@@ -6,138 +6,153 @@
 
 @layer base {
   :root {
-    /* Brand Colors - Corporate Financial Theme */
+    /* Delta Brand Colors - Premium Enterprise Theme */
     --background: 0 0% 100%;
-    --foreground: 215 25% 27%;
+    --foreground: 215 25% 15%;
     
     --card: 0 0% 100%;
-    --card-foreground: 215 25% 27%;
+    --card-foreground: 215 25% 15%;
     
     --popover: 0 0% 100%;
-    --popover-foreground: 215 25% 27%;
+    --popover-foreground: 215 25% 15%;
     
-    /* Primary - Deep Corporate Blue */
-    --primary: 214 84% 56%;
+    /* Primary - Delta Gold */
+    --primary: 34 58% 46%;
     --primary-foreground: 0 0% 98%;
-    --primary-hover: 214 84% 46%;
-    --primary-light: 214 84% 96%;
+    --primary-hover: 34 58% 38%;
+    --primary-light: 34 58% 95%;
     
-    /* Secondary - Neutral Slate */
-    --secondary: 215 16% 97%;
-    --secondary-foreground: 215 25% 27%;
-    --secondary-hover: 215 16% 93%;
+    /* Secondary - Delta Navy */
+    --secondary: 215 85% 13%;
+    --secondary-foreground: 0 0% 98%;
+    --secondary-hover: 215 85% 20%;
     
     /* Success - Financial Green */
     --success: 142 71% 45%;
     --success-foreground: 0 0% 98%;
     --success-light: 142 71% 96%;
     
-    /* Warning - Amber */
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 98%;
-    --warning-light: 38 92% 95%;
+    /* Warning - Gold Accent */
+    --warning: 43 92% 55%;
+    --warning-foreground: 215 25% 15%;
+    --warning-light: 43 92% 95%;
     
     /* Danger - Financial Red */
     --danger: 0 84% 60%;
     --danger-foreground: 0 0% 98%;
     --danger-light: 0 84% 96%;
     
+    /* Info - Premium Blue */
+    --info: 204 94% 56%;
+    --info-foreground: 0 0% 98%;
+    --info-light: 204 94% 96%;
+    
     --muted: 215 16% 97%;
     --muted-foreground: 215 14% 55%;
     
-    --accent: 215 16% 97%;
-    --accent-foreground: 215 25% 27%;
+    --accent: 34 58% 96%;
+    --accent-foreground: 34 58% 25%;
     
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
     
     --border: 215 16% 91%;
     --input: 215 16% 91%;
-    --ring: 214 84% 56%;
+    --ring: 34 58% 46%;
     
     --radius: 0.75rem;
     
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(214 84% 56%), hsl(214 84% 66%));
+    /* Delta Premium Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(34 58% 46%), hsl(34 58% 56%));
+    --gradient-secondary: linear-gradient(135deg, hsl(215 85% 13%), hsl(215 85% 23%));
     --gradient-success: linear-gradient(135deg, hsl(142 71% 45%), hsl(142 71% 55%));
-    --gradient-warning: linear-gradient(135deg, hsl(38 92% 50%), hsl(38 92% 60%));
+    --gradient-warning: linear-gradient(135deg, hsl(43 92% 55%), hsl(43 92% 65%));
     --gradient-danger: linear-gradient(135deg, hsl(0 84% 60%), hsl(0 84% 70%));
-    --gradient-surface: linear-gradient(180deg, hsl(0 0% 100%), hsl(215 16% 98%));
+    --gradient-hero: linear-gradient(135deg, hsl(34 58% 46%), hsl(215 85% 13%));
+    --gradient-surface: linear-gradient(180deg, hsl(0 0% 100%), hsl(34 58% 98%));
     
-    /* Shadows */
-    --shadow-sm: 0 1px 2px 0 hsl(215 25% 27% / 0.05);
-    --shadow-md: 0 4px 6px -1px hsl(215 25% 27% / 0.1);
-    --shadow-lg: 0 10px 15px -3px hsl(215 25% 27% / 0.1);
-    --shadow-card: 0 4px 12px hsl(215 25% 27% / 0.08);
+    /* Premium Shadows with Delta Accent */
+    --shadow-sm: 0 1px 2px 0 hsl(215 25% 15% / 0.05);
+    --shadow-md: 0 4px 6px -1px hsl(215 25% 15% / 0.1);
+    --shadow-lg: 0 10px 15px -3px hsl(215 25% 15% / 0.1);
+    --shadow-xl: 0 20px 25px -5px hsl(215 25% 15% / 0.1);
+    --shadow-card: 0 4px 12px hsl(215 25% 15% / 0.08);
+    --shadow-gold: 0 4px 20px hsl(34 58% 46% / 0.15);
+    --shadow-elevated: 0 8px 30px hsl(215 25% 15% / 0.12);
     
-    /* Animations */
+    /* Premium Animations */
     --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-normal: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 600ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: 600ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
     
-    /* Sidebar */
-    --sidebar-background: 215 16% 99%;
-    --sidebar-foreground: 215 25% 27%;
-    --sidebar-primary: 214 84% 56%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 215 16% 95%;
-    --sidebar-accent-foreground: 215 25% 27%;
-    --sidebar-border: 215 16% 91%;
-    --sidebar-ring: 214 84% 56%;
+    /* Sidebar - Delta Theme */
+    --sidebar-background: 215 85% 13%;
+    --sidebar-foreground: 215 16% 95%;
+    --sidebar-primary: 34 58% 46%;
+    --sidebar-primary-foreground: 215 85% 13%;
+    --sidebar-accent: 215 85% 18%;
+    --sidebar-accent-foreground: 215 16% 90%;
+    --sidebar-border: 215 85% 20%;
+    --sidebar-ring: 34 58% 46%;
   }
   
   .dark {
-    /* Dark theme colors */
-    --background: 215 25% 12%;
+    /* Delta Dark Theme */
+    --background: 215 85% 8%;
     --foreground: 215 16% 95%;
     
-    --card: 215 25% 15%;
+    --card: 215 85% 11%;
     --card-foreground: 215 16% 95%;
     
-    --popover: 215 25% 15%;
+    --popover: 215 85% 11%;
     --popover-foreground: 215 16% 95%;
     
-    --primary: 214 84% 66%;
-    --primary-foreground: 215 25% 12%;
-    --primary-hover: 214 84% 56%;
-    --primary-light: 214 84% 20%;
+    --primary: 34 58% 56%;
+    --primary-foreground: 215 85% 8%;
+    --primary-hover: 34 58% 46%;
+    --primary-light: 34 58% 18%;
     
-    --secondary: 215 25% 18%;
+    --secondary: 215 85% 15%;
     --secondary-foreground: 215 16% 95%;
-    --secondary-hover: 215 25% 22%;
+    --secondary-hover: 215 85% 20%;
     
     --success: 142 71% 55%;
-    --success-foreground: 215 25% 12%;
+    --success-foreground: 215 85% 8%;
     --success-light: 142 71% 20%;
     
-    --warning: 38 92% 60%;
-    --warning-foreground: 215 25% 12%;
-    --warning-light: 38 92% 20%;
+    --warning: 43 92% 65%;
+    --warning-foreground: 215 85% 8%;
+    --warning-light: 43 92% 18%;
     
     --danger: 0 84% 70%;
-    --danger-foreground: 215 25% 12%;
-    --danger-light: 0 84% 20%;
+    --danger-foreground: 215 85% 8%;
+    --danger-light: 0 84% 18%;
     
-    --muted: 215 25% 18%;
+    --info: 204 94% 66%;
+    --info-foreground: 215 85% 8%;
+    --info-light: 204 94% 18%;
+    
+    --muted: 215 85% 15%;
     --muted-foreground: 215 14% 65%;
     
-    --accent: 215 25% 18%;
-    --accent-foreground: 215 16% 95%;
+    --accent: 34 58% 15%;
+    --accent-foreground: 34 58% 85%;
     
     --destructive: 0 84% 70%;
-    --destructive-foreground: 215 25% 12%;
+    --destructive-foreground: 215 85% 8%;
     
-    --border: 215 25% 25%;
-    --input: 215 25% 25%;
-    --ring: 214 84% 66%;
+    --border: 215 85% 20%;
+    --input: 215 85% 20%;
+    --ring: 34 58% 56%;
     
-    --sidebar-background: 215 25% 10%;
+    --sidebar-background: 215 85% 6%;
     --sidebar-foreground: 215 16% 90%;
-    --sidebar-primary: 214 84% 66%;
-    --sidebar-primary-foreground: 215 25% 10%;
-    --sidebar-accent: 215 25% 15%;
+    --sidebar-primary: 34 58% 56%;
+    --sidebar-primary-foreground: 215 85% 6%;
+    --sidebar-accent: 215 85% 12%;
     --sidebar-accent-foreground: 215 16% 90%;
-    --sidebar-border: 215 25% 20%;
+    --sidebar-border: 215 85% 18%;
   }
 }
 
@@ -152,52 +167,125 @@
 }
 
 @layer components {
-  /* KPI Card Variants */
+  /* Delta Premium KPI Cards */
   .kpi-card {
-    @apply rounded-xl bg-card border border-border/50 p-6 transition-all duration-300 hover:shadow-lg;
+    @apply rounded-xl bg-card border border-border/50 p-6 transition-all duration-300 hover:shadow-elevated;
     box-shadow: var(--shadow-card);
   }
   
+  .kpi-card:hover {
+    box-shadow: var(--shadow-gold);
+    transform: translateY(-2px);
+  }
+  
   .kpi-card-primary {
-    @apply bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20;
+    @apply bg-gradient-to-br from-primary/5 to-primary/10 border-primary/30;
+    box-shadow: var(--shadow-card), 0 0 0 1px hsl(var(--primary) / 0.1);
   }
   
   .kpi-card-success {
-    @apply bg-gradient-to-br from-success/5 to-success/10 border-success/20;
+    @apply bg-gradient-to-br from-success/5 to-success/10 border-success/30;
+    box-shadow: var(--shadow-card), 0 0 0 1px hsl(var(--success) / 0.1);
   }
   
   .kpi-card-warning {
-    @apply bg-gradient-to-br from-warning/5 to-warning/10 border-warning/20;
+    @apply bg-gradient-to-br from-warning/5 to-warning/10 border-warning/30;
+    box-shadow: var(--shadow-card), 0 0 0 1px hsl(var(--warning) / 0.1);
   }
   
   .kpi-card-danger {
-    @apply bg-gradient-to-br from-danger/5 to-danger/10 border-danger/20;
+    @apply bg-gradient-to-br from-danger/5 to-danger/10 border-danger/30;
+    box-shadow: var(--shadow-card), 0 0 0 1px hsl(var(--danger) / 0.1);
   }
   
-  /* Chart Container */
+  .kpi-card-info {
+    @apply bg-gradient-to-br from-info/5 to-info/10 border-info/30;
+    box-shadow: var(--shadow-card), 0 0 0 1px hsl(var(--info) / 0.1);
+  }
+  
+  /* Premium Chart Container */
   .chart-container {
-    @apply bg-gradient-to-b from-card to-muted/30 rounded-lg border border-border/50 p-4;
+    @apply bg-gradient-to-b from-card to-accent/20 rounded-xl border border-border/50 p-6;
+    box-shadow: var(--shadow-card);
   }
   
-  /* Metric Value */
+  .chart-container:hover {
+    box-shadow: var(--shadow-elevated);
+  }
+  
+  /* Premium Metrics */
   .metric-value {
-    @apply text-2xl font-bold tracking-tight;
+    @apply text-3xl font-bold tracking-tight bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent;
   }
   
   .metric-label {
-    @apply text-sm font-medium text-muted-foreground uppercase tracking-wide;
+    @apply text-sm font-semibold text-muted-foreground uppercase tracking-wider;
+  }
+  
+  .metric-trend-up {
+    @apply text-success font-semibold;
+  }
+  
+  .metric-trend-down {
+    @apply text-danger font-semibold;
+  }
+  
+  .metric-trend-neutral {
+    @apply text-warning font-semibold;
   }
   
   /* Status Indicators */
   .status-positive {
-    @apply text-success bg-success-light rounded-full px-2 py-1 text-xs font-medium;
+    @apply text-success bg-success-light rounded-full px-3 py-1 text-xs font-semibold border border-success/20;
   }
   
   .status-negative {
-    @apply text-danger bg-danger-light rounded-full px-2 py-1 text-xs font-medium;
+    @apply text-danger bg-danger-light rounded-full px-3 py-1 text-xs font-semibold border border-danger/20;
   }
   
   .status-neutral {
-    @apply text-warning bg-warning-light rounded-full px-2 py-1 text-xs font-medium;
+    @apply text-warning bg-warning-light rounded-full px-3 py-1 text-xs font-semibold border border-warning/20;
   }
+  
+  .status-info {
+    @apply text-info bg-info-light rounded-full px-3 py-1 text-xs font-semibold border border-info/20;
+  }
+  
+  /* Premium Interactive Elements */
+  .premium-button {
+    @apply relative overflow-hidden bg-gradient-to-r from-primary to-secondary text-primary-foreground font-semibold px-6 py-3 rounded-lg transition-all duration-300 hover:shadow-gold hover:-translate-y-0.5;
+  }
+  
+  .premium-button:before {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 transition-opacity duration-300;
+  }
+  
+  .premium-button:hover:before {
+    @apply opacity-100;
+  }
+  
+  /* Delta Loading States */
+  .loading-shimmer {
+    @apply animate-pulse bg-gradient-to-r from-muted via-accent to-muted bg-[length:200%_100%];
+    animation: shimmer 2s ease-in-out infinite;
+  }
+  
+  .loading-skeleton {
+    @apply bg-gradient-to-r from-muted/50 via-accent/50 to-muted/50 animate-pulse rounded;
+  }
+  
+  /* Zero State */
+  .zero-state {
+    @apply text-6xl font-bold text-muted-foreground/30 tabular-nums;
+  }
+  
+  .zero-currency {
+    @apply text-2xl font-bold text-muted-foreground/50;
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }

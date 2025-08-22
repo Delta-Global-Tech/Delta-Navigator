@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      aberturas_contas: {
+        Row: {
+          canal: string | null
+          created_at: string | null
+          data_formalizacao: string
+          id: string
+          matricula: string | null
+          segmento: string | null
+          tipo_documento: string | null
+        }
+        Insert: {
+          canal?: string | null
+          created_at?: string | null
+          data_formalizacao: string
+          id?: string
+          matricula?: string | null
+          segmento?: string | null
+          tipo_documento?: string | null
+        }
+        Update: {
+          canal?: string | null
+          created_at?: string | null
+          data_formalizacao?: string
+          id?: string
+          matricula?: string | null
+          segmento?: string | null
+          tipo_documento?: string | null
+        }
+        Relationships: []
+      }
       contracts: {
         Row: {
           banco: string | null
@@ -56,6 +86,273 @@ export type Database = {
           saldo_devedor?: number | null
           status?: Database["public"]["Enums"]["contract_status"] | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      operacoes: {
+        Row: {
+          created_at: string | null
+          data_emissao: string | null
+          id: string
+          matricula: string | null
+          prazo: number | null
+          saldo_devedor: number | null
+          status: string | null
+          tipo_documento: string
+          tipo_liberacao: string
+          valor_parcela: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          data_emissao?: string | null
+          id?: string
+          matricula?: string | null
+          prazo?: number | null
+          saldo_devedor?: number | null
+          status?: string | null
+          tipo_documento: string
+          tipo_liberacao: string
+          valor_parcela?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          data_emissao?: string | null
+          id?: string
+          matricula?: string | null
+          prazo?: number | null
+          saldo_devedor?: number | null
+          status?: string | null
+          tipo_documento?: string
+          tipo_liberacao?: string
+          valor_parcela?: number | null
+        }
+        Relationships: []
+      }
+      producao_fila_compra: {
+        Row: {
+          created_at: string | null
+          data_atualizacao_off: string | null
+          data_atualizacao_on: string | null
+          data_formalizacao: string | null
+          id: string
+          matricula: string | null
+          prazo: number | null
+          status: string | null
+          tipo_documento: string | null
+          tipo_liberacao: string | null
+          valor_parcela: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          data_atualizacao_off?: string | null
+          data_atualizacao_on?: string | null
+          data_formalizacao?: string | null
+          id?: string
+          matricula?: string | null
+          prazo?: number | null
+          status?: string | null
+          tipo_documento?: string | null
+          tipo_liberacao?: string | null
+          valor_parcela?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          data_atualizacao_off?: string | null
+          data_atualizacao_on?: string | null
+          data_formalizacao?: string | null
+          id?: string
+          matricula?: string | null
+          prazo?: number | null
+          status?: string | null
+          tipo_documento?: string | null
+          tipo_liberacao?: string | null
+          valor_parcela?: number | null
+        }
+        Relationships: []
+      }
+      producao_fila_novo: {
+        Row: {
+          created_at: string | null
+          data_atualizacao_off: string | null
+          data_atualizacao_on: string | null
+          data_formalizacao: string | null
+          id: string
+          matricula: string | null
+          prazo: number | null
+          status: string | null
+          tipo_documento: string | null
+          tipo_liberacao: string | null
+          valor_parcela: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          data_atualizacao_off?: string | null
+          data_atualizacao_on?: string | null
+          data_formalizacao?: string | null
+          id?: string
+          matricula?: string | null
+          prazo?: number | null
+          status?: string | null
+          tipo_documento?: string | null
+          tipo_liberacao?: string | null
+          valor_parcela?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          data_atualizacao_off?: string | null
+          data_atualizacao_on?: string | null
+          data_formalizacao?: string | null
+          id?: string
+          matricula?: string | null
+          prazo?: number | null
+          status?: string | null
+          tipo_documento?: string | null
+          tipo_liberacao?: string | null
+          valor_parcela?: number | null
+        }
+        Relationships: []
+      }
+      producao_paga_compra: {
+        Row: {
+          comissao: number | null
+          created_at: string | null
+          data_ddb: string | null
+          data_formalizacao: string
+          id: string
+          matricula: string | null
+          prazo: number | null
+          tipo_documento: string | null
+          tipo_liberacao: string | null
+          valor_parcela: number | null
+        }
+        Insert: {
+          comissao?: number | null
+          created_at?: string | null
+          data_ddb?: string | null
+          data_formalizacao: string
+          id?: string
+          matricula?: string | null
+          prazo?: number | null
+          tipo_documento?: string | null
+          tipo_liberacao?: string | null
+          valor_parcela?: number | null
+        }
+        Update: {
+          comissao?: number | null
+          created_at?: string | null
+          data_ddb?: string | null
+          data_formalizacao?: string
+          id?: string
+          matricula?: string | null
+          prazo?: number | null
+          tipo_documento?: string | null
+          tipo_liberacao?: string | null
+          valor_parcela?: number | null
+        }
+        Relationships: []
+      }
+      producao_paga_novo: {
+        Row: {
+          comissao: number | null
+          created_at: string | null
+          data_ddb: string | null
+          data_formalizacao: string
+          id: string
+          matricula: string | null
+          prazo: number | null
+          tipo_documento: string | null
+          tipo_liberacao: string | null
+          valor_parcela: number | null
+        }
+        Insert: {
+          comissao?: number | null
+          created_at?: string | null
+          data_ddb?: string | null
+          data_formalizacao: string
+          id?: string
+          matricula?: string | null
+          prazo?: number | null
+          tipo_documento?: string | null
+          tipo_liberacao?: string | null
+          valor_parcela?: number | null
+        }
+        Update: {
+          comissao?: number | null
+          created_at?: string | null
+          data_ddb?: string | null
+          data_formalizacao?: string
+          id?: string
+          matricula?: string | null
+          prazo?: number | null
+          tipo_documento?: string | null
+          tipo_liberacao?: string | null
+          valor_parcela?: number | null
+        }
+        Relationships: []
+      }
+      producao_total_compra: {
+        Row: {
+          created_at: string | null
+          data_formalizacao: string
+          id: string
+          matricula: string | null
+          prazo: number | null
+          tipo_documento: string | null
+          tipo_liberacao: string | null
+          valor_parcela: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          data_formalizacao: string
+          id?: string
+          matricula?: string | null
+          prazo?: number | null
+          tipo_documento?: string | null
+          tipo_liberacao?: string | null
+          valor_parcela?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          data_formalizacao?: string
+          id?: string
+          matricula?: string | null
+          prazo?: number | null
+          tipo_documento?: string | null
+          tipo_liberacao?: string | null
+          valor_parcela?: number | null
+        }
+        Relationships: []
+      }
+      producao_total_novo: {
+        Row: {
+          created_at: string | null
+          data_formalizacao: string
+          id: string
+          matricula: string | null
+          prazo: number | null
+          tipo_documento: string | null
+          tipo_liberacao: string | null
+          valor_parcela: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          data_formalizacao: string
+          id?: string
+          matricula?: string | null
+          prazo?: number | null
+          tipo_documento?: string | null
+          tipo_liberacao?: string | null
+          valor_parcela?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          data_formalizacao?: string
+          id?: string
+          matricula?: string | null
+          prazo?: number | null
+          tipo_documento?: string | null
+          tipo_liberacao?: string | null
+          valor_parcela?: number | null
         }
         Relationships: []
       }
