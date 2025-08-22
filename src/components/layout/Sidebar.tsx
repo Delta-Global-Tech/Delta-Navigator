@@ -38,8 +38,8 @@ const mainNavItems: NavItem[] = [
     icon: UserPlus,
     description: "Abertura de Contas",
     badge: "New"
-  },
-]
+  }
+];
 
 const productionNavItems: NavItem[] = [
   {
@@ -66,8 +66,8 @@ const productionNavItems: NavItem[] = [
     url: "/paga",
     icon: CheckCircle,
     description: "Contratos Pagos"
-  },
-]
+  }
+];
 
 const analysisNavItems: NavItem[] = [
   {
@@ -83,8 +83,8 @@ const analysisNavItems: NavItem[] = [
     description: "Qualidade dos Dados",
     badge: "3",
     variant: "warning" as const
-  },
-]
+  }
+];
 
 interface NavSectionProps {
   title: string
