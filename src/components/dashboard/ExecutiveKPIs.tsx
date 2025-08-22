@@ -1,6 +1,7 @@
 import { TrendingUp, TrendingDown, DollarSign, Users, Target, Percent } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { useExecutiveKPIs } from "@/hooks/useSupabaseData"
 
 interface KPICardProps {
   title: string
@@ -48,11 +49,32 @@ function KPICard({ title, value, subtitle, trend, icon: Icon, variant = "primary
 }
 
 export function ExecutiveKPIs() {
+  const { data: kpis, isLoading } = useExecutiveKPIs()
+  
+  const brl = (value: number) => 
+    new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value)
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+        {Array(6).fill(0).map((_, i) => (
+          <Card key={i} className="kpi-card">
+            <CardContent className="p-6">
+              <div className="skeleton-text" />
+              <div className="skeleton-metric" />
+              <div className="skeleton-text w-24" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    )
+  }
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
       <KPICard
         title="Registros Totais"
-        value="0"
+        value={kpis?.totalRegistros?.toLocaleString("pt-BR") || "0"}
         subtitle="Contratos ativos"
         trend={{ value: "—", positive: true }}
         icon={Users}
@@ -61,7 +83,7 @@ export function ExecutiveKPIs() {
       
       <KPICard
         title="Saldo Devedor"
-        value="R$ 0,00"
+        value={brl(kpis?.saldoDevedor || 0)}
         subtitle="Total em carteira"
         trend={{ value: "—", positive: true }}
         icon={DollarSign}
@@ -70,7 +92,7 @@ export function ExecutiveKPIs() {
       
       <KPICard
         title="Comissão Prevista"
-        value="R$ 0,00"
+        value={brl(kpis?.comissaoPrevista || 0)}
         subtitle="Receita esperada"
         trend={{ value: "—", positive: false }}
         icon={Target}
@@ -79,7 +101,7 @@ export function ExecutiveKPIs() {
       
       <KPICard
         title="Comissão Recebida"
-        value="R$ 0,00"
+        value={brl(kpis?.comissaoRecebida || 0)}
         subtitle="Receita realizada"
         trend={{ value: "—", positive: true }}
         icon={DollarSign}
@@ -88,7 +110,7 @@ export function ExecutiveKPIs() {
       
       <KPICard
         title="Ticket Médio"
-        value="R$ 0,00"
+        value={brl(kpis?.ticketMedio || 0)}
         subtitle="Valor médio/contrato"
         trend={{ value: "—", positive: false }}
         icon={TrendingUp}
@@ -97,7 +119,7 @@ export function ExecutiveKPIs() {
       
       <KPICard
         title="Conversão Total"
-        value="0%"
+        value={`${kpis?.conversaoTotal?.toFixed(1) || 0}%`}
         subtitle="Total → Pago"
         trend={{ value: "—", positive: true }}
         icon={Percent}

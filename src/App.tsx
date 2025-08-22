@@ -6,6 +6,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { Layout } from "@/components/layout/Layout";
 import Dashboard from "./pages/Dashboard";
+import Aquisicao from "./pages/Aquisicao";
+import ProducaoNovo from "./pages/ProducaoNovo";
+import ProducaoCompra from "./pages/ProducaoCompra";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -20,9 +23,9 @@ const App = () => (
           <Layout>
             <Routes>
               <Route path="/" element={<Dashboard />} />
-              <Route path="/aquisicao" element={<div className="p-6">Aquisição - Em desenvolvimento</div>} />
-              <Route path="/producao/novo" element={<div className="p-6">Produção NOVO - Em desenvolvimento</div>} />
-              <Route path="/producao/compra" element={<div className="p-6">Produção COMPRA - Em desenvolvimento</div>} />
+              <Route path="/aquisicao" element={<Aquisicao />} />
+              <Route path="/producao/novo" element={<ProducaoNovo />} />
+              <Route path="/producao/compra" element={<ProducaoCompra />} />
               <Route path="/fila" element={<div className="p-6">Fila de Pagamento - Em desenvolvimento</div>} />
               <Route path="/paga" element={<div className="p-6">Produção Paga - Em desenvolvimento</div>} />
               <Route path="/explorar" element={<div className="p-6">Explorador - Em desenvolvimento</div>} />

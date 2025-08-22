@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts'
 import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Clock, Target, DollarSign, LayoutDashboard } from "lucide-react"
+import { useFunnelData, useVolumeData, useExecutiveKPIs, useABCRevenue, useDocumentPerformance } from "@/hooks/useSupabaseData"
 
 // Mock data for zero state
 const volumeData = []
@@ -24,6 +25,30 @@ const colors = {
 }
 
 export default function Dashboard() {
+  // Carregar dados do Supabase
+  const { data: kpis, isLoading: kpisLoading } = useExecutiveKPIs()
+  const { data: volumeData, isLoading: volumeLoading } = useVolumeData()
+  const { data: funnelData, isLoading: funnelLoading } = useFunnelData()
+  const { data: abcData, isLoading: abcLoading } = useABCRevenue()
+  const { data: docData, isLoading: docLoading } = useDocumentPerformance()
+
+  // Preparar dados para gráficos
+  const chartVolumeData = volumeData?.reduce((acc, item) => {
+    const existing = acc.find(a => a.ym === item.ym)
+    if (existing) {
+      existing.total += item.total
+      existing.pago += item.pago
+    } else {
+      acc.push({ ym: item.ym, total: item.total, pago: item.pago })
+    }
+    return acc
+  }, [] as any[]) || []
+
+  const conversionData = funnelData?.map(item => ({
+    ym: item.ym,
+    conversion: item.conv_total_paga
+  })) || []
+
   return (
     <div className="p-6 space-y-8">
       {/* Page Header */}
@@ -67,7 +92,11 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="h-[280px] w-full">
-              {volumeData.length === 0 ? (
+              {volumeLoading ? (
+                <div className="zero-state">
+                  <div className="skeleton h-[280px] w-full" />
+                </div>
+              ) : chartVolumeData.length === 0 ? (
                 <div className="zero-state">
                   <TrendingUp className="zero-state-icon" />
                   <h3 className="zero-state-title">Aguardando Dados</h3>
@@ -77,7 +106,7 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={volumeData}>
+                  <BarChart data={chartVolumeData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="ym" stroke="hsl(var(--muted-foreground))" />
                     <YAxis stroke="hsl(var(--muted-foreground))" />
@@ -88,8 +117,8 @@ export default function Dashboard() {
                         borderRadius: '8px'
                       }} 
                     />
-                    <Bar dataKey="total" fill={colors.primary} name="Total" />
-                    <Bar dataKey="pago" fill={colors.success} name="Pago" />
+                    <Bar dataKey="total" fill="hsl(var(--primary))" name="Total" />
+                    <Bar dataKey="pago" fill="hsl(var(--success))" name="Pago" />
                   </BarChart>
                 </ResponsiveContainer>
               )}
@@ -108,7 +137,11 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="h-[280px] w-full">
-              {conversionData.length === 0 ? (
+              {funnelLoading ? (
+                <div className="zero-state">
+                  <div className="skeleton h-[280px] w-full" />
+                </div>
+              ) : conversionData.length === 0 ? (
                 <div className="zero-state">
                   <Target className="zero-state-icon" />
                   <h3 className="zero-state-title">Aguardando Dados</h3>
@@ -129,7 +162,7 @@ export default function Dashboard() {
                         borderRadius: '8px'
                       }} 
                     />
-                    <Line type="monotone" dataKey="conversion" stroke={colors.success} strokeWidth={3} />
+                    <Line type="monotone" dataKey="conversion" stroke="hsl(var(--success))" strokeWidth={3} />
                   </LineChart>
                 </ResponsiveContainer>
               )}
@@ -167,7 +200,11 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {documentTypes.length === 0 ? (
+              {docLoading ? (
+                Array(5).fill(0).map((_, i) => (
+                  <div key={i} className="skeleton h-12 w-full" />
+                ))
+              ) : docData.length === 0 ? (
                 <div className="zero-state">
                   <TrendingUp className="zero-state-icon" />
                   <h3 className="zero-state-title">Ranking Vazio</h3>
@@ -176,15 +213,15 @@ export default function Dashboard() {
                   </p>
                 </div>
               ) : (
-                documentTypes.map((doc, index) => (
+                docData.slice(0, 5).map((doc, index) => (
                   <div key={index} className="flex items-center justify-between p-3 bg-muted/20 rounded-lg">
                     <div className="flex items-center gap-3">
                       <Badge variant="outline" className="w-8 h-8 rounded-full flex items-center justify-center">
                         {index + 1}
                       </Badge>
-                      <span className="font-medium">{doc.name}</span>
+                      <span className="font-medium">{doc.tipo_documento || 'N/A'}</span>
                     </div>
-                    <span className="text-sm text-muted-foreground">{doc.count}</span>
+                    <span className="text-sm text-muted-foreground">{doc.total_registros}</span>
                   </div>
                 ))
               )}
@@ -221,19 +258,37 @@ export default function Dashboard() {
               <CardTitle className="chart-title">ABC de Receita</CardTitle>
               <p className="chart-subtitle">Análise Pareto 80/20</p>
             </div>
-            <Badge variant="outline" className="border-warning/20 text-warning">
-              Aguardando
+            <Badge variant="outline" className={abcData.length === 0 ? "border-warning/20 text-warning" : "border-success/20 text-success"}>
+              {abcData.length === 0 ? "Aguardando" : "Ativo"}
             </Badge>
           </CardHeader>
           <CardContent>
             <div className="h-[200px] w-full">
-              <div className="zero-state">
-                <DollarSign className="zero-state-icon" />
-                <h3 className="zero-state-title">Análise ABC Pendente</h3>
-                <p className="zero-state-description">
-                  Análise de receita será exibida com dados suficientes
-                </p>
-              </div>
+              {abcLoading ? (
+                <div className="skeleton h-full w-full" />
+              ) : abcData.length === 0 ? (
+                <div className="zero-state">
+                  <DollarSign className="zero-state-icon" />
+                  <h3 className="zero-state-title">Análise ABC Pendente</h3>
+                  <p className="zero-state-description">
+                    Análise de receita será exibida com dados suficientes
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {abcData.slice(0, 5).map((item, index) => (
+                    <div key={index} className="flex items-center justify-between p-2 bg-muted/10 rounded">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${index < 2 ? 'bg-success' : index < 4 ? 'bg-warning' : 'bg-danger'}`} />
+                        <span className="text-sm font-medium">{item.tipo_documento}</span>
+                      </div>
+                      <span className="text-sm font-mono">
+                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.comissao_total)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -248,23 +303,44 @@ export default function Dashboard() {
             <div className="flex gap-2">
               <Badge variant="outline" className="border-success/20 text-success">
                 <TrendingUp className="h-3 w-3 mr-1" />
-                +0%
+                +{funnelData?.slice(-1)[0]?.conv_total_paga?.toFixed(1) || 0}%
               </Badge>
-              <Badge variant="outline" className="border-danger/20 text-danger">
-                <TrendingDown className="h-3 w-3 mr-1" />
-                -0%
+              <Badge variant="outline" className="border-primary/20 text-primary">
+                <Target className="h-3 w-3 mr-1" />
+                Meta: 15%
               </Badge>
             </div>
           </CardHeader>
           <CardContent>
             <div className="h-[200px] w-full">
-              <div className="zero-state">
-                <Target className="zero-state-icon" />
-                <h3 className="zero-state-title">Sem Tendências</h3>
-                <p className="zero-state-description">
-                  Tendências MoM serão calculadas com histórico
-                </p>
-              </div>
+              {funnelLoading ? (
+                <div className="skeleton h-full w-full" />
+              ) : funnelData.length === 0 ? (
+                <div className="zero-state">
+                  <Target className="zero-state-icon" />
+                  <h3 className="zero-state-title">Sem Tendências</h3>
+                  <p className="zero-state-description">
+                    Tendências MoM serão calculadas com histórico
+                  </p>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={funnelData.slice(-12)}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="ym" stroke="hsl(var(--muted-foreground))" />
+                    <YAxis stroke="hsl(var(--muted-foreground))" />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--card))', 
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px'
+                      }} 
+                    />
+                    <Line type="monotone" dataKey="conv_total_paga" stroke="hsl(var(--primary))" strokeWidth={2} />
+                    <Line type="monotone" dataKey="fila_sobre_total" stroke="hsl(var(--warning))" strokeWidth={2} />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </CardContent>
         </Card>
