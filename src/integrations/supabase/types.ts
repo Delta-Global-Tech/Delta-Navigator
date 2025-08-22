@@ -368,6 +368,75 @@ export type Database = {
         }
         Relationships: []
       }
+      vw_abc_receita: {
+        Row: {
+          comissao_media: number | null
+          comissao_total: number | null
+          ranking: number | null
+          registros: number | null
+          tipo_documento: string | null
+        }
+        Relationships: []
+      }
+      vw_documento_performance: {
+        Row: {
+          prazo_medio: number | null
+          ticket_medio: number | null
+          tipo_documento: string | null
+          total_registros: number | null
+          valor_total: number | null
+        }
+        Relationships: []
+      }
+      vw_fila_mensal: {
+        Row: {
+          registros: number | null
+          ticket_medio: number | null
+          tipo: string | null
+          valor: number | null
+          ym: string | null
+        }
+        Relationships: []
+      }
+      vw_funil_mensal: {
+        Row: {
+          comissao_paga: number | null
+          conv_fila_paga: number | null
+          conv_total_paga: number | null
+          fila: number | null
+          fila_sobre_total: number | null
+          paga: number | null
+          tipo: string | null
+          total: number | null
+          valor_fila: number | null
+          valor_paga: number | null
+          valor_total: number | null
+          ym: string | null
+        }
+        Relationships: []
+      }
+      vw_paga_mensal: {
+        Row: {
+          comissao: number | null
+          lead_time_medio: number | null
+          registros: number | null
+          ticket_medio: number | null
+          tipo: string | null
+          valor: number | null
+          ym: string | null
+        }
+        Relationships: []
+      }
+      vw_total_mensal: {
+        Row: {
+          registros: number | null
+          ticket_medio: number | null
+          tipo: string | null
+          valor: number | null
+          ym: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
