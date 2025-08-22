@@ -23,6 +23,8 @@ interface NavItem {
   description: string
   badge?: string
   variant?: "warning" | "default"
+}
+
 const mainNavItems: NavItem[] = [
   {
     title: "Visão Geral",
