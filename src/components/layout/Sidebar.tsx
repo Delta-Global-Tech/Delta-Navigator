@@ -34,10 +34,9 @@ const mainNavItems: NavItem[] = [
   },
   {
     title: "Aquisição",
-    url: "/aquisicao",
+    url: "/aberturas",
     icon: UserPlus,
-    description: "Abertura de Contas",
-    badge: "New"
+    description: "Abertura de Contas"
   }
 ];
 

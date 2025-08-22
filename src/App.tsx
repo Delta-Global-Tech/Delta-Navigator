@@ -9,6 +9,10 @@ import Dashboard from "./pages/Dashboard";
 import Aquisicao from "./pages/Aquisicao";
 import ProducaoNovo from "./pages/ProducaoNovo";
 import ProducaoCompra from "./pages/ProducaoCompra";
+import FilaPagamento from "./pages/FilaPagamento";
+import ProducaoPaga from "./pages/ProducaoPaga";
+import ExploradorDados from "./pages/ExploradorDados";
+import QualidadeDados from "./pages/QualidadeDados";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,13 +27,15 @@ const App = () => (
           <Layout>
             <Routes>
               <Route path="/" element={<Dashboard />} />
-              <Route path="/aquisicao" element={<Aquisicao />} />
+              <Route path="/aberturas" element={<Aquisicao />} />
               <Route path="/producao/novo" element={<ProducaoNovo />} />
               <Route path="/producao/compra" element={<ProducaoCompra />} />
-              <Route path="/fila" element={<div className="p-6">Fila de Pagamento - Em desenvolvimento</div>} />
-              <Route path="/paga" element={<div className="p-6">Produção Paga - Em desenvolvimento</div>} />
-              <Route path="/explorar" element={<div className="p-6">Explorador - Em desenvolvimento</div>} />
-              <Route path="/qualidade" element={<div className="p-6">Qualidade - Em desenvolvimento</div>} />
+              <Route path="/fila" element={<FilaPagamento />} />
+              <Route path="/paga" element={<ProducaoPaga />} />
+              <Route path="/explorar" element={<ExploradorDados />} />
+              <Route path="/qualidade" element={<QualidadeDados />} />
+              {/* Legacy routes */}
+              <Route path="/aquisicao" element={<Aquisicao />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Layout>
