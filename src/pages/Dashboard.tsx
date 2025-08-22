@@ -28,9 +28,9 @@ export default function Dashboard() {
   // Carregar dados do Supabase
   const { data: kpis, isLoading: kpisLoading } = useExecutiveKPIs()
   const { data: volumeData, isLoading: volumeLoading } = useVolumeData()
-  const { data: funnelData, isLoading: funnelLoading } = useFunnelData()
-  const { data: abcData, isLoading: abcLoading } = useABCRevenue()
-  const { data: docData, isLoading: docLoading } = useDocumentPerformance()
+  const { data: funnelData = [], isLoading: funnelLoading } = useFunnelData()
+  const { data: abcData = [], isLoading: abcLoading } = useABCRevenue()
+  const { data: docData = [], isLoading: docLoading } = useDocumentPerformance()
 
   // Preparar dados para gráficos
   const chartVolumeData = volumeData?.reduce((acc, item) => {
