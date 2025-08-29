@@ -1,4 +1,4 @@
--- ===== DELTA COMMAND CENTER - SIMPLIFIED DATABASE STRUCTURE =====
+-- ===== Delta Global Center - SIMPLIFIED DATABASE STRUCTURE =====
 
 -- Add CHECK constraints to existing tables (if not already present)
 DO $$ 

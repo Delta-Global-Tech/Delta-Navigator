@@ -2,16 +2,12 @@ import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { BarChart3, Upload as UploadIcon, Search, Shield, TrendingUp, FileSpreadsheet, Menu, X } from "lucide-react"
+import { BarChart3, Upload as UploadIcon, Search, Shield, TrendingUp, FileSpreadsheet, Menu, X, ShoppingCart } from "lucide-react"
 
 import { MetricsGrid } from "./dashboard/MetricsGrid"
 import { ChartsSection } from "./dashboard/ChartsSection"
-
-import Upload from "@/pages/Upload"
-import Explore from "@/pages/Explore"
-import Quality from "@/pages/Quality"
-import Insights from "@/pages/Insights"
-import Reports from "@/pages/Reports"
+import ProducaoNovo from "@/pages/ProducaoNovo"
+import ProducaoCompra from "@/pages/ProducaoCompra"
 
 const DADOS_DASHBOARD = {
   totalRegistros: 1247,
@@ -19,20 +15,22 @@ const DADOS_DASHBOARD = {
   comissaoPrevista: 28_000.00,
   comissaoRecebida: 2_289.03,
   status: "Sistema Online",
-  ultimaSync: "21/08/2024 17:35",
+  ultimaSync: new Date().toLocaleString('pt-BR', { 
+    day: '2-digit', 
+    month: '2-digit', 
+    year: 'numeric', 
+    hour: '2-digit', 
+    minute: '2-digit' 
+  }),
 }
 
 const tabs = [
-  { id: "dashboard", label: "Dashboard", icon: <BarChart3 className="h-4 w-4" />, description: "KPIs e métricas principais" },
-  { id: "upload", label: "Upload", icon: <UploadIcon className="h-4 w-4" />, description: "Carregar dados Excel" },
-  { id: "explore", label: "Explorar", icon: <Search className="h-4 w-4" />, description: "Tabela dinâmica" },
-  { id: "quality", label: "Qualidade", icon: <Shield className="h-4 w-4" />, description: "Diagnóstico de dados" },
-  { id: "insights", label: "Insights", icon: <TrendingUp className="h-4 w-4" />, description: "Análises inteligentes" },
-  { id: "reports", label: "Relatórios", icon: <FileSpreadsheet className="h-4 w-4" />, description: "Exportar PDF/Excel" },
+  { id: "producao-novo", label: "Produção Novo", icon: <TrendingUp className="h-4 w-4" />, description: "Contratos Novos" },
+  { id: "producao-compra", label: "Produção Compra", icon: <ShoppingCart className="h-4 w-4" />, description: "Contratos Compra" },
 ]
 
 export function SinglePageApp() {
-  const [activeTab, setActiveTab] = useState("dashboard")
+  const [activeTab, setActiveTab] = useState("producao-novo")
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
@@ -113,28 +111,9 @@ export function SinglePageApp() {
         {/* Main */}
         <main className="flex-1 p-4 lg:p-6">
           <div className="max-w-7xl mx-auto">
-            {activeTab === "dashboard" && (
-              <div className="space-y-6 animate-fade-in">
-                <div>
-                  <h2 className="text-2xl font-bold text-foreground mb-2">Dashboard Executivo</h2>
-                  <p className="text-muted-foreground">Visão geral completa das operações e métricas do Corban</p>
-                </div>
-
-                <MetricsGrid
-                  totalRegistros={DADOS_DASHBOARD.totalRegistros}
-                  totalSaldo={DADOS_DASHBOARD.saldoDevedor}
-                  totalComissaoPrevista={DADOS_DASHBOARD.comissaoPrevista}
-                  totalComissaoRecebida={DADOS_DASHBOARD.comissaoRecebida}
-                />
-                <ChartsSection />
-              </div>
-            )}
-
-            {activeTab === "upload" && <div className="animate-fade-in"><Upload /></div>}
-            {activeTab === "explore" && <div className="animate-fade-in"><Explore /></div>}
-            {activeTab === "quality" && <div className="animate-fade-in"><Quality /></div>}
-            {activeTab === "insights" && <div className="animate-fade-in"><Insights /></div>}
-            {activeTab === "reports" && <div className="animate-fade-in"><Reports /></div>}
+            {/* Renderização das telas de produção */}
+            {activeTab === "producao-novo" && <div className="animate-fade-in"><ProducaoNovo /></div>}
+            {activeTab === "producao-compra" && <div className="animate-fade-in"><ProducaoCompra /></div>}
           </div>
         </main>
       </div>

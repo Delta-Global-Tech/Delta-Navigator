@@ -1,4 +1,4 @@
-import { Search, Command, Bell, Settings, User } from "lucide-react"
+import { Search, Command, Bell, Settings, User, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -11,19 +11,35 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useAuth } from "@/hooks/useAuth"
 
 export function Header() {
+  const { user, logout } = useAuth()
+
+  const handleLogout = async () => {
+    await logout()
+  }
+
+  // Obter iniciais do usuário
+  const getUserInitials = (email: string) => {
+    return email.split('@')[0].slice(0, 2).toUpperCase()
+  }
+
   return (
     <header className="page-header">
       <div className="flex h-16 items-center justify-between px-6">
         {/* Logo and Title */}
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary-hover rounded-lg flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">Δ</span>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden">
+              <img 
+                src="/logo.png" 
+                alt="Logo" 
+                className="w-full h-full object-contain"
+              />
             </div>
             <div>
-              <h1 className="text-lg font-semibold text-foreground">Delta Command Center</h1>
+              <h1 className="text-lg font-semibold text-foreground">Delta Global Center</h1>
               <p className="text-xs text-muted-foreground">Enterprise Analytics Dashboard</p>
             </div>
           </div>
@@ -84,7 +100,7 @@ export function Header() {
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                 <Avatar className="h-8 w-8 border-2 border-primary/20">
                   <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                    RC
+                    {user?.email ? getUserInitials(user.email) : 'US'}
                   </AvatarFallback>
                 </Avatar>
               </Button>
@@ -92,9 +108,9 @@ export function Header() {
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <div className="flex items-center justify-start gap-2 p-2">
                 <div className="flex flex-col space-y-1 leading-none">
-                  <p className="font-medium">Rafael Carlos</p>
+                  <p className="font-medium">{user?.email?.split('@')[0] || 'Usuário'}</p>
                   <p className="w-[200px] truncate text-sm text-muted-foreground">
-                    admin@deltacommand.com
+                    {user?.email || 'usuario@sistema.com'}
                   </p>
                 </div>
               </div>
@@ -108,7 +124,11 @@ export function Header() {
                 Configurações
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-danger">
+              <DropdownMenuItem 
+                className="text-destructive focus:text-destructive"
+                onClick={handleLogout}
+              >
+                <LogOut className="mr-2 h-4 w-4" />
                 Sair
               </DropdownMenuItem>
             </DropdownMenuContent>

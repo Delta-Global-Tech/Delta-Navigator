@@ -215,7 +215,21 @@
   
   /* Premium Metrics */
   .metric-value {
-    @apply text-3xl font-bold tracking-tight bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent;
+    @apply text-3xl font-bold tracking-tight;
+    background: linear-gradient(135deg, #ac7b39 0%, #d4a574 50%, #ac7b39 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: #ac7b39; /* Fallback para browsers que não suportam */
+    text-shadow: 0 0 1px rgba(172, 123, 57, 0.3);
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+  }
+  
+  /* Versão alternativa mais legível */
+  .metric-value-solid {
+    @apply text-3xl font-bold tracking-tight;
+    color: #ac7b39;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5), 0 0 10px rgba(172, 123, 57, 0.2);
   }
   
   .metric-label {

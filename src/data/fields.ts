@@ -1,4 +1,4 @@
-// Delta Command Center - Field Resolution
+// Delta Global Center - Field Resolution
 // Resolver de sinônimos com base em DataConfig.fields
 
 import { DataConfig } from './config';

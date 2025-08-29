@@ -1,4 +1,4 @@
-// Delta Command Center - Global State Management
+// Delta Global Center - Global State Management
 import { create } from 'zustand';
 import { devtools, subscribeWithSelector } from 'zustand/middleware';
 import { z } from 'zod';

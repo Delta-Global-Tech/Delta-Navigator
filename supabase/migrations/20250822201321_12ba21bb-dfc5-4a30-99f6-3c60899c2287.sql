@@ -1,4 +1,4 @@
--- ===== DELTA COMMAND CENTER - COMPLETE DATABASE STRUCTURE =====
+-- ===== Delta Global Center - COMPLETE DATABASE STRUCTURE =====
 
 -- Drop existing policies to recreate with proper names
 DROP POLICY IF EXISTS "read_only" ON aberturas_contas;

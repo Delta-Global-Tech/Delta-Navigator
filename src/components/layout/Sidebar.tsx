@@ -8,7 +8,9 @@ import {
   Search, 
   Shield,
   AlertCircle,
-  ChevronRight
+  ChevronRight,
+  TrendingDown,
+  FileText
 } from "lucide-react"
 import { NavLink, useLocation } from "react-router-dom"
 import { cn } from "@/lib/utils"
@@ -25,63 +27,35 @@ interface NavItem {
   variant?: "warning" | "default"
 }
 
-const mainNavItems: NavItem[] = [
-  {
-    title: "Visão Geral",
-    url: "/",
-    icon: LayoutDashboard,
-    description: "Dashboard Executivo"
-  },
-  {
-    title: "Aquisição",
-    url: "/aberturas",
-    icon: UserPlus,
-    description: "Abertura de Contas"
-  }
-];
+const mainNavItems: NavItem[] = [];
 
 const productionNavItems: NavItem[] = [
   {
-    title: "Produção NOVO",
+    title: "Produção",
     url: "/producao/novo",
     icon: TrendingUp,
-    description: "Contratos Novos"
+    description: "Contratos Pagos"
   },
   {
-    title: "Produção COMPRA",
+    title: "Produção",
     url: "/producao/compra", 
     icon: ShoppingCart,
-    description: "Contratos Compra"
-  },
-  {
-    title: "Fila de Pagamento",
-    url: "/fila",
-    icon: Clock,
-    description: "Aguardando Pagamento",
-    badge: "156"
-  },
-  {
-    title: "Produção Paga",
-    url: "/paga",
-    icon: CheckCircle,
-    description: "Contratos Pagos"
+    description: "Contratos em Andamento"
   }
 ];
 
 const analysisNavItems: NavItem[] = [
   {
-    title: "Explorador",
-    url: "/explorar",
-    icon: Search,
-    description: "Análise de Dados"
+    title: "Funil",
+    url: "/funil",
+    icon: TrendingDown,
+    description: "Funil de Conversão"
   },
   {
-    title: "Qualidade",
-    url: "/qualidade",
-    icon: Shield,
-    description: "Qualidade dos Dados",
-    badge: "3",
-    variant: "warning" as const
+    title: "Propostas",
+    url: "/propostas",
+    icon: FileText,
+    description: "Gestão de Propostas"
   }
 ];
 
@@ -162,7 +136,7 @@ export function Sidebar() {
             <span className="text-primary-foreground font-bold text-sm">Δ</span>
           </div>
           <div>
-            <h2 className="font-semibold text-sidebar-foreground">Command Center</h2>
+            <h2 className="font-semibold text-sidebar-foreground">Delta Global Center</h2>
             <p className="text-xs text-muted-foreground">v2.1.0</p>
           </div>
         </div>
@@ -170,7 +144,6 @@ export function Sidebar() {
 
       {/* Navigation */}
       <div className="flex-1 overflow-y-auto py-4">
-        <NavSection title="Principal" items={mainNavItems} />
         <NavSection title="Produção" items={productionNavItems} />
         <NavSection title="Análise" items={analysisNavItems} />
       </div>
@@ -181,7 +154,7 @@ export function Sidebar() {
           <AlertCircle className="h-4 w-4 text-warning" />
           <div className="flex-1">
             <p className="text-xs font-medium text-foreground">Sistema Online</p>
-            <p className="text-xs text-muted-foreground">Última sync: 15:32</p>
+            <p className="text-xs text-muted-foreground">Última sync: {new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
           </div>
         </div>
       </div>

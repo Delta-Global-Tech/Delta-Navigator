@@ -1,4 +1,4 @@
-// Delta Command Center - Data Configuration
+// Delta Global Center - Data Configuration
 // Planilhas → Tabelas mapping and field synonyms
 
 export const DataConfig = {

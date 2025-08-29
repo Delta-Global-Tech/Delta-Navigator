@@ -1,0 +1,544 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: data-corban-navigator
+  annotations:
+    description: "Data Corban Navigator - Sistema completo de análise de dados"
+    tags: "react,nodejs,analytics,dashboard"
+    iconClass: "icon-nodejs"
+labels:
+  app: data-corban-navigator
+  template: data-corban-navigator
+
+parameters:
+- name: APPLICATION_NAME
+  displayName: "Nome da Aplicação"
+  description: "Nome da aplicação no OpenShift"
+  value: "data-corban-navigator"
+  required: true
+
+- name: GIT_URI
+  displayName: "Git Repository URL"
+  description: "URL do repositório Git"
+  value: "https://github.com/2carllos/data-corban-navigator.git"
+  required: true
+
+- name: GIT_REF
+  displayName: "Git Reference"
+  description: "Branch, tag ou commit"
+  value: "main"
+
+- name: SUPABASE_URL
+  displayName: "Supabase URL"
+  description: "URL do projeto Supabase"
+  required: true
+
+- name: SUPABASE_KEY
+  displayName: "Supabase Anon Key"
+  description: "Chave pública do Supabase"
+  required: true
+
+- name: SQLSERVER_HOST
+  displayName: "SQL Server Host"
+  description: "Endereço do SQL Server"
+  value: "192.168.10.230"
+
+- name: SQLSERVER_PORT
+  displayName: "SQL Server Port"
+  description: "Porta do SQL Server"
+  value: "49172"
+
+- name: SQLSERVER_USER
+  displayName: "SQL Server User"
+  description: "Usuário do SQL Server"
+  value: "sa"
+
+- name: SQLSERVER_PASSWORD
+  displayName: "SQL Server Password"
+  description: "Senha do SQL Server"
+  required: true
+
+- name: SQLSERVER_DB
+  displayName: "SQL Server Database"
+  description: "Nome do banco SQL Server"
+  value: "treynor"
+
+- name: POSTGRES_HOST
+  displayName: "PostgreSQL Host"
+  description: "Endereço do PostgreSQL"
+  value: "localhost"
+
+- name: POSTGRES_PORT
+  displayName: "PostgreSQL Port"
+  description: "Porta do PostgreSQL"
+  value: "5432"
+
+- name: POSTGRES_USER
+  displayName: "PostgreSQL User"
+  description: "Usuário do PostgreSQL"
+  value: "postgres"
+
+- name: POSTGRES_PASSWORD
+  displayName: "PostgreSQL Password"
+  description: "Senha do PostgreSQL"
+  required: true
+
+- name: POSTGRES_DB
+  displayName: "PostgreSQL Database"
+  description: "Nome do banco PostgreSQL"
+  value: "funil_conversao"
+
+objects:
+# Frontend ImageStream
+- apiVersion: image.openshift.io/v1
+  kind: ImageStream
+  metadata:
+    name: ${APPLICATION_NAME}-frontend
+    labels:
+      app: ${APPLICATION_NAME}
+      component: frontend
+
+# SQL Backend ImageStream
+- apiVersion: image.openshift.io/v1
+  kind: ImageStream
+  metadata:
+    name: ${APPLICATION_NAME}-sql-backend
+    labels:
+      app: ${APPLICATION_NAME}
+      component: sql-backend
+
+# PostgreSQL Backend ImageStream
+- apiVersion: image.openshift.io/v1
+  kind: ImageStream
+  metadata:
+    name: ${APPLICATION_NAME}-postgres-backend
+    labels:
+      app: ${APPLICATION_NAME}
+      component: postgres-backend
+
+# Frontend BuildConfig
+- apiVersion: build.openshift.io/v1
+  kind: BuildConfig
+  metadata:
+    name: ${APPLICATION_NAME}-frontend
+    labels:
+      app: ${APPLICATION_NAME}
+      component: frontend
+  spec:
+    source:
+      type: Git
+      git:
+        uri: ${GIT_URI}
+        ref: ${GIT_REF}
+      contextDir: "."
+    strategy:
+      type: Docker
+      dockerStrategy:
+        dockerfilePath: "Dockerfile"
+    output:
+      to:
+        kind: ImageStreamTag
+        name: ${APPLICATION_NAME}-frontend:latest
+    triggers:
+    - type: ConfigChange
+    - type: GitHub
+      github:
+        secret: ${APPLICATION_NAME}-webhook
+    - type: ImageChange
+
+# SQL Backend BuildConfig
+- apiVersion: build.openshift.io/v1
+  kind: BuildConfig
+  metadata:
+    name: ${APPLICATION_NAME}-sql-backend
+    labels:
+      app: ${APPLICATION_NAME}
+      component: sql-backend
+  spec:
+    source:
+      type: Git
+      git:
+        uri: ${GIT_URI}
+        ref: ${GIT_REF}
+      contextDir: "server"
+    strategy:
+      type: Docker
+      dockerStrategy:
+        dockerfilePath: "Dockerfile"
+    output:
+      to:
+        kind: ImageStreamTag
+        name: ${APPLICATION_NAME}-sql-backend:latest
+    triggers:
+    - type: ConfigChange
+    - type: ImageChange
+
+# PostgreSQL Backend BuildConfig
+- apiVersion: build.openshift.io/v1
+  kind: BuildConfig
+  metadata:
+    name: ${APPLICATION_NAME}-postgres-backend
+    labels:
+      app: ${APPLICATION_NAME}
+      component: postgres-backend
+  spec:
+    source:
+      type: Git
+      git:
+        uri: ${GIT_URI}
+        ref: ${GIT_REF}
+      contextDir: "postgres-server"
+    strategy:
+      type: Docker
+      dockerStrategy:
+        dockerfilePath: "Dockerfile"
+    output:
+      to:
+        kind: ImageStreamTag
+        name: ${APPLICATION_NAME}-postgres-backend:latest
+    triggers:
+    - type: ConfigChange
+    - type: ImageChange
+
+# Secrets
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    name: ${APPLICATION_NAME}-secrets
+    labels:
+      app: ${APPLICATION_NAME}
+  type: Opaque
+  stringData:
+    SUPABASE_KEY: ${SUPABASE_KEY}
+    SQLSERVER_PASSWORD: ${SQLSERVER_PASSWORD}
+    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+# ConfigMap
+- apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: ${APPLICATION_NAME}-config
+    labels:
+      app: ${APPLICATION_NAME}
+  data:
+    SUPABASE_URL: ${SUPABASE_URL}
+    SQLSERVER_HOST: ${SQLSERVER_HOST}
+    SQLSERVER_PORT: ${SQLSERVER_PORT}
+    SQLSERVER_USER: ${SQLSERVER_USER}
+    SQLSERVER_DB: ${SQLSERVER_DB}
+    POSTGRES_HOST: ${POSTGRES_HOST}
+    POSTGRES_PORT: ${POSTGRES_PORT}
+    POSTGRES_USER: ${POSTGRES_USER}
+    POSTGRES_DB: ${POSTGRES_DB}
+
+# Frontend Deployment
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: ${APPLICATION_NAME}-frontend
+    labels:
+      app: ${APPLICATION_NAME}
+      component: frontend
+  spec:
+    replicas: 2
+    selector:
+      matchLabels:
+        app: ${APPLICATION_NAME}
+        component: frontend
+    template:
+      metadata:
+        labels:
+          app: ${APPLICATION_NAME}
+          component: frontend
+      spec:
+        containers:
+        - name: frontend
+          image: ${APPLICATION_NAME}-frontend:latest
+          ports:
+          - containerPort: 80
+            protocol: TCP
+          env:
+          - name: VITE_SUPABASE_URL
+            valueFrom:
+              configMapKeyRef:
+                name: ${APPLICATION_NAME}-config
+                key: SUPABASE_URL
+          - name: VITE_SUPABASE_ANON_KEY
+            valueFrom:
+              secretKeyRef:
+                name: ${APPLICATION_NAME}-secrets
+                key: SUPABASE_KEY
+          - name: VITE_API_URL
+            value: "http://${APPLICATION_NAME}-sql-backend:3001"
+          - name: VITE_POSTGRES_API_URL
+            value: "http://${APPLICATION_NAME}-postgres-backend:3002"
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 30
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            timeoutSeconds: 3
+
+# SQL Backend Deployment
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: ${APPLICATION_NAME}-sql-backend
+    labels:
+      app: ${APPLICATION_NAME}
+      component: sql-backend
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app: ${APPLICATION_NAME}
+        component: sql-backend
+    template:
+      metadata:
+        labels:
+          app: ${APPLICATION_NAME}
+          component: sql-backend
+      spec:
+        containers:
+        - name: sql-backend
+          image: ${APPLICATION_NAME}-sql-backend:latest
+          ports:
+          - containerPort: 3001
+            protocol: TCP
+          env:
+          - name: PORT
+            value: "3001"
+          - name: NODE_ENV
+            value: "production"
+          - name: SQLSERVER_HOST
+            valueFrom:
+              configMapKeyRef:
+                name: ${APPLICATION_NAME}-config
+                key: SQLSERVER_HOST
+          - name: SQLSERVER_PORT
+            valueFrom:
+              configMapKeyRef:
+                name: ${APPLICATION_NAME}-config
+                key: SQLSERVER_PORT
+          - name: SQLSERVER_USER
+            valueFrom:
+              configMapKeyRef:
+                name: ${APPLICATION_NAME}-config
+                key: SQLSERVER_USER
+          - name: SQLSERVER_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: ${APPLICATION_NAME}-secrets
+                key: SQLSERVER_PASSWORD
+          - name: SQLSERVER_DB
+            valueFrom:
+              configMapKeyRef:
+                name: ${APPLICATION_NAME}-config
+                key: SQLSERVER_DB
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3001
+            initialDelaySeconds: 30
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3001
+            initialDelaySeconds: 10
+            timeoutSeconds: 3
+
+# PostgreSQL Backend Deployment
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: ${APPLICATION_NAME}-postgres-backend
+    labels:
+      app: ${APPLICATION_NAME}
+      component: postgres-backend
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app: ${APPLICATION_NAME}
+        component: postgres-backend
+    template:
+      metadata:
+        labels:
+          app: ${APPLICATION_NAME}
+          component: postgres-backend
+      spec:
+        containers:
+        - name: postgres-backend
+          image: ${APPLICATION_NAME}-postgres-backend:latest
+          ports:
+          - containerPort: 3002
+            protocol: TCP
+          env:
+          - name: NODE_ENV
+            value: "production"
+          - name: HOST
+            valueFrom:
+              configMapKeyRef:
+                name: ${APPLICATION_NAME}-config
+                key: POSTGRES_HOST
+          - name: PORT
+            valueFrom:
+              configMapKeyRef:
+                name: ${APPLICATION_NAME}-config
+                key: POSTGRES_PORT
+          - name: DB_USER
+            valueFrom:
+              configMapKeyRef:
+                name: ${APPLICATION_NAME}-config
+                key: POSTGRES_USER
+          - name: PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: ${APPLICATION_NAME}-secrets
+                key: POSTGRES_PASSWORD
+          - name: DB
+            valueFrom:
+              configMapKeyRef:
+                name: ${APPLICATION_NAME}-config
+                key: POSTGRES_DB
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3002
+            initialDelaySeconds: 30
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3002
+            initialDelaySeconds: 10
+            timeoutSeconds: 3
+
+# Services
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: ${APPLICATION_NAME}-frontend
+    labels:
+      app: ${APPLICATION_NAME}
+      component: frontend
+  spec:
+    ports:
+    - name: web
+      port: 80
+      targetPort: 80
+    selector:
+      app: ${APPLICATION_NAME}
+      component: frontend
+
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: ${APPLICATION_NAME}-sql-backend
+    labels:
+      app: ${APPLICATION_NAME}
+      component: sql-backend
+  spec:
+    ports:
+    - name: api
+      port: 3001
+      targetPort: 3001
+    selector:
+      app: ${APPLICATION_NAME}
+      component: sql-backend
+
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: ${APPLICATION_NAME}-postgres-backend
+    labels:
+      app: ${APPLICATION_NAME}
+      component: postgres-backend
+  spec:
+    ports:
+    - name: api
+      port: 3002
+      targetPort: 3002
+    selector:
+      app: ${APPLICATION_NAME}
+      component: postgres-backend
+
+# Routes
+- apiVersion: route.openshift.io/v1
+  kind: Route
+  metadata:
+    name: ${APPLICATION_NAME}-frontend
+    labels:
+      app: ${APPLICATION_NAME}
+      component: frontend
+  spec:
+    to:
+      kind: Service
+      name: ${APPLICATION_NAME}-frontend
+    port:
+      targetPort: web
+    tls:
+      termination: edge
+      insecureEdgeTerminationPolicy: Redirect
+
+- apiVersion: route.openshift.io/v1
+  kind: Route
+  metadata:
+    name: ${APPLICATION_NAME}-sql-backend
+    labels:
+      app: ${APPLICATION_NAME}
+      component: sql-backend
+  spec:
+    to:
+      kind: Service
+      name: ${APPLICATION_NAME}-sql-backend
+    port:
+      targetPort: api
+    tls:
+      termination: edge
+      insecureEdgeTerminationPolicy: Redirect
+
+- apiVersion: route.openshift.io/v1
+  kind: Route
+  metadata:
+    name: ${APPLICATION_NAME}-postgres-backend
+    labels:
+      app: ${APPLICATION_NAME}
+      component: postgres-backend
+  spec:
+    to:
+      kind: Service
+      name: ${APPLICATION_NAME}-postgres-backend
+    port:
+      targetPort: api
+    tls:
+      termination: edge
+      insecureEdgeTerminationPolicy: Redirect
