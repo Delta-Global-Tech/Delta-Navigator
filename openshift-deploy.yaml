@@ -1,0 +1,210 @@
+apiVersion: v1
+kind: ImageStream
+metadata:
+  name: delta-navigator
+  labels:
+    app: delta-navigator
+    app.kubernetes.io/component: delta-navigator
+    app.kubernetes.io/instance: delta-navigator
+    app.kubernetes.io/name: delta-navigator
+spec:
+  lookupPolicy:
+    local: false
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: delta-navigator
+  labels:
+    app: delta-navigator
+    app.kubernetes.io/component: delta-navigator
+    app.kubernetes.io/instance: delta-navigator
+    app.kubernetes.io/name: delta-navigator
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: delta-navigator:latest
+  source:
+    type: Git
+    git:
+      uri: https://github.com/Delta-Global-Dados/Delta-Navigator.git
+      ref: main
+    contextDir: "."
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Dockerfile
+  triggers:
+  - type: GitHub
+    github:
+      secret: delta-navigator-webhook
+  - type: Generic
+    generic:
+      secret: delta-navigator-webhook
+  - type: ConfigChange
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: delta-navigator
+  labels:
+    app: delta-navigator
+    app.kubernetes.io/component: delta-navigator
+    app.kubernetes.io/instance: delta-navigator
+    app.kubernetes.io/name: delta-navigator
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: delta-navigator
+  template:
+    metadata:
+      labels:
+        app: delta-navigator
+    spec:
+      containers:
+      - name: delta-navigator
+        image: delta-navigator:latest
+        ports:
+        - containerPort: 80
+          protocol: TCP
+        - containerPort: 3001
+          protocol: TCP
+        - containerPort: 3002
+          protocol: TCP
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: VITE_SUPABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: delta-navigator-secrets
+              key: supabase-url
+        - name: VITE_SUPABASE_ANON_KEY
+          valueFrom:
+            secretKeyRef:
+              name: delta-navigator-secrets
+              key: supabase-key
+        - name: HOST
+          valueFrom:
+            secretKeyRef:
+              name: delta-navigator-secrets
+              key: postgres-host
+        - name: PORT
+          valueFrom:
+            secretKeyRef:
+              name: delta-navigator-secrets
+              key: postgres-port
+        - name: DB
+          valueFrom:
+            secretKeyRef:
+              name: delta-navigator-secrets
+              key: postgres-db
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: delta-navigator-secrets
+              key: postgres-user
+        - name: PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: delta-navigator-secrets
+              key: postgres-password
+        - name: SQLSERVER_HOST
+          valueFrom:
+            secretKeyRef:
+              name: delta-navigator-secrets
+              key: sqlserver-host
+        - name: SQLSERVER_PORT
+          valueFrom:
+            secretKeyRef:
+              name: delta-navigator-secrets
+              key: sqlserver-port
+        - name: SQLSERVER_DATABASE
+          valueFrom:
+            secretKeyRef:
+              name: delta-navigator-secrets
+              key: sqlserver-database
+        - name: SQLSERVER_USER
+          valueFrom:
+            secretKeyRef:
+              name: delta-navigator-secrets
+              key: sqlserver-user
+        - name: SQLSERVER_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: delta-navigator-secrets
+              key: sqlserver-password
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          timeoutSeconds: 3
+        imagePullPolicy: Always
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: delta-navigator-service
+  labels:
+    app: delta-navigator
+    app.kubernetes.io/component: delta-navigator
+    app.kubernetes.io/instance: delta-navigator
+    app.kubernetes.io/name: delta-navigator
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  - name: postgres-api
+    port: 3002
+    protocol: TCP
+    targetPort: 3002
+  - name: sql-api
+    port: 3001
+    protocol: TCP
+    targetPort: 3001
+  selector:
+    app: delta-navigator
+  type: ClusterIP
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: delta-navigator-route
+  labels:
+    app: delta-navigator
+    app.kubernetes.io/component: delta-navigator
+    app.kubernetes.io/instance: delta-navigator
+    app.kubernetes.io/name: delta-navigator
+spec:
+  host: delta-navigator-089327-deltaglobal-prod.apps.prd-cluster.priv.rtmcloud.net.br
+  to:
+    kind: Service
+    name: delta-navigator-service
+    weight: 100
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+  wildcardPolicy: None
