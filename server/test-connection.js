@@ -29,7 +29,7 @@ async function testConnection() {
     console.log('✅ Query executada:', result.recordset);
 
     console.log('Testando acesso à tabela...');
-    const tableTest = await pool.request().query('SELECT TOP 3 proposta_id, cliente_nome FROM fact_proposals_newcorban');
+    const tableTest = await pool.request().query('SELECT TOP 3 proposta_id, cliente_nome FROM dbo.fact_proposals_newcorban');
     console.log('✅ Tabela acessada:', tableTest.recordset);
 
     await pool.close();

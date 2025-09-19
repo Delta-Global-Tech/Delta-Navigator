@@ -20,12 +20,6 @@ const config = {
   ssl: false
 };
 
-console.log('Configuração PostgreSQL:', {
-  host: config.host,
-  port: config.port,
-  database: config.database,
-  user: config.user
-});
 
 // Rota de teste de conexão
 app.get('/api/test', async (req, res) => {
@@ -618,7 +612,7 @@ app.get('/api/propostas/evolucao-diaria', async (req, res) => {
 });
 
 // Iniciar servidor
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
   console.log(`Servidor rodando na porta ${port}`);
   console.log(`Teste a API em: http://localhost:${port}/api/test`);
 });

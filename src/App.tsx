@@ -12,6 +12,8 @@ import ProducaoNovo from "./pages/ProducaoNovo";
 import ProducaoCompra from "./pages/ProducaoCompra";
 import Funil from "./pages/Funil";
 import Propostas from "./pages/Propostas";
+import Statement from './pages/Statement';
+import Faturas from './pages/Faturas';
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +34,8 @@ const App = () => (
                   <Route path="/producao/compra" element={<ProducaoCompra />} />
                   <Route path="/funil" element={<Funil />} />
                   <Route path="/propostas" element={<Propostas />} />
+                  <Route path="/extrato" element={<Statement />} />
+                  <Route path="/faturas" element={<Faturas />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Layout>

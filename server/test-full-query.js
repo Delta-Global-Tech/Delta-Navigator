@@ -20,7 +20,7 @@ async function testFullQuery() {
     console.log('Executando contagem total...');
     const countResult = await pool.request().query(`
       SELECT COUNT(*) as total 
-      FROM fact_proposals_newcorban 
+      FROM dbo.fact_proposals_newcorban 
       WHERE status_nome = 'PAGO'
     `);
     console.log('Total de registros PAGO:', countResult.recordset[0].total);
@@ -36,7 +36,7 @@ async function testFullQuery() {
         status_nome,
         cliente_nome,
         date_cadastro
-      FROM fact_proposals_newcorban
+      FROM dbo.fact_proposals_newcorban
       WHERE status_nome = 'PAGO'
       ORDER BY date_cadastro DESC
     `);

@@ -5,9 +5,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
-import { FileText, Users, DollarSign, TrendingUp, TrendingDown, Calendar, Filter, BarChart3, RotateCcw, FileSpreadsheet } from 'lucide-react';
+import { FileText, Users, DollarSign, TrendingUp, TrendingDown, Calendar, Filter, BarChart3, RotateCcw, FileSpreadsheet, Search } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 interface PropostaData {
@@ -47,73 +48,41 @@ interface KPIData {
 }
 
 const Propostas = () => {
+  // Estados para valores dos inputs (não aplicados ainda)
+  const [inputStatus, setInputStatus] = useState('todos');
+  const [inputDataInicio, setInputDataInicio] = useState('');
+  const [inputDataFim, setInputDataFim] = useState('');
+  
+  // Estados para valores aplicados nos filtros
   const [status, setStatus] = useState('todos');
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
   
-  // Estados para debounce das datas
-  const [dataInicioInput, setDataInicioInput] = useState('');
-  const [dataFimInput, setDataFimInput] = useState('');
-  const [isDateLoading, setIsDateLoading] = useState(false);
-  const [lastValidDataInicio, setLastValidDataInicio] = useState('');
-  const [lastValidDataFim, setLastValidDataFim] = useState('');
-  
   // Estado para controlar a data selecionada no gráfico
   const [selectedChartDate, setSelectedChartDate] = useState<string | null>(null);
 
-  // Debounce para as datas
-  useEffect(() => {
-    if (dataInicioInput !== dataInicio) {
-      setIsDateLoading(true);
+  // Função para aplicar os filtros quando o botão for clicado
+  const handleApplyFilters = () => {
+    setStatus(inputStatus);
+    setDataInicio(inputDataInicio);
+    setDataFim(inputDataFim);
+  };
+
+  // Função para aplicar filtros ao pressionar Enter
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleApplyFilters();
     }
-    
-    const timer = setTimeout(() => {
-      // Só aplicar se:
-      // 1. Campo está vazio (limpar filtro) OU
-      // 2. Data válida (10 chars) E é diferente da última aplicada E é igual à última válida salva
-      if (!dataInicioInput || 
-          (dataInicioInput.length === 10 && 
-           dataInicioInput !== dataInicio && 
-           dataInicioInput === lastValidDataInicio)) {
-        setDataInicio(dataInicioInput);
-      }
-      setIsDateLoading(false);
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [dataInicioInput, dataInicio, lastValidDataInicio]);
-
-  useEffect(() => {
-    if (dataFimInput !== dataFim) {
-      setIsDateLoading(true);
-    }
-    
-    const timer = setTimeout(() => {
-      // Só aplicar se:
-      // 1. Campo está vazio (limpar filtro) OU
-      // 2. Data válida (10 chars) E é diferente da última aplicada E é igual à última válida salva
-      if (!dataFimInput || 
-          (dataFimInput.length === 10 && 
-           dataFimInput !== dataFim && 
-           dataFimInput === lastValidDataFim)) {
-        setDataFim(dataFimInput);
-      }
-      setIsDateLoading(false);
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [dataFimInput, dataFim, lastValidDataFim]);
+  };
 
   // Função para limpar todos os filtros
   const limparFiltros = () => {
+    setInputStatus('todos');
+    setInputDataInicio('');
+    setInputDataFim('');
     setStatus('todos');
     setDataInicio('');
     setDataFim('');
-    setDataInicioInput('');
-    setDataFimInput('');
-    setLastValidDataInicio('');
-    setLastValidDataFim('');
-    setIsDateLoading(false);
     setSelectedChartDate(null);
   };
 
@@ -133,41 +102,29 @@ const Propostas = () => {
         // Se é a mesma data, limpar o filtro
         if (selectedChartDate === formattedDate) {
           setSelectedChartDate(null);
+          setInputDataInicio('');
+          setInputDataFim('');
           setDataInicio('');
           setDataFim('');
-          setDataInicioInput('');
-          setDataFimInput('');
         } else {
           // Filtrar apenas este dia
           setSelectedChartDate(formattedDate);
+          setInputDataInicio(formattedDate);
+          setInputDataFim(formattedDate);
           setDataInicio(formattedDate);
           setDataFim(formattedDate);
-          setDataInicioInput(formattedDate);
-          setDataFimInput(formattedDate);
-          setLastValidDataInicio(formattedDate);
-          setLastValidDataFim(formattedDate);
         }
       }
     }
   };
 
-  // Handlers para mudança de data
+  // Handlers para mudança de data (agora apenas atualiza inputs)
   const handleDataInicioChange = (value: string) => {
-    setDataInicioInput(value);
-    
-    // Se é uma data válida e diferente da última válida, salvar
-    if (value.length === 10) {
-      setLastValidDataInicio(value);
-    }
+    setInputDataInicio(value);
   };
 
   const handleDataFimChange = (value: string) => {
-    setDataFimInput(value);
-    
-    // Se é uma data válida e diferente da última válida, salvar
-    if (value.length === 10) {
-      setLastValidDataFim(value);
-    }
+    setInputDataFim(value);
   };
 
   // Função para exportar para Excel
@@ -237,7 +194,7 @@ const Propostas = () => {
       if (dataInicio) params.append('data_inicio', dataInicio);
       if (dataFim) params.append('data_fim', dataFim);
       
-      const response = await fetch(`http://localhost:3002/api/propostas/data?${params}`);
+  const response = await fetch(`http://${window.location.hostname}:3002/api/propostas/data?${params}`);
       if (!response.ok) throw new Error('Erro ao buscar propostas');
       return response.json();
     },
@@ -253,7 +210,7 @@ const Propostas = () => {
       if (dataInicio) params.append('data_inicio', dataInicio);
       if (dataFim) params.append('data_fim', dataFim);
       
-      const response = await fetch(`http://localhost:3002/api/propostas/kpis?${params}`);
+  const response = await fetch(`http://${window.location.hostname}:3002/api/propostas/kpis?${params}`);
       if (!response.ok) throw new Error('Erro ao buscar KPIs');
       return response.json();
     },
@@ -264,7 +221,7 @@ const Propostas = () => {
   const { data: statusList } = useQuery({
     queryKey: ['propostas-status'],
     queryFn: async () => {
-      const response = await fetch('http://localhost:3002/api/propostas/status');
+  const response = await fetch(`http://${window.location.hostname}:3002/api/propostas/status`);
       if (!response.ok) throw new Error('Erro ao buscar status');
       return response.json();
     },
@@ -279,7 +236,7 @@ const Propostas = () => {
       if (dataInicio) params.append('data_inicio', dataInicio);
       if (dataFim) params.append('data_fim', dataFim);
       
-      const response = await fetch(`http://localhost:3002/api/propostas/evolucao-diaria?${params}`);
+  const response = await fetch(`http://${window.location.hostname}:3002/api/propostas/evolucao-diaria?${params}`);
       if (!response.ok) throw new Error('Erro ao buscar evolução');
       
       const data = await response.json();
@@ -523,7 +480,7 @@ const Propostas = () => {
           <CardTitle className="flex items-center gap-2">
             <Filter className="h-5 w-5" />
             Filtros
-            {(isDateLoading || loadingPropostas || loadingKPIs) && (
+            {(loadingPropostas || loadingKPIs) && (
               <div className="ml-2 h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
             )}
           </CardTitle>
@@ -532,7 +489,7 @@ const Propostas = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
-              <Select value={status} onValueChange={setStatus}>
+              <Select value={inputStatus} onValueChange={setInputStatus}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o status" />
                 </SelectTrigger>
@@ -550,8 +507,9 @@ const Propostas = () => {
               <Input
                 id="data-inicio"
                 type="date"
-                value={dataInicioInput}
+                value={inputDataInicio}
                 onChange={(e) => handleDataInicioChange(e.target.value)}
+                onKeyPress={handleKeyPress}
                 placeholder="dd/mm/aaaa"
                 className="cursor-pointer [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:bg-white [&::-webkit-calendar-picker-indicator]:rounded [&::-webkit-calendar-picker-indicator]:border [&::-webkit-calendar-picker-indicator]:border-gray-300 [&::-webkit-calendar-picker-indicator]:p-1 [&::-webkit-calendar-picker-indicator]:mr-1"
                 style={{
@@ -565,8 +523,9 @@ const Propostas = () => {
               <Input
                 id="data-fim"
                 type="date"
-                value={dataFimInput}
+                value={inputDataFim}
                 onChange={(e) => handleDataFimChange(e.target.value)}
+                onKeyPress={handleKeyPress}
                 placeholder="dd/mm/aaaa"
                 className="cursor-pointer [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:bg-white [&::-webkit-calendar-picker-indicator]:rounded [&::-webkit-calendar-picker-indicator]:border [&::-webkit-calendar-picker-indicator]:border-gray-300 [&::-webkit-calendar-picker-indicator]:p-1 [&::-webkit-calendar-picker-indicator]:mr-1"
                 style={{
@@ -577,6 +536,14 @@ const Propostas = () => {
           </div>
           
           <div className="mt-4 flex justify-end gap-2">
+            <Button
+              onClick={handleApplyFilters}
+              variant="default"
+              className="flex items-center gap-2"
+            >
+              <Search className="h-4 w-4" />
+              Pesquisar
+            </Button>
             <button
               onClick={exportToExcel}
               className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md transition-colors"
@@ -717,10 +684,10 @@ const Propostas = () => {
                 <button
                   onClick={() => {
                     setSelectedChartDate(null);
+                    setInputDataInicio('');
+                    setInputDataFim('');
                     setDataInicio('');
                     setDataFim('');
-                    setDataInicioInput('');
-                    setDataFimInput('');
                   }}
                   className="ml-1 text-xs hover:text-destructive"
                   title="Remover filtro de data"

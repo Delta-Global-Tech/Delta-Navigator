@@ -27,17 +27,14 @@ const config = {
 // Rota para buscar dados de produção NOVO
 app.get('/api/producao/novo', async (req, res) => {
   try {
-    console.log('Iniciando busca de dados de produção...');
     
     // Parâmetros de paginação
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 1000; // 1000 por página por padrão
     const offset = (page - 1) * limit;
     
-    console.log(`Página: ${page}, Limit: ${limit}, Offset: ${offset}`);
     
     const pool = await sql.connect(config);
-    console.log('Conexão estabelecida, executando query...');
     
     // Primeiro, contar total de registros com a nova lógica
     const countResult = await pool.request().query(`
@@ -64,7 +61,7 @@ app.get('/api/producao/novo', async (req, res) => {
                   PARTITION BY proposta_id
                   ORDER BY inserted_at DESC
               ) AS rn
-          FROM fact_proposals_newcorban
+          FROM dbo.fact_proposals_newcorban
           WHERE status_nome = 'PAGO'
       )
       SELECT COUNT(*) as total FROM ranked WHERE rn = 1
@@ -72,7 +69,6 @@ app.get('/api/producao/novo', async (req, res) => {
     const totalRecords = countResult.recordset[0].total;
     const totalPages = Math.ceil(totalRecords / limit);
     
-    console.log(`Total de registros PAGO no banco: ${totalRecords}, Total de páginas: ${totalPages}`);
     
     const result = await pool.request().query(`
       ;WITH ranked AS (
@@ -98,7 +94,7 @@ app.get('/api/producao/novo', async (req, res) => {
                   PARTITION BY proposta_id
                   ORDER BY inserted_at DESC
               ) AS rn
-          FROM fact_proposals_newcorban
+          FROM dbo.fact_proposals_newcorban
           WHERE status_nome = 'PAGO'
       )
       SELECT
@@ -126,8 +122,6 @@ app.get('/api/producao/novo', async (req, res) => {
       FETCH NEXT ${limit} ROWS ONLY
     `);
     
-    console.log(`Query executada com sucesso. ${result.recordset.length} registros retornados da página ${page}.`);
-    console.log('Tamanho da resposta em MB:', JSON.stringify(result.recordset).length / 1024 / 1024);
     
     // Retorna dados com metadados de paginação
     const response = {
@@ -146,7 +140,6 @@ app.get('/api/producao/novo', async (req, res) => {
     res.json(response);
     
   } catch (error) {
-    console.error('Erro ao buscar dados:', error);
     res.status(500).json({ 
       error: 'Erro interno do servidor',
       details: error.message,
@@ -158,7 +151,6 @@ app.get('/api/producao/novo', async (req, res) => {
 // Rota para dados agregados mensais (para gráficos)
 app.get('/api/producao/novo/monthly', async (req, res) => {
   try {
-    console.log('Buscando dados mensais agregados...');
     const pool = await sql.connect(config);
     
     const result = await pool.request().query(`
@@ -186,7 +178,7 @@ app.get('/api/producao/novo/monthly', async (req, res) => {
                   PARTITION BY proposta_id
                   ORDER BY inserted_at DESC
               ) AS rn
-          FROM fact_proposals_newcorban
+          FROM dbo.fact_proposals_newcorban
           WHERE status_nome = 'PAGO'
       )
       SELECT 
@@ -199,13 +191,11 @@ app.get('/api/producao/novo/monthly', async (req, res) => {
       ORDER BY mes
     `);
     
-    console.log('Dados mensais calculados:', result.recordset.length, 'meses');
     
     await pool.close();
     res.json(result.recordset);
     
   } catch (error) {
-    console.error('Erro ao buscar dados mensais:', error);
     res.status(500).json({ 
       error: 'Erro interno do servidor',
       details: error.message,
@@ -217,7 +207,6 @@ app.get('/api/producao/novo/monthly', async (req, res) => {
 // Rota para ranking de produtos
 app.get('/api/producao/novo/produtos', async (req, res) => {
   try {
-    console.log('Buscando ranking de produtos...');
     const pool = await sql.connect(config);
     
     const result = await pool.request().query(`
@@ -244,7 +233,7 @@ app.get('/api/producao/novo/produtos', async (req, res) => {
                   PARTITION BY proposta_id
                   ORDER BY inserted_at DESC
               ) AS rn
-          FROM fact_proposals_newcorban
+          FROM dbo.fact_proposals_newcorban
           WHERE status_nome = 'PAGO'
       )
       SELECT 
@@ -257,13 +246,11 @@ app.get('/api/producao/novo/produtos', async (req, res) => {
       ORDER BY quantidade DESC
     `);
     
-    console.log('Ranking de produtos calculado:', result.recordset.length, 'produtos');
     
     await pool.close();
     res.json(result.recordset);
     
   } catch (error) {
-    console.error('Erro ao buscar ranking de produtos:', error);
     res.status(500).json({ 
       error: 'Erro interno do servidor',
       details: error.message,
@@ -275,7 +262,6 @@ app.get('/api/producao/novo/produtos', async (req, res) => {
 // Rota otimizada para KPIs (agregações rápidas)
 app.get('/api/producao/novo/kpis', async (req, res) => {
   try {
-    console.log('Buscando KPIs de produção...');
     const pool = await sql.connect(config);
     
     const result = await pool.request().query(`
@@ -303,7 +289,7 @@ app.get('/api/producao/novo/kpis', async (req, res) => {
                   PARTITION BY proposta_id
                   ORDER BY inserted_at DESC
               ) AS rn
-          FROM fact_proposals_newcorban
+          FROM dbo.fact_proposals_newcorban
           WHERE status_nome = 'PAGO'
       )
       SELECT 
@@ -316,13 +302,11 @@ app.get('/api/producao/novo/kpis', async (req, res) => {
       WHERE rn = 1
     `);
     
-    console.log('KPIs calculados com sucesso:', result.recordset[0]);
     
     await pool.close();
     res.json(result.recordset[0]);
     
   } catch (error) {
-    console.error('Erro ao buscar KPIs:', error);
     res.status(500).json({ 
       error: 'Erro interno do servidor',
       details: error.message,
@@ -339,12 +323,9 @@ app.get('/api/health', (req, res) => {
 // Rota de teste de conexão com banco
 app.get('/api/test-db', async (req, res) => {
   try {
-    console.log('Testando conexão com SQL Server...');
     const pool = await sql.connect(config);
-    console.log('Conexão estabelecida!');
     
     const result = await pool.request().query('SELECT 1 as test, GETDATE() as now');
-    console.log('Query executada:', result.recordset);
     
     await pool.close();
     
@@ -355,7 +336,6 @@ app.get('/api/test-db', async (req, res) => {
       result: result.recordset
     });
   } catch (error) {
-    console.error('Erro na conexão:', error);
     res.status(500).json({ 
       error: 'Falha na conexão com banco',
       details: error.message,
@@ -367,10 +347,9 @@ app.get('/api/test-db', async (req, res) => {
 // Rota simples de teste da tabela
 app.get('/api/test-table', async (req, res) => {
   try {
-    console.log('Testando acesso à tabela...');
     const pool = await sql.connect(config);
     
-    const result = await pool.request().query('SELECT TOP 5 proposta_id, cliente_nome FROM fact_proposals_newcorban');
+    const result = await pool.request().query('SELECT TOP 5 proposta_id, cliente_nome FROM dbo.fact_proposals_newcorban');
     console.log(`Encontrados ${result.recordset.length} registros`);
     
     await pool.close();
@@ -429,7 +408,7 @@ app.get('/api/producao/compra', async (req, res) => {
                   PARTITION BY proposta_id
                   ORDER BY inserted_at DESC
               ) AS rn
-          FROM fact_proposals_newcorban
+          FROM dbo.fact_proposals_newcorban
           WHERE ` + whereClause + `
       )
       SELECT COUNT(*) as total FROM ranked WHERE rn = 1
@@ -466,7 +445,7 @@ app.get('/api/producao/compra', async (req, res) => {
                   PARTITION BY proposta_id
                   ORDER BY inserted_at DESC
               ) AS rn
-          FROM fact_proposals_newcorban
+          FROM dbo.fact_proposals_newcorban
           WHERE ` + whereClause + `
       )
       SELECT
@@ -555,7 +534,7 @@ app.get('/api/producao/compra/monthly', async (req, res) => {
                   PARTITION BY proposta_id
                   ORDER BY inserted_at DESC
               ) AS rn
-          FROM fact_proposals_newcorban
+          FROM dbo.fact_proposals_newcorban
           WHERE status_nome != 'PAGO'
       )
       SELECT 
@@ -613,7 +592,7 @@ app.get('/api/producao/compra/produtos', async (req, res) => {
                   PARTITION BY proposta_id
                   ORDER BY inserted_at DESC
               ) AS rn
-          FROM fact_proposals_newcorban
+          FROM dbo.fact_proposals_newcorban
           WHERE status_nome != 'PAGO'
       )
       SELECT 
@@ -672,7 +651,7 @@ app.get('/api/producao/compra/kpis', async (req, res) => {
                   PARTITION BY proposta_id
                   ORDER BY inserted_at DESC
               ) AS rn
-          FROM fact_proposals_newcorban
+          FROM dbo.fact_proposals_newcorban
           WHERE status_nome != 'PAGO'
       )
       SELECT 
@@ -716,7 +695,7 @@ app.get('/api/producao/compra/status', async (req, res) => {
                   PARTITION BY proposta_id
                   ORDER BY inserted_at DESC
               ) AS rn
-          FROM fact_proposals_newcorban
+          FROM dbo.fact_proposals_newcorban
           WHERE status_nome != 'PAGO'
       )
       SELECT 
@@ -743,6 +722,6 @@ app.get('/api/producao/compra/status', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });

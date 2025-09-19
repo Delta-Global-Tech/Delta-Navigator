@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, 
   UserPlus, 
@@ -10,7 +11,9 @@ import {
   AlertCircle,
   ChevronRight,
   TrendingDown,
-  FileText
+  FileText,
+  Receipt,
+  CreditCard
 } from "lucide-react"
 import { NavLink, useLocation } from "react-router-dom"
 import { cn } from "@/lib/utils"
@@ -56,6 +59,20 @@ const analysisNavItems: NavItem[] = [
     url: "/propostas",
     icon: FileText,
     description: "Gestão de Propostas"
+  },
+  {
+    title: "Extrato",
+    url: "/extrato",
+    icon: Receipt,
+    description: "Extrato Clientes",
+    badge: "Novo"
+  },
+  {
+    title: "Faturas",
+    url: "/faturas",
+    icon: CreditCard,
+    description: "Faturas Cartão",
+    badge: "Novo"
   }
 ];
 
@@ -127,8 +144,40 @@ function NavSection({ title, items }: NavSectionProps) {
 }
 
 export function Sidebar() {
+  const [ultimaSyncExtrato, setUltimaSyncExtrato] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const raw = localStorage.getItem('ultimaSyncExtrato') || '-';
+      return raw.split(' ')[0];
+    }
+    return '-';
+  });
+
+  useEffect(() => {
+    function handleStorage(e: StorageEvent) {
+      if (e.key === 'ultimaSyncExtrato') {
+        const value = e.newValue || '-';
+        setUltimaSyncExtrato(value.split(' ')[0]);
+      }
+    }
+    function handleCustomSync() {
+      const value = localStorage.getItem('ultimaSyncExtrato') || '-';
+      setUltimaSyncExtrato(value.split(' ')[0]);
+    }
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener('ultimaSyncExtratoUpdate', handleCustomSync);
+    // Fallback: atualiza a cada 30s
+    const interval = setInterval(() => {
+      const value = localStorage.getItem('ultimaSyncExtrato') || '-';
+      setUltimaSyncExtrato(value.split(' ')[0]);
+    }, 30000);
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('ultimaSyncExtratoUpdate', handleCustomSync);
+      clearInterval(interval);
+    };
+  }, []);
   return (
-    <aside className="w-64 h-screen bg-sidebar-background border-r border-sidebar-border flex flex-col">
+    <aside className="fixed left-0 top-0 z-50 w-64 h-screen bg-sidebar-background border-r border-sidebar-border flex flex-col">
       {/* Sidebar Header */}
       <div className="p-4 border-b border-sidebar-border">
         <div className="flex items-center gap-3">
@@ -144,20 +193,20 @@ export function Sidebar() {
 
       {/* Navigation */}
       <div className="flex-1 overflow-y-auto py-4">
-        <NavSection title="Produção" items={productionNavItems} />
-        <NavSection title="Análise" items={analysisNavItems} />
+        <NavSection title="Treynor" items={productionNavItems} />
+        <NavSection title="Delta Global Bank" items={analysisNavItems} />
       </div>
 
       {/* Sidebar Footer */}
-      <div className="p-4 border-t border-sidebar-border">
-        <div className="flex items-center gap-2 p-3 bg-accent/30 rounded-lg">
-          <AlertCircle className="h-4 w-4 text-warning" />
-          <div className="flex-1">
-            <p className="text-xs font-medium text-foreground">Sistema Online</p>
-            <p className="text-xs text-muted-foreground">Última sync: {new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
+          <div className="p-4 border-t border-sidebar-border">
+            <div className="flex items-center gap-2 p-3 bg-accent/30 rounded-lg">
+              <AlertCircle className="h-4 w-4 text-warning" />
+              <div className="flex-1">
+                <p className="text-xs font-medium text-foreground">Sistema Online</p>
+                <p className="text-xs text-muted-foreground">Última sync: {ultimaSyncExtrato}</p>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
     </aside>
   )
 }
