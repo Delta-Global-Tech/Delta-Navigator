@@ -12,20 +12,6 @@ dist
 dist-ssr
 *.local
 
-# Environment variables and credentials
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Database and server credentials
-server/.env
-postgres-server/.env
-*.env
-config.json
-secrets.json
-
 # OS generated files
 .DS_Store
 .DS_Store?
