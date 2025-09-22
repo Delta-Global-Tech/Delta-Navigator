@@ -1,5 +1,5 @@
 // Configuração da API para PostgreSQL
-const POSTGRES_API_BASE_URL = `http://${window.location.hostname}:3002/api`;
+const POSTGRES_API_BASE_URL = `${import.meta.env.VITE_API_POSTGRES_URL}/api`;
 
 // Função para buscar dados do funil
 export const getFunilData = async (produto?: string, status?: string) => {

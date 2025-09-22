@@ -1,5 +1,5 @@
 // Configuração da API backend
-const API_BASE_URL = `http://${window.location.hostname}:3001/api`;
+const API_BASE_URL = `${import.meta.env.VITE_API_SQLSERVER_URL}/api`;
 
 interface PaginationParams {
   page?: number;
@@ -75,16 +75,23 @@ export const getAllProducaoNovoData = async () => {
 // Função para buscar KPIs otimizados (muito mais rápido)
 export const getProducaoNovoKPIs = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/producao/novo/kpis`);
+    const url = `${API_BASE_URL}/producao/novo/kpis`;
+    console.log('🔍 API_BASE_URL:', API_BASE_URL);
+    console.log('🔍 Fazendo requisição para:', url);
+    console.log('🔍 VITE_API_SQLSERVER_URL:', import.meta.env.VITE_API_SQLSERVER_URL);
+    
+    const response = await fetch(url);
     
     if (!response.ok) {
+      console.error('❌ Resposta não OK:', response.status, response.statusText);
       throw new Error(`Erro na API: ${response.status} ${response.statusText}`);
     }
     
     const data = await response.json();
+    console.log('✅ Dados recebidos:', data);
     return data;
   } catch (error) {
-    console.error('Erro ao buscar KPIs da API:', error);
+    console.error('❌ Erro ao buscar KPIs da API:', error);
     throw new Error('Falha ao carregar KPIs de produção');
   }
 };
@@ -92,16 +99,21 @@ export const getProducaoNovoKPIs = async () => {
 // Função para buscar dados mensais agregados
 export const getProducaoNovoMonthly = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/producao/novo/monthly`);
+    const url = `${API_BASE_URL}/producao/novo/monthly`;
+    console.log('🔍 Monthly URL:', url);
+    
+    const response = await fetch(url);
     
     if (!response.ok) {
+      console.error('❌ Monthly Resposta não OK:', response.status, response.statusText);
       throw new Error(`Erro na API: ${response.status} ${response.statusText}`);
     }
     
     const data = await response.json();
+    console.log('✅ Monthly dados recebidos:', data);
     return data;
   } catch (error) {
-    console.error('Erro ao buscar dados mensais da API:', error);
+    console.error('❌ Erro ao buscar dados mensais da API:', error);
     throw new Error('Falha ao carregar dados mensais');
   }
 };
@@ -109,16 +121,21 @@ export const getProducaoNovoMonthly = async () => {
 // Função para buscar ranking de produtos
 export const getProducaoNovoProdutos = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/producao/novo/produtos`);
+    const url = `${API_BASE_URL}/producao/novo/produtos`;
+    console.log('🔍 Produtos URL:', url);
+    
+    const response = await fetch(url);
     
     if (!response.ok) {
+      console.error('❌ Produtos Resposta não OK:', response.status, response.statusText);
       throw new Error(`Erro na API: ${response.status} ${response.statusText}`);
     }
     
     const data = await response.json();
+    console.log('✅ Produtos dados recebidos:', data);
     return data;
   } catch (error) {
-    console.error('Erro ao buscar ranking de produtos da API:', error);
+    console.error('❌ Erro ao buscar ranking de produtos da API:', error);
     throw new Error('Falha ao carregar ranking de produtos');
   }
 };
@@ -151,13 +168,17 @@ export const getProducaoCompraKPIs = async (statusFilter?: string[]) => {
       url += `?${statusParams}`;
     }
     
+    console.log('🔍 Fazendo requisição COMPRA para:', url);
+    
     const response = await fetch(url);
     
     if (!response.ok) {
+      console.error('❌ Resposta COMPRA não OK:', response.status, response.statusText);
       throw new Error(`Erro na API: ${response.status} ${response.statusText}`);
     }
     
     const data = await response.json();
+    console.log('✅ Dados COMPRA recebidos:', data);
     return data;
   } catch (error) {
     console.error('Erro ao buscar KPIs COMPRA da API:', error);

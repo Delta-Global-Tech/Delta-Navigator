@@ -1,4 +1,4 @@
-import { Search, Command, Bell, Settings, User, LogOut } from "lucide-react"
+import { Search, Command, Bell, Settings, User, LogOut, Wifi } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -13,7 +13,12 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useAuth } from "@/hooks/useAuth"
 
-export function Header() {
+interface HeaderProps {
+  lastSync?: string
+  isRefreshing?: boolean
+}
+
+export function Header({ lastSync, isRefreshing }: HeaderProps) {
   const { user, logout } = useAuth()
 
   const handleLogout = async () => {
@@ -75,10 +80,15 @@ export function Header() {
 
         {/* Right: Status & User */}
         <div className="flex items-center gap-3">
-          {/* Data Status */}
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-success rounded-full animate-pulse"></div>
-            <span className="text-xs text-muted-foreground">Online</span>
+          {/* System Status */}
+          <div className="flex items-center gap-2 px-3 py-1 rounded-md bg-muted/50">
+            <div className="flex items-center gap-1">
+              <div className={`w-2 h-2 rounded-full ${isRefreshing ? 'bg-yellow-500 animate-pulse' : 'bg-green-500'}`}></div>
+              <Wifi className={`h-3 w-3 ${isRefreshing ? 'text-yellow-500' : 'text-green-500'}`} />
+            </div>
+            <span className="text-xs text-muted-foreground">
+              Sistema Online - Última Sync: {lastSync || '--:--:--'}
+            </span>
           </div>
 
           {/* Notifications */}

@@ -52,37 +52,6 @@ app.get('/api/test', async (req, res) => {
   }
 });
 
-// API de debug para listar rotas registradas
-app.get('/api/debug/routes', (req, res) => {
-  const routes = [];
-  app._router.stack.forEach((middleware) => {
-    if (middleware.route) {
-      routes.push({
-        path: middleware.route.path,
-        methods: Object.keys(middleware.route.methods)
-      });
-    }
-  });
-  res.json({ routes, total: routes.length });
-});
-
-// API de debug para ver estrutura da tabela
-app.get('/api/debug/columns', async (req, res) => {
-  try {
-    const query = `
-      SELECT column_name, data_type, is_nullable
-      FROM information_schema.columns 
-      WHERE table_name = 'fact_proposals_newcorban'
-      ORDER BY ordinal_position
-    `;
-    const result = await pool.query(query);
-    res.json({ columns: result.rows });
-  } catch (error) {
-    console.error('Erro ao buscar colunas:', error);
-    res.status(500).json({ error: 'Erro ao buscar colunas', details: error.message });
-  }
-});
-
 // API para verificar dados disponíveis na tabela
 app.get('/api/debug/data-range', async (req, res) => {
   try {
@@ -120,8 +89,6 @@ app.get('/api/debug/data-range', async (req, res) => {
   }
 });
 
-// ===== APIs DE PRODUÇÃO =====
-
 // API para KPIs da tela PRODUCAO NOVO
 app.get('/api/producao/novo/kpis', async (req, res) => {
   try {
@@ -139,7 +106,7 @@ app.get('/api/producao/novo/kpis', async (req, res) => {
       WHERE status_nome IN ('ASSINATURA APROVADA', 'GERANDO CCB', 'GERANDO NOVA CCB', 
                             'AGUARDANDO FORMALIZAÇÃO CCB', 'AGUARDANDO ENVIO DA CCB', 
                             'FILA DE DIGITAÇÃO', 'PENDENTE')
-        AND DATE_TRUNC('month', data_cadastro) = DATE_TRUNC('month', CURRENT_DATE)
+        AND DATE_TRUNC('month', created_at) = DATE_TRUNC('month', CURRENT_DATE)
     `;
     
     // KPIs do mês anterior para comparação
@@ -154,7 +121,7 @@ app.get('/api/producao/novo/kpis', async (req, res) => {
       WHERE status_nome IN ('ASSINATURA APROVADA', 'GERANDO CCB', 'GERANDO NOVA CCB', 
                             'AGUARDANDO FORMALIZAÇÃO CCB', 'AGUARDANDO ENVIO DA CCB', 
                             'FILA DE DIGITAÇÃO', 'PENDENTE')
-        AND DATE_TRUNC('month', data_cadastro) = DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
+        AND DATE_TRUNC('month', created_at) = DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
     `;
     
     const [resultAtual, resultAnterior] = await Promise.all([
@@ -194,65 +161,29 @@ app.get('/api/producao/novo/kpis', async (req, res) => {
 // API para evolução mensal da tela PRODUCAO NOVO
 app.get('/api/producao/novo/monthly', async (req, res) => {
   try {
-    // Primeiro, buscar os dados reais
-    const dataQuery = `
+    const query = `
       SELECT 
-        DATE_TRUNC('month', data_cadastro) as mes,
+        DATE_TRUNC('month', created_at) as mes,
         COUNT(*) as contratos,
         SUM(valor_financiado) as valor_total
       FROM fact_proposals_newcorban 
-      WHERE data_cadastro >= '2024-01-01'
-        AND status_nome IS NOT NULL
-        AND status_nome != ''
-      GROUP BY DATE_TRUNC('month', data_cadastro)
+      WHERE status_nome IN ('ASSINATURA APROVADA', 'GERANDO CCB', 'GERANDO NOVA CCB', 
+                            'AGUARDANDO FORMALIZAÇÃO CCB', 'AGUARDANDO ENVIO DA CCB', 
+                            'FILA DE DIGITAÇÃO', 'PENDENTE')
+        AND created_at >= '2024-01-01'  -- Últimos 2 anos para ter mais dados
+      GROUP BY DATE_TRUNC('month', created_at)
       ORDER BY mes
     `;
     
-    const dataResult = await pool.query(dataQuery);
+    const result = await pool.query(query);
     
-    // Gerar série temporal completa de 2024-01 até hoje
-    const generateMonthlyTimeSeries = () => {
-      const months = [];
-      const startDate = new Date('2024-01-01');
-      const currentDate = new Date();
-      
-      // Garantir que vamos até o mês atual
-      currentDate.setDate(1); // Primeiro dia do mês atual
-      
-      let date = new Date(startDate);
-      while (date <= currentDate) {
-        months.push(new Date(date));
-        date.setMonth(date.getMonth() + 1);
-      }
-      
-      return months;
-    };
+    const monthlyData = result.rows.map(row => ({
+      mes: row.mes,
+      contratos: parseInt(row.contratos),
+      valor: parseFloat(row.valor_total) || 0
+    }));
     
-    const timeSeries = generateMonthlyTimeSeries();
-    
-    // Criar um mapa dos dados reais para lookup rápido
-    const dataMap = new Map();
-    dataResult.rows.forEach(row => {
-      const key = row.mes.toISOString().substring(0, 7); // YYYY-MM format
-      dataMap.set(key, {
-        contratos: parseInt(row.contratos),
-        valor: parseFloat(row.valor_total) || 0
-      });
-    });
-    
-    // Combinar série temporal com dados reais
-    const monthlyData = timeSeries.map(month => {
-      const key = month.toISOString().substring(0, 7); // YYYY-MM format
-      const data = dataMap.get(key) || { contratos: 0, valor: 0 };
-      
-      return {
-        mes: month,
-        contratos: data.contratos,
-        valor: data.valor
-      };
-    });
-    
-    console.log('Dados mensais NOVO encontrados:', monthlyData.length, 'meses (série temporal completa)');
+    console.log('Dados mensais NOVO encontrados:', monthlyData.length, 'meses');
     res.json(monthlyData);
   } catch (error) {
     console.error('Erro ao buscar dados mensais NOVO:', error);
@@ -272,7 +203,6 @@ app.get('/api/producao/novo/produtos', async (req, res) => {
       WHERE status_nome IN ('ASSINATURA APROVADA', 'GERANDO CCB', 'GERANDO NOVA CCB', 
                             'AGUARDANDO FORMALIZAÇÃO CCB', 'AGUARDANDO ENVIO DA CCB', 
                             'FILA DE DIGITAÇÃO', 'PENDENTE')
-        AND data_cadastro >= '2024-01-01'
       GROUP BY produto_nome
       ORDER BY quantidade DESC
       LIMIT 10
@@ -291,102 +221,6 @@ app.get('/api/producao/novo/produtos', async (req, res) => {
   } catch (error) {
     console.error('Erro ao buscar produtos NOVO:', error);
     res.status(500).json({ error: 'Erro ao buscar produtos NOVO', details: error.message });
-  }
-});
-
-// API para análise de produção por status
-app.get('/api/producao/status-analysis', async (req, res) => {
-  try {
-    const { startDate, endDate, status, banco, equipe } = req.query;
-    
-    // Definir período padrão se não fornecido
-    const start = startDate || '2024-01-01';
-    const end = endDate || new Date().toISOString().split('T')[0];
-    
-    let statusQuery, monthlyQuery, params;
-    let whereConditions = ['data_cadastro >= $1', 'data_cadastro <= $2'];
-    let paramIndex = 3;
-    let queryParams = [start, end];
-    
-    // Adicionar filtros opcionais
-    if (status) {
-      whereConditions.push(`status_nome = $${paramIndex}`);
-      queryParams.push(status);
-      paramIndex++;
-    }
-    
-    if (banco) {
-      whereConditions.push(`banco_nome = $${paramIndex}`);
-      queryParams.push(banco);
-      paramIndex++;
-    }
-    
-    if (equipe) {
-      whereConditions.push(`equipe_nome = $${paramIndex}`);
-      queryParams.push(equipe);
-      paramIndex++;
-    }
-    
-    const whereClause = `WHERE ${whereConditions.join(' AND ')}`;
-    
-    // Query para breakdown por status
-    statusQuery = `
-      SELECT 
-        COALESCE(status_nome, 'Não Informado') as status,
-        COUNT(*) as quantidade,
-        SUM(valor_referencia) as valor_referencia,
-        SUM(valor_financiado) as valor_financiado,
-        SUM(valor_liberado) as valor_liberado,
-        SUM(valor_parcela) as valor_parcela
-      FROM fact_proposals_newcorban 
-      ${whereClause}
-      GROUP BY status_nome
-      ORDER BY quantidade DESC
-    `;
-    
-    // Query para evolução mensal
-    monthlyQuery = `
-      SELECT 
-        DATE_TRUNC('month', data_cadastro) as mes,
-        COALESCE(status_nome, 'Não Informado') as status,
-        COUNT(*) as quantidade,
-        SUM(valor_financiado) as valor_total
-      FROM fact_proposals_newcorban 
-      ${whereClause}
-      GROUP BY DATE_TRUNC('month', data_cadastro), status_nome
-      ORDER BY mes, quantidade DESC
-    `;
-    
-    params = queryParams;
-    
-    const [statusResult, monthlyResult] = await Promise.all([
-      pool.query(statusQuery, params),
-      pool.query(monthlyQuery, params)
-    ]);
-    
-    const response = {
-      period: { start, end },
-      statusBreakdown: statusResult.rows.map(row => ({
-        status: row.status,
-        quantidade: parseInt(row.quantidade),
-        valorReferencia: parseFloat(row.valor_referencia) || 0,
-        valorFinanciado: parseFloat(row.valor_financiado) || 0,
-        valorLiberado: parseFloat(row.valor_liberado) || 0,
-        valorParcela: parseFloat(row.valor_parcela) || 0
-      })),
-      monthlyEvolution: monthlyResult.rows.map(row => ({
-        mes: row.mes,
-        status: row.status,
-        quantidade: parseInt(row.quantidade),
-        valorTotal: parseFloat(row.valor_total) || 0
-      }))
-    };
-    
-    console.log('Análise por status encontrada:', response.statusBreakdown.length, 'status diferentes');
-    res.json(response);
-  } catch (error) {
-    console.error('Erro ao buscar análise por status:', error);
-    res.status(500).json({ error: 'Erro ao buscar análise por status', details: error.message });
   }
 });
 
@@ -458,64 +292,27 @@ app.get('/api/producao/compra/kpis', async (req, res) => {
 // API para evolução mensal da tela PRODUCAO COMPRA
 app.get('/api/producao/compra/monthly', async (req, res) => {
   try {
-    // Primeiro, buscar os dados reais
-    const dataQuery = `
+    const query = `
       SELECT 
         DATE_TRUNC('month', created_at) as mes,
         COUNT(*) as contratos,
         SUM(valor_financiado) as valor_total
       FROM fact_proposals_newcorban 
       WHERE status_nome IN ('PAGO', 'BOLETO QUITADO', 'AVERBADO')
-        AND created_at >= '2024-01-01'
+        AND created_at >= '2024-01-01'  -- Últimos 2 anos para ter mais dados
       GROUP BY DATE_TRUNC('month', created_at)
       ORDER BY mes
     `;
     
-    const dataResult = await pool.query(dataQuery);
+    const result = await pool.query(query);
     
-    // Gerar série temporal completa de 2024-01 até hoje
-    const generateMonthlyTimeSeries = () => {
-      const months = [];
-      const startDate = new Date('2024-01-01');
-      const currentDate = new Date();
-      
-      // Garantir que vamos até o mês atual
-      currentDate.setDate(1); // Primeiro dia do mês atual
-      
-      let date = new Date(startDate);
-      while (date <= currentDate) {
-        months.push(new Date(date));
-        date.setMonth(date.getMonth() + 1);
-      }
-      
-      return months;
-    };
+    const monthlyData = result.rows.map(row => ({
+      mes: row.mes,
+      contratos: parseInt(row.contratos),
+      valor: parseFloat(row.valor_total) || 0
+    }));
     
-    const timeSeries = generateMonthlyTimeSeries();
-    
-    // Criar um mapa dos dados reais para lookup rápido
-    const dataMap = new Map();
-    dataResult.rows.forEach(row => {
-      const key = row.mes.toISOString().substring(0, 7); // YYYY-MM format
-      dataMap.set(key, {
-        contratos: parseInt(row.contratos),
-        valor: parseFloat(row.valor_total) || 0
-      });
-    });
-    
-    // Combinar série temporal com dados reais
-    const monthlyData = timeSeries.map(month => {
-      const key = month.toISOString().substring(0, 7); // YYYY-MM format
-      const data = dataMap.get(key) || { contratos: 0, valor: 0 };
-      
-      return {
-        mes: month,
-        contratos: data.contratos,
-        valor: data.valor
-      };
-    });
-    
-    console.log('Dados mensais COMPRA encontrados:', monthlyData.length, 'meses (série temporal completa)');
+    console.log('Dados mensais COMPRA encontrados:', monthlyData.length, 'meses');
     res.json(monthlyData);
   } catch (error) {
     console.error('Erro ao buscar dados mensais COMPRA:', error);
@@ -553,138 +350,6 @@ app.get('/api/producao/compra/produtos', async (req, res) => {
     res.status(500).json({ error: 'Erro ao buscar produtos COMPRA', details: error.message });
   }
 });
-
-// API para detalhes de contratos por status
-app.get('/api/producao/status-details', async (req, res) => {
-  try {
-    const { startDate, endDate, status, banco, equipe, limit } = req.query;
-    
-    // Definir período padrão se não fornecido
-    const start = startDate || '2024-01-01';
-    const end = endDate || new Date().toISOString().split('T')[0];
-    const maxLimit = parseInt(limit) || 500;
-    
-    let query, params;
-    let whereConditions = [];
-    let paramCount = 0;
-    
-    // Condições base
-    whereConditions.push(`data_cadastro >= $${++paramCount}`);
-    whereConditions.push(`data_cadastro <= $${++paramCount}`);
-    params = [start, end];
-    
-    // Adicionar filtro de status se fornecido
-    if (status && status !== '') {
-      whereConditions.push(`status_nome = $${++paramCount}`);
-      params.push(status);
-    }
-    
-    // Adicionar filtro de banco se fornecido
-    if (banco && banco !== '') {
-      whereConditions.push(`banco_nome = $${++paramCount}`);
-      params.push(banco);
-    }
-    
-    // Adicionar filtro de equipe se fornecido
-    if (equipe && equipe !== '') {
-      whereConditions.push(`equipe_nome = $${++paramCount}`);
-      params.push(equipe);
-    }
-    
-    // Construir query
-    query = `
-      SELECT 
-        proposta_id as id,
-        cliente_nome,
-        cliente_cpf as cpf_cnpj,
-        banco_nome,
-        produto_nome,
-        equipe_nome,
-        valor_referencia,
-        valor_financiado,
-        valor_liberado,
-        valor_parcela,
-        status_nome,
-        data_cadastro
-      FROM fact_proposals_newcorban 
-      WHERE ${whereConditions.join(' AND ')}
-      ORDER BY data_cadastro DESC
-      LIMIT $${++paramCount}
-    `;
-    params.push(maxLimit);
-    
-    const result = await pool.query(query, params);
-    
-    const contractDetails = result.rows.map(row => ({
-      id: row.id,
-      clienteNome: row.cliente_nome,
-      cpfCnpj: row.cpf_cnpj,
-      bancoNome: row.banco_nome,
-      produtoNome: row.produto_nome,
-      equipeNome: row.equipe_nome,
-      valores: parseFloat(row.valor_financiado) || 0,
-      valorReferencia: parseFloat(row.valor_referencia) || 0,
-      valorLiberado: parseFloat(row.valor_liberado) || 0,
-      valorParcela: parseFloat(row.valor_parcela) || 0,
-      statusNome: row.status_nome,
-      dataCadastro: row.data_cadastro
-    }));
-    
-    console.log('Detalhes encontrados:', contractDetails.length, 'contratos para filtros:', {
-      status: status || 'todos',
-      banco: banco || 'todos',
-      equipe: equipe || 'todas'
-    });
-    res.json(contractDetails);
-  } catch (error) {
-    console.error('Erro ao buscar detalhes por status:', error);
-    res.status(500).json({ error: 'Erro ao buscar detalhes por status', details: error.message });
-  }
-});
-
-// API para obter lista de bancos para filtros
-app.get('/api/producao/bancos', async (req, res) => {
-  try {
-    const query = `
-      SELECT DISTINCT banco_nome
-      FROM fact_proposals_newcorban 
-      WHERE banco_nome IS NOT NULL 
-        AND banco_nome != ''
-      ORDER BY banco_nome
-    `;
-    
-    const result = await pool.query(query);
-    const bancos = result.rows.map(row => row.banco_nome);
-    
-    res.json(bancos);
-  } catch (error) {
-    console.error('Erro ao buscar bancos:', error);
-    res.status(500).json({ error: 'Erro ao buscar bancos', details: error.message });
-  }
-});
-
-// API para obter lista de equipes para filtros
-app.get('/api/producao/equipes', async (req, res) => {
-  try {
-    const query = `
-      SELECT DISTINCT equipe_nome
-      FROM fact_proposals_newcorban 
-      WHERE equipe_nome IS NOT NULL 
-        AND equipe_nome != ''
-      ORDER BY equipe_nome
-    `;
-    
-    const result = await pool.query(query);
-    const equipes = result.rows.map(row => row.equipe_nome);
-    
-    res.json(equipes);
-  } catch (error) {
-    console.error('Erro ao buscar equipes:', error);
-    res.status(500).json({ error: 'Erro ao buscar equipes', details: error.message });
-  }
-});
-
-// ===== SERVIDOR =====
 
 // Iniciar servidor
 app.listen(PORT, () => {

@@ -1,5 +1,5 @@
 // Configuração da API para PostgreSQL - Extrato
-const EXTRATO_API_BASE_URL = `http://${window.location.hostname}:3003/api`; // Dinâmico para qualquer ambiente
+const EXTRATO_API_BASE_URL = `${import.meta.env.VITE_EXTRATO_API_URL}/api`; // Usando variável de ambiente
 
 export interface StatementItem {
   personal_name: string;

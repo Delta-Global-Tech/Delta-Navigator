@@ -34,16 +34,10 @@ const mainNavItems: NavItem[] = [];
 
 const productionNavItems: NavItem[] = [
   {
-    title: "Produção",
-    url: "/producao/novo",
-    icon: TrendingUp,
-    description: "Contratos Pagos"
-  },
-  {
-    title: "Produção",
-    url: "/producao/compra", 
-    icon: ShoppingCart,
-    description: "Contratos em Andamento"
+    title: "Produção Analytics",
+    url: "/producao/analytics",
+    icon: FileText,
+    description: "Análise Completa por Status"
   }
 ];
 
