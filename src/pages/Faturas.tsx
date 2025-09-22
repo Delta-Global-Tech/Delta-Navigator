@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -10,8 +10,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell } from 'recharts';
 import { CreditCard, AlertTriangle, CheckCircle, Clock, DollarSign, Users, Calendar, Search, Filter, Download, TrendingUp, TrendingDown } from 'lucide-react';
 import { getFaturasData, FaturaData, FaturasSummary } from '@/data/faturasApi';
+import { useAutoRefresh } from '@/hooks/useAutoRefresh';
+import { useSync } from '@/providers/sync-provider';
 
 const Faturas = () => {
+  const { updateSync, setRefreshing } = useSync()
+  
+  // Ref para armazenar dados anteriores para comparação
+  const previousDataRef = useRef<any>(null)
+  
   // Estados para filtros (inputs não aplicados)
   const [inputPersonalDocument, setInputPersonalDocument] = useState('');
   const [inputStatus, setInputStatus] = useState('todos');
@@ -47,11 +54,48 @@ const Faturas = () => {
   };
 
   // Query para buscar dados das faturas
-  const { data: faturasResponse, isLoading, error } = useQuery({
+  const { data: faturasResponse, isLoading, error, refetch } = useQuery({
     queryKey: ['faturas', personalDocument, status],
     queryFn: () => getFaturasData(personalDocument, status),
     staleTime: 5 * 60 * 1000, // 5 minutos
   });
+
+  // Função para atualizar dados
+  const refreshData = async () => {
+    setRefreshing(true)
+    try {
+      const result = await refetch()
+      const newData = result.data
+      
+      // Comparar com dados anteriores
+      const hasNewData = !previousDataRef.current || 
+        JSON.stringify(previousDataRef.current) !== JSON.stringify(newData)
+      
+      if (hasNewData) {
+        previousDataRef.current = newData
+        const now = new Date()
+        updateSync(now.toLocaleTimeString('pt-BR', {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        }))
+      }
+      
+      return { hasNewData }
+    } catch (error) {
+      console.error('Erro ao atualizar dados de faturas:', error)
+      return { hasNewData: false }
+    } finally {
+      setRefreshing(false)
+    }
+  }
+
+  // Auto-refresh configurado para 30 segundos
+  useAutoRefresh({
+    onRefresh: refreshData,
+    interval: 30000, // 30 segundos
+    enabled: true
+  })
 
   const faturasData = faturasResponse?.data || [];
   const faturasSummary = faturasResponse?.summary || {

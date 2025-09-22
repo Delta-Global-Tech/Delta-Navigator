@@ -61,10 +61,23 @@ export default function Statement() {
     refetchInterval: 30000, // Atualiza a cada 30 segundos
   });
 
-  // Fallback: força o refetch manualmente a cada 30s
+  // Fallback: força o refetch manualmente a cada 30s com atualização sempre do sync
   useEffect(() => {
     const interval = setInterval(() => {
-      refetch();
+      refetch().then(() => {
+        // Sempre atualiza o sync independente dos dados
+        const now = new Date();
+        const syncTime = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        setLastSync(syncTime);
+        if (typeof window !== 'undefined') {
+          const syncValue = `${syncTime} (${Date.now()})`;
+          (window as any).__LAST_SYNC_EXTRATO__ = syncValue;
+          localStorage.setItem('ultimaSyncExtrato', syncValue);
+          console.log('[SYNC] ultimaSyncExtrato atualizado:', syncValue);
+          // Dispara evento customizado para atualizar Sidebar imediatamente
+          window.dispatchEvent(new Event('ultimaSyncExtratoUpdate'));
+        }
+      });
     }, 30000);
     return () => clearInterval(interval);
   }, [refetch]);

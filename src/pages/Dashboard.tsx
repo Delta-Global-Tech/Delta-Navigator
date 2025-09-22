@@ -4,6 +4,9 @@ import { Badge } from "@/components/ui/badge"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts'
 import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Clock, Target, DollarSign, LayoutDashboard } from "lucide-react"
 import { useFunnelData, useVolumeData, useExecutiveKPIs, useABCRevenue, useDocumentPerformance } from "@/hooks/useSupabaseData"
+import { useAutoRefresh } from "@/hooks/useAutoRefresh"
+import { useSync } from "@/providers/sync-provider"
+import { useEffect, useRef } from "react"
 
 // Mock data for zero state
 const volumeData = []
@@ -25,12 +28,68 @@ const colors = {
 }
 
 export default function Dashboard() {
+  const { updateSync, setRefreshing } = useSync()
+  
+  // Ref para armazenar dados anteriores para comparação
+  const previousDataRef = useRef<any>(null)
+
   // Carregar dados do Supabase
-  const { data: kpis, isLoading: kpisLoading } = useExecutiveKPIs()
-  const { data: volumeData, isLoading: volumeLoading } = useVolumeData()
-  const { data: funnelData = [], isLoading: funnelLoading } = useFunnelData()
-  const { data: abcData = [], isLoading: abcLoading } = useABCRevenue()
-  const { data: docData = [], isLoading: docLoading } = useDocumentPerformance()
+  const { data: kpis, isLoading: kpisLoading, refetch: refetchKpis } = useExecutiveKPIs()
+  const { data: volumeData, isLoading: volumeLoading, refetch: refetchVolume } = useVolumeData()
+  const { data: funnelData = [], isLoading: funnelLoading, refetch: refetchFunnel } = useFunnelData()
+  const { data: abcData = [], isLoading: abcLoading, refetch: refetchAbc } = useABCRevenue()
+  const { data: docData = [], isLoading: docLoading, refetch: refetchDoc } = useDocumentPerformance()
+
+  // Função para atualizar todos os dados
+  const refreshAllData = async () => {
+    setRefreshing(true)
+    try {
+      const results = await Promise.all([
+        refetchKpis(),
+        refetchVolume(),
+        refetchFunnel(),
+        refetchAbc(),
+        refetchDoc()
+      ])
+      
+      // Combinar todos os dados para comparação
+      const newData = {
+        kpis: results[0].data,
+        volume: results[1].data,
+        funnel: results[2].data,
+        abc: results[3].data,
+        doc: results[4].data
+      }
+      
+      // Comparar com dados anteriores
+      const hasNewData = !previousDataRef.current || 
+        JSON.stringify(previousDataRef.current) !== JSON.stringify(newData)
+      
+      if (hasNewData) {
+        previousDataRef.current = newData
+        const now = new Date()
+        updateSync(now.toLocaleTimeString('pt-BR', {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        }))
+      }
+      
+      return { hasNewData }
+    } catch (error) {
+      console.error('Erro ao atualizar dados:', error)
+      return { hasNewData: false }
+    } finally {
+      setRefreshing(false)
+    }
+  }
+
+  // Auto-refresh configurado para 30 segundos
+  useAutoRefresh({
+    onRefresh: refreshAllData,
+    interval: 30000, // 30 segundos
+    enabled: true
+  })
 
   // Preparar dados para gráficos
   const chartVolumeData = volumeData?.reduce((acc, item) => {

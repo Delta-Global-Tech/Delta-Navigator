@@ -6,10 +6,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useQuery } from "@tanstack/react-query"
 import { getFunilData, getFunilKPIs, getFunilDataByStep, getFunilStatus } from "@/data/postgres"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useRef } from "react"
 import * as XLSX from 'xlsx'
+import { useAutoRefresh } from "@/hooks/useAutoRefresh"
+import { useSync } from "@/providers/sync-provider"
 
 export default function FunilPage() {
+  const { updateSync, setRefreshing } = useSync()
+  
+  // Ref para armazenar dados anteriores para comparação
+  const previousDataRef = useRef<any>(null)
+  
   // Estado para filtro de produto
   const [selectedProduct, setSelectedProduct] = useState<string>("todos")
   // Estado para filtro de status
@@ -18,13 +25,13 @@ export default function FunilPage() {
   const [selectedStep, setSelectedStep] = useState<number | null>(null)
 
   // Buscar status disponíveis
-  const { data: statusList = [] } = useQuery({
+  const { data: statusList = [], refetch: refetchStatus } = useQuery({
     queryKey: ['funil-status'],
     queryFn: getFunilStatus
   })
 
   // Buscar dados do funil (geral ou por etapa)
-  const { data: funilData, isLoading: funilLoading } = useQuery({
+  const { data: funilData, isLoading: funilLoading, refetch: refetchFunil } = useQuery({
     queryKey: ['funil-data', selectedProduct, selectedStatus, selectedStep],
     queryFn: () => {
       const produto = selectedProduct === "todos" ? "" : selectedProduct
@@ -39,13 +46,60 @@ export default function FunilPage() {
   })
 
   // Buscar KPIs do funil
-  const { data: kpisData, isLoading: kpisLoading } = useQuery({
+  const { data: kpisData, isLoading: kpisLoading, refetch: refetchKpis } = useQuery({
     queryKey: ['funil-kpis', selectedProduct, selectedStatus],
     queryFn: () => {
       const produto = selectedProduct === "todos" ? "" : selectedProduct
       const status = selectedStatus === "todos" ? "" : selectedStatus
       return getFunilKPIs(produto, status)
     }
+  })
+
+  // Função para atualizar todos os dados
+  const refreshAllData = async () => {
+    setRefreshing(true)
+    try {
+      const results = await Promise.all([
+        refetchStatus(),
+        refetchFunil(),
+        refetchKpis()
+      ])
+      
+      // Combinar todos os dados para comparação
+      const newData = {
+        status: results[0].data,
+        funil: results[1].data,
+        kpis: results[2].data
+      }
+      
+      // Comparar com dados anteriores
+      const hasNewData = !previousDataRef.current || 
+        JSON.stringify(previousDataRef.current) !== JSON.stringify(newData)
+      
+      if (hasNewData) {
+        previousDataRef.current = newData
+        const now = new Date()
+        updateSync(now.toLocaleTimeString('pt-BR', {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        }))
+      }
+      
+      return { hasNewData }
+    } catch (error) {
+      console.error('Erro ao atualizar dados do funil:', error)
+      return { hasNewData: false }
+    } finally {
+      setRefreshing(false)
+    }
+  }
+
+  // Auto-refresh configurado para 30 segundos
+  useAutoRefresh({
+    onRefresh: refreshAllData,
+    interval: 30000, // 30 segundos
+    enabled: true
   })
 
   const isLoading = funilLoading || kpisLoading
