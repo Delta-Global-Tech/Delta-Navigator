@@ -4,22 +4,98 @@ const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
-const port = process.env.SERVER_PORT || 3003;
+const port = process.env.SERVER_PORT || 3001;
 
 // Configuração do banco de dados
 const dbConfig = {
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  database: process.env.DB_NAME,
+  host: process.env.HOST || process.env.DB_HOST,
+  port: process.env.PORT || process.env.DB_PORT || 5432,
+  database: process.env.DB || process.env.DB_NAME,
   user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
+  password: process.env.PASSWORD || process.env.DB_PASSWORD,
 };
 
 
 const pool = new Pool(dbConfig);
 
 // Middlewares
-app.use(cors());
+app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
+app.use(express.json());
+// Ranking de clientes por saldo
+app.get('/api/statement/ranking', async (req, res) => {
+  try {
+    const { nome, dataInicio, dataFim } = req.query;
+    let query = `
+      SELECT 
+        da.personal_name AS nome,
+        da.personal_document AS documento,
+        da.email AS email,
+        da.status_description AS status,
+        fas.saldo_posterior AS saldo,
+        fas.transaction_date
+      FROM dim_account da
+      INNER JOIN fct_account_statement fas ON da.account_id = fas.account_id
+      WHERE 1=1
+    `;
+    const params = [];
+    let paramIndex = 1;
+    
+    if (nome) {
+      query += ` AND da.personal_name ILIKE $${paramIndex}`;
+      params.push(`%${nome}%`);
+      paramIndex++;
+    }
+    
+    if (dataInicio && dataFim) {
+      // Se uma faixa de data foi fornecida
+      if (dataInicio === dataFim) {
+        // Se as datas são iguais, busca o último saldo daquela data específica
+        query += ` AND fas.transaction_date = (
+          SELECT MAX(fas2.transaction_date)
+          FROM fct_account_statement fas2
+          WHERE fas2.account_id = da.account_id
+          AND DATE(fas2.transaction_date) = $${paramIndex}
+        )`;
+        params.push(dataInicio);
+        paramIndex++;
+      } else {
+        // Se há faixa de datas, busca a transação mais recente no período
+        query += ` AND fas.transaction_date = (
+          SELECT MAX(fas2.transaction_date)
+          FROM fct_account_statement fas2
+          WHERE fas2.account_id = da.account_id
+          AND DATE(fas2.transaction_date) BETWEEN $${paramIndex} AND $${paramIndex + 1}
+        )`;
+        params.push(dataInicio);
+        params.push(dataFim);
+        paramIndex += 2;
+      }
+    } else if (dataInicio) {
+      // Se apenas data início foi fornecida, considera até essa data
+      query += ` AND fas.transaction_date = (
+        SELECT MAX(fas2.transaction_date)
+        FROM fct_account_statement fas2
+        WHERE fas2.account_id = da.account_id
+        AND fas2.transaction_date <= $${paramIndex}
+      )`;
+      params.push(dataInicio);
+      paramIndex++;
+    } else {
+      // Comportamento padrão: saldo mais recente
+      query += ` AND fas.transaction_date = (
+        SELECT MAX(fas2.transaction_date)
+        FROM fct_account_statement fas2
+        WHERE fas2.account_id = da.account_id
+      )`;
+    }
+    
+    query += ` ORDER BY saldo DESC LIMIT 100`;
+    const result = await pool.query(query, params);
+    res.json({ clientes: result.rows });
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao buscar ranking', details: error.message });
+  }
+});
 app.use(express.json());
 
 // Rota de teste
@@ -74,7 +150,7 @@ app.get('/api/tables/:schema', async (req, res) => {
 // Rota para buscar dados do extrato
 app.get('/api/statement', async (req, res) => {
   try {
-    const { startDate, endDate, personalDocument } = req.query;
+    const { dataInicio, dataFim, personalDocument } = req.query;
     
     let query = `
       select 
@@ -101,16 +177,31 @@ app.get('/api/statement', async (req, res) => {
     let paramIndex = 1;
     
     // Filtros opcionais
-    if (startDate) {
-      query += ` AND fas.transaction_date >= $${paramIndex}`;
-      params.push(startDate);
-      paramIndex++;
-    }
-    
-    if (endDate) {
-      query += ` AND fas.transaction_date <= $${paramIndex}`;
-      params.push(endDate);
-      paramIndex++;
+    if (dataInicio && dataFim) {
+      if (dataInicio === dataFim) {
+        // Se as datas são iguais, busca transações daquela data específica
+        query += ` AND DATE(fas.transaction_date) = $${paramIndex}`;
+        params.push(dataInicio);
+        paramIndex++;
+      } else {
+        // Se há faixa de datas, usa between
+        query += ` AND DATE(fas.transaction_date) BETWEEN $${paramIndex} AND $${paramIndex + 1}`;
+        params.push(dataInicio);
+        params.push(dataFim);
+        paramIndex += 2;
+      }
+    } else {
+      if (dataInicio) {
+        query += ` AND DATE(fas.transaction_date) >= $${paramIndex}`;
+        params.push(dataInicio);
+        paramIndex++;
+      }
+      
+      if (dataFim) {
+        query += ` AND DATE(fas.transaction_date) <= $${paramIndex}`;
+        params.push(dataFim);
+        paramIndex++;
+      }
     }
     
     if (personalDocument) {
@@ -141,7 +232,7 @@ app.get('/api/statement', async (req, res) => {
 // Rota para buscar resumo do extrato
 app.get('/api/statement/summary', async (req, res) => {
   try {
-    const { startDate, endDate, personalDocument } = req.query;
+    const { dataInicio, dataFim, personalDocument } = req.query;
     
     let query = `
       select 
@@ -160,16 +251,31 @@ app.get('/api/statement/summary', async (req, res) => {
     const params = [];
     let paramIndex = 1;
     
-    if (startDate) {
-      query += ` AND fas.transaction_date >= $${paramIndex}`;
-      params.push(startDate);
-      paramIndex++;
-    }
-    
-    if (endDate) {
-      query += ` AND fas.transaction_date <= $${paramIndex}`;
-      params.push(endDate);
-      paramIndex++;
+    if (dataInicio && dataFim) {
+      if (dataInicio === dataFim) {
+        // Se as datas são iguais, busca transações daquela data específica
+        query += ` AND DATE(fas.transaction_date) = $${paramIndex}`;
+        params.push(dataInicio);
+        paramIndex++;
+      } else {
+        // Se há faixa de datas, usa between
+        query += ` AND DATE(fas.transaction_date) BETWEEN $${paramIndex} AND $${paramIndex + 1}`;
+        params.push(dataInicio);
+        params.push(dataFim);
+        paramIndex += 2;
+      }
+    } else {
+      if (dataInicio) {
+        query += ` AND DATE(fas.transaction_date) >= $${paramIndex}`;
+        params.push(dataInicio);
+        paramIndex++;
+      }
+      
+      if (dataFim) {
+        query += ` AND DATE(fas.transaction_date) <= $${paramIndex}`;
+        params.push(dataFim);
+        paramIndex++;
+      }
     }
     
     if (personalDocument) {

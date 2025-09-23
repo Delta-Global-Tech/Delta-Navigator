@@ -15,6 +15,7 @@ import Propostas from "./pages/Propostas";
 import Statement from './pages/Statement';
 import Faturas from './pages/Faturas';
 import NotFound from "./pages/NotFound";
+import ExtratoRanking from "./pages/ExtratoRanking";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ function AppContent() {
             <Route path="/funil" element={<Funil />} />
             <Route path="/propostas" element={<Propostas />} />
             <Route path="/extrato" element={<Statement />} />
+            <Route path="/extrato-ranking" element={<ExtratoRanking />} />
             <Route path="/faturas" element={<Faturas />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -4,6 +4,11 @@ const { Pool } = require('pg');
 require('dotenv').config();
 
 const app = express();
+// Log de todas as requisições recebidas
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
 const port = 3002;
 
 // Middlewares

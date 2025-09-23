@@ -62,6 +62,13 @@ const analysisNavItems: NavItem[] = [
     badge: "Novo"
   },
   {
+    title: "Ranking Extrato",
+    url: "/extrato-ranking",
+    icon: TrendingUp,
+    description: "Ranking por Saldo",
+    badge: "Novo"
+  },
+  {
     title: "Faturas",
     url: "/faturas",
     icon: CreditCard,
@@ -76,8 +83,7 @@ interface NavSectionProps {
 }
 
 function NavSection({ title, items }: NavSectionProps) {
-  const location = useLocation()
-  
+  const location = useLocation();
   return (
     <div className="mb-6">
       <h3 className="mb-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -85,8 +91,7 @@ function NavSection({ title, items }: NavSectionProps) {
       </h3>
       <nav className="space-y-1 px-2">
         {items.map((item) => {
-          const isActive = location.pathname === item.url
-          
+          const isActive = location.pathname === item.url;
           return (
             <NavLink
               key={item.url}
@@ -110,15 +115,14 @@ function NavSection({ title, items }: NavSectionProps) {
                   </span>
                 </div>
               </div>
-              
               <div className="flex items-center gap-2">
                 {item.badge && (
-                  <Badge 
+                  <Badge
                     variant={item.variant === "warning" ? "destructive" : "secondary"}
                     className={cn(
                       "text-xs h-5 px-1.5",
-                      item.variant === "warning" 
-                        ? "bg-warning/10 text-warning border-warning/20" 
+                      item.variant === "warning"
+                        ? "bg-warning/10 text-warning border-warning/20"
                         : "bg-primary/10 text-primary border-primary/20"
                     )}
                   >
@@ -130,11 +134,11 @@ function NavSection({ title, items }: NavSectionProps) {
                 )}
               </div>
             </NavLink>
-          )
+          );
         })}
       </nav>
     </div>
-  )
+  );
 }
 
 export function Sidebar() {
