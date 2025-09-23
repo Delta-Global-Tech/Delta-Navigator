@@ -119,6 +119,79 @@ app.get('/api/test', async (req, res) => {
   }
 });
 
+// Rota de debug para contar clientes
+app.get('/api/debug/clientes', async (req, res) => {
+  try {
+    // Contar total de clientes únicos
+    const totalClientes = await pool.query(`
+      SELECT COUNT(DISTINCT da.account_id) as total
+      FROM dim_account da
+    `);
+    
+    // Contar clientes com transações
+    const clientesComTransacoes = await pool.query(`
+      SELECT COUNT(DISTINCT da.account_id) as total
+      FROM dim_account da
+      INNER JOIN fct_account_statement fas ON da.account_id = fas.account_id
+    `);
+    
+    // Contar clientes que apareceriam no ranking (com saldo mais recente)
+    const clientesRanking = await pool.query(`
+      SELECT COUNT(*) as total
+      FROM (
+        SELECT DISTINCT da.account_id
+        FROM dim_account da
+        INNER JOIN fct_account_statement fas ON da.account_id = fas.account_id
+        WHERE fas.transaction_date = (
+          SELECT MAX(fas2.transaction_date)
+          FROM fct_account_statement fas2
+          WHERE fas2.account_id = da.account_id
+        )
+      ) subquery
+    `);
+    
+    res.json({
+      totalClientesUnicos: totalClientes.rows[0].total,
+      clientesComTransacoes: clientesComTransacoes.rows[0].total,
+      clientesNoRanking: clientesRanking.rows[0].total
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao buscar debug', details: error.message });
+  }
+});
+
+// Rota para contar clientes únicos
+app.get('/api/debug/count-clients', async (req, res) => {
+  try {
+    const totalClients = await pool.query('SELECT COUNT(DISTINCT account_id) as total FROM dim_account');
+    const clientsWithTransactions = await pool.query(`
+      SELECT COUNT(DISTINCT da.account_id) as total 
+      FROM dim_account da
+      INNER JOIN fct_account_statement fas ON da.account_id = fas.account_id
+    `);
+    const clientsWithLatestBalance = await pool.query(`
+      SELECT COUNT(*) as total FROM (
+        SELECT DISTINCT da.account_id
+        FROM dim_account da
+        INNER JOIN fct_account_statement fas ON da.account_id = fas.account_id
+        WHERE fas.transaction_date = (
+          SELECT MAX(fas2.transaction_date)
+          FROM fct_account_statement fas2
+          WHERE fas2.account_id = da.account_id
+        )
+      ) as sub
+    `);
+    
+    res.json({
+      totalClients: totalClients.rows[0].total,
+      clientsWithTransactions: clientsWithTransactions.rows[0].total,
+      clientsWithLatestBalance: clientsWithLatestBalance.rows[0].total
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao contar clientes', details: error.message });
+  }
+});
+
 // Rota para listar schemas
 app.get('/api/schemas', async (req, res) => {
   try {

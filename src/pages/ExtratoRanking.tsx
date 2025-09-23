@@ -7,7 +7,7 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { TrendingUp, Users, DollarSign, Target, Crown, Filter, Search } from 'lucide-react';
+import { TrendingUp, Users, DollarSign, Target, Crown, Filter, Search, ChevronUp, ChevronDown } from 'lucide-react';
 import { getApiEndpoint, logApiCall } from '@/lib/api-config';
 
 // Função para buscar ranking dos clientes
@@ -54,6 +54,7 @@ export default function ExtratoRanking() {
   const [filtroNome, setFiltroNome] = useState('');
   const [filtroDataInicio, setFiltroDataInicio] = useState('');
   const [filtroDataFim, setFiltroDataFim] = useState('');
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc'); // desc = maior para menor, asc = menor para maior
   
   const [activeFilters, setActiveFilters] = useState({ nome: '', dataInicio: '', dataFim: '' });
   
@@ -65,6 +66,21 @@ export default function ExtratoRanking() {
   });
   // Calcular faixas de saldo após data estar disponível
   const faixasSaldos = getFaixasSaldos(data?.clientes || []);
+
+  // Dados ordenados baseados no sortOrder
+  const sortedClientes = React.useMemo(() => {
+    if (!data?.clientes) return [];
+    return [...data.clientes].sort((a, b) => {
+      const saldoA = parseFloat(a.saldo || 0);
+      const saldoB = parseFloat(b.saldo || 0);
+      return sortOrder === 'desc' ? saldoB - saldoA : saldoA - saldoB;
+    });
+  }, [data?.clientes, sortOrder]);
+
+  // Função para alternar ordenação
+  const toggleSortOrder = () => {
+    setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc');
+  };
 
   // Handler para aplicar filtro
   const handleApplyFilter = () => {
@@ -261,7 +277,7 @@ export default function ExtratoRanking() {
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart 
-                    data={data?.clientes?.slice(0, 5) || []} 
+                    data={data?.clientes?.slice(0, 5).sort((a, b) => parseFloat(b.saldo) - parseFloat(a.saldo)) || []} 
                     margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
@@ -401,11 +417,24 @@ export default function ExtratoRanking() {
                   <TableHead className="text-slate-300 font-semibold">Documento</TableHead>
                   <TableHead className="text-slate-300 font-semibold">Email</TableHead>
                   <TableHead className="text-slate-300 font-semibold">Status</TableHead>
-                  <TableHead className="text-slate-300 font-semibold">Saldo</TableHead>
+                  <TableHead 
+                    className="text-slate-300 font-semibold cursor-pointer hover:text-white transition-colors select-none"
+                    onClick={toggleSortOrder}
+                    title={`Clique para ordenar do ${sortOrder === 'desc' ? 'menor para o maior' : 'maior para o menor'}`}
+                  >
+                    <div className="flex items-center gap-1">
+                      Saldo
+                      {sortOrder === 'desc' ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronUp className="h-4 w-4" />
+                      )}
+                    </div>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data?.clientes?.map((cliente: any, idx: number) => (
+                {sortedClientes?.map((cliente: any, idx: number) => (
                   <TableRow key={cliente.documento} className="border-slate-700 hover:bg-slate-700/30">
                     <TableCell className="text-slate-300">
                       <div className="flex items-center gap-2">
