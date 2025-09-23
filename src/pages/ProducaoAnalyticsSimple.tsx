@@ -11,6 +11,7 @@ import jsPDF from 'jspdf'
 import 'jspdf-autotable'
 import { useAutoRefresh } from "@/hooks/useAutoRefresh"
 import { useSync } from "@/providers/sync-provider"
+import { getApiEndpoint, logApiCall } from "@/lib/api-config"
 
 export default function ProducaoAnalytics() {
   const { updateSync, setRefreshing } = useSync()
@@ -70,19 +71,21 @@ export default function ProducaoAnalytics() {
   const fetchData = async (customStartDate?: string, customEndDate?: string) => {
     setLoading(true)
     setRefreshing(true)
+    
+    const params = new URLSearchParams()
+    params.append('startDate', customStartDate || startDate)
+    params.append('endDate', customEndDate || endDate)
+    
+    // Adicionar filtros de banco e equipe
+    if (selectedBanco) params.append('banco', selectedBanco)
+    if (selectedEquipe) params.append('equipe', selectedEquipe)
+    
+    const url = getApiEndpoint('SQLSERVER', `/api/producao/status-analysis?${params.toString()}`)
+    console.log('🔍 Buscando análise:', url)
+    logApiCall(url, 'REQUEST')
+    console.log('🏦 Filtros ativos - Banco:', selectedBanco, 'Equipe:', selectedEquipe)
+    
     try {
-      const params = new URLSearchParams()
-      params.append('startDate', customStartDate || startDate)
-      params.append('endDate', customEndDate || endDate)
-      
-      // Adicionar filtros de banco e equipe
-      if (selectedBanco) params.append('banco', selectedBanco)
-      if (selectedEquipe) params.append('equipe', selectedEquipe)
-      
-      const url = `http://localhost:3001/api/producao/status-analysis?${params.toString()}`
-      console.log('🔍 Buscando análise:', url)
-      console.log('🏦 Filtros ativos - Banco:', selectedBanco, 'Equipe:', selectedEquipe)
-      
       const response = await fetch(url)
       if (!response.ok) {
         throw new Error(`Erro na API: ${response.status} ${response.statusText}`)
@@ -91,6 +94,7 @@ export default function ProducaoAnalytics() {
       const result = await response.json()
       setData(result)
       console.log('Dados recebidos:', result)
+      logApiCall(url, 'SUCCESS')
       
       // Atualizar indicador de sincronização
       const now = new Date()
@@ -103,6 +107,7 @@ export default function ProducaoAnalytics() {
       return { hasNewData: true } // Sempre retorna hasNewData: true
     } catch (error) {
       console.error('Erro:', error)
+      logApiCall(url, 'ERROR')
       alert('Erro ao carregar dados: ' + error.message)
       return { hasNewData: false }
     } finally {
@@ -135,14 +140,16 @@ export default function ProducaoAnalytics() {
     setLoadingFilters(true)
     try {
       // Carregar bancos
-      const bancosResponse = await fetch('http://localhost:3001/api/producao/bancos')
+      const bancosUrl = getApiEndpoint('SQLSERVER', '/api/producao/bancos')
+      const bancosResponse = await fetch(bancosUrl)
       if (bancosResponse.ok) {
         const bancosData = await bancosResponse.json()
         setBancos(bancosData)
       }
 
       // Carregar equipes
-      const equipesResponse = await fetch('http://localhost:3001/api/producao/equipes')
+      const equipesUrl = getApiEndpoint('SQLSERVER', '/api/producao/equipes')
+      const equipesResponse = await fetch(equipesUrl)
       if (equipesResponse.ok) {
         const equipesData = await equipesResponse.json()
         setEquipes(equipesData)
@@ -169,17 +176,19 @@ export default function ProducaoAnalytics() {
   // Função para buscar detalhes dos contratos por status
   const fetchContractDetails = async (status) => {
     setLoadingDetails(true)
+    
+    const params = new URLSearchParams()
+    params.append('startDate', startDate)
+    params.append('endDate', endDate)
+    if (status) params.append('status', status)
+    if (selectedBanco) params.append('banco', selectedBanco)
+    if (selectedEquipe) params.append('equipe', selectedEquipe)
+    
+    const url = getApiEndpoint('SQLSERVER', `/api/producao/status-details?${params.toString()}`)
+    console.log('🔍 Buscando detalhes:', url)
+    logApiCall(url, 'REQUEST')
+    
     try {
-      const params = new URLSearchParams()
-      params.append('startDate', startDate)
-      params.append('endDate', endDate)
-      if (status) params.append('status', status)
-      if (selectedBanco) params.append('banco', selectedBanco)
-      if (selectedEquipe) params.append('equipe', selectedEquipe)
-      
-      const url = `http://localhost:3001/api/producao/status-details?${params.toString()}`
-      console.log('🔍 Buscando detalhes:', url)
-      
       const response = await fetch(url)
       if (!response.ok) {
         throw new Error(`Erro na API: ${response.status} ${response.statusText}`)
@@ -188,8 +197,10 @@ export default function ProducaoAnalytics() {
       const result = await response.json()
       setContractDetails(result)
       console.log('Detalhes recebidos:', result)
+      logApiCall(url, 'SUCCESS')
     } catch (error) {
       console.error('Erro ao buscar detalhes:', error)
+      logApiCall(url, 'ERROR')
       setContractDetails([]) // Definir array vazio em caso de erro
       alert('Erro ao carregar detalhes: ' + error.message)
     } finally {
@@ -200,17 +211,19 @@ export default function ProducaoAnalytics() {
   // Função para buscar todos os contratos
   const fetchAllContracts = async () => {
     setLoadingDetails(true)
+    
+    const params = new URLSearchParams()
+    params.append('startDate', startDate)
+    params.append('endDate', endDate)
+    params.append('limit', '500')
+    if (selectedBanco) params.append('banco', selectedBanco)
+    if (selectedEquipe) params.append('equipe', selectedEquipe)
+    
+    const url = getApiEndpoint('SQLSERVER', `/api/producao/status-details?${params.toString()}`)
+    console.log('🔍 Buscando todos os contratos:', url)
+    logApiCall(url, 'REQUEST')
+    
     try {
-      const params = new URLSearchParams()
-      params.append('startDate', startDate)
-      params.append('endDate', endDate)
-      params.append('limit', '500')
-      if (selectedBanco) params.append('banco', selectedBanco)
-      if (selectedEquipe) params.append('equipe', selectedEquipe)
-      
-      const url = `http://localhost:3001/api/producao/status-details?${params.toString()}`
-      console.log('🔍 Buscando todos os contratos:', url)
-      
       const response = await fetch(url)
       if (!response.ok) {
         throw new Error(`Erro na API: ${response.status} ${response.statusText}`)
@@ -219,8 +232,10 @@ export default function ProducaoAnalytics() {
       const result = await response.json()
       setContractDetails(result)
       console.log('Todos os contratos recebidos:', result)
+      logApiCall(url, 'SUCCESS')
     } catch (error) {
       console.error('Erro ao buscar todos os contratos:', error)
+      logApiCall(url, 'ERROR')
       setContractDetails([])
       alert('Erro ao carregar contratos: ' + error.message)
     } finally {

@@ -1,5 +1,7 @@
 // Configuração da API para PostgreSQL - Faturas de Cartão
-const FATURAS_API_BASE_URL = `${import.meta.env.VITE_EXTRATO_API_URL}/api`; // Usando variável de ambiente
+import { getApiUrl } from '@/lib/api-config';
+
+const FATURAS_API_BASE_URL = `${getApiUrl(3003, 'VITE_EXTRATO_API_URL')}/api`; // Usando configuração dinâmica
 
 export interface FaturaData {
   account_id: string;

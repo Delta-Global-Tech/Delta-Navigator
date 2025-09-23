@@ -1,5 +1,7 @@
 // Configuração da API backend
-const API_BASE_URL = `${import.meta.env.VITE_API_SQLSERVER_URL}/api`;
+import { getApiUrl } from '@/lib/api-config';
+
+const API_BASE_URL = `${getApiUrl(3001, 'VITE_API_SQLSERVER_URL')}/api`;
 
 interface PaginationParams {
   page?: number;
