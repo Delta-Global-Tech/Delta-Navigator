@@ -16,6 +16,7 @@ import Statement from './pages/Statement';
 import Faturas from './pages/Faturas';
 import NotFound from "./pages/NotFound";
 import ExtratoRanking from "./pages/ExtratoRanking";
+import NetworkTest from "./pages/NetworkTest";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +35,7 @@ function AppContent() {
             <Route path="/extrato" element={<Statement />} />
             <Route path="/extrato-ranking" element={<ExtratoRanking />} />
             <Route path="/faturas" element={<Faturas />} />
+            <Route path="/network-test" element={<NetworkTest />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Layout>

@@ -12,6 +12,7 @@ import { FileText, Users, DollarSign, TrendingUp, TrendingDown, Calendar, Filter
 import * as XLSX from 'xlsx';
 import { useAutoRefresh } from '@/hooks/useAutoRefresh';
 import { useSync } from '@/providers/sync-provider';
+import { getApiEndpoint, logApiCall } from '@/lib/api-config';
 
 interface PropostaData {
   cliente: string;
@@ -201,9 +202,13 @@ const Propostas = () => {
       if (dataInicio) params.append('data_inicio', dataInicio);
       if (dataFim) params.append('data_fim', dataFim);
       
-  const response = await fetch(`http://${window.location.hostname}:3002/api/propostas/data?${params}`);
+      const url = getApiEndpoint('POSTGRES', `/api/propostas/data?${params}`);
+      logApiCall(url, 'REQUEST');
+      const response = await fetch(url);
       if (!response.ok) throw new Error('Erro ao buscar propostas');
-      return response.json();
+      const result = await response.json();
+      logApiCall(url, 'SUCCESS');
+      return result;
     },
     staleTime: 5 * 60 * 1000, // 5 minutos
   });
@@ -217,9 +222,13 @@ const Propostas = () => {
       if (dataInicio) params.append('data_inicio', dataInicio);
       if (dataFim) params.append('data_fim', dataFim);
       
-  const response = await fetch(`http://${window.location.hostname}:3002/api/propostas/kpis?${params}`);
+      const url = getApiEndpoint('POSTGRES', `/api/propostas/kpis?${params}`);
+      logApiCall(url, 'REQUEST');
+      const response = await fetch(url);
       if (!response.ok) throw new Error('Erro ao buscar KPIs');
-      return response.json();
+      const result = await response.json();
+      logApiCall(url, 'SUCCESS');
+      return result;
     },
     staleTime: 5 * 60 * 1000, // 5 minutos
   });
@@ -228,9 +237,13 @@ const Propostas = () => {
   const { data: statusList, refetch: refetchStatus } = useQuery({
     queryKey: ['propostas-status'],
     queryFn: async () => {
-  const response = await fetch(`http://${window.location.hostname}:3002/api/propostas/status`);
+      const url = getApiEndpoint('POSTGRES', '/api/propostas/status');
+      logApiCall(url, 'REQUEST');
+      const response = await fetch(url);
       if (!response.ok) throw new Error('Erro ao buscar status');
-      return response.json();
+      const result = await response.json();
+      logApiCall(url, 'SUCCESS');
+      return result;
     },
   });
 
@@ -243,11 +256,13 @@ const Propostas = () => {
       if (dataInicio) params.append('data_inicio', dataInicio);
       if (dataFim) params.append('data_fim', dataFim);
       
-  const response = await fetch(`http://${window.location.hostname}:3002/api/propostas/evolucao-diaria?${params}`);
+      const url = getApiEndpoint('POSTGRES', `/api/propostas/evolucao-diaria?${params}`);
+      logApiCall(url, 'REQUEST');
+      const response = await fetch(url);
       if (!response.ok) throw new Error('Erro ao buscar evolução');
-      
-      const data = await response.json();
-      return data;
+      const result = await response.json();
+      logApiCall(url, 'SUCCESS');
+      return result;
     },
     staleTime: 5 * 60 * 1000, // 5 minutos
   });

@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { TrendingUp, Users, DollarSign, Target, Crown, Filter, Search } from 'lucide-react';
+import { getApiEndpoint, logApiCall } from '@/lib/api-config';
 
 // Função para buscar ranking dos clientes
 async function fetchRankingClientes(nome?: string, dataInicio?: string, dataFim?: string) {
@@ -17,11 +18,17 @@ async function fetchRankingClientes(nome?: string, dataInicio?: string, dataFim?
   if (dataFim) params.append('dataFim', dataFim);
   
   const queryString = params.toString();
-  const url = `${import.meta.env.VITE_EXTRATO_API_URL}/api/statement/ranking${queryString ? `?${queryString}` : ''}`;
+  const url = getApiEndpoint('EXTRATO', `/api/statement/ranking${queryString ? `?${queryString}` : ''}`);
   
+  logApiCall(url, 'REQUEST');
   const res = await fetch(url);
-  if (!res.ok) throw new Error('Erro ao buscar ranking');
-  return res.json();
+  if (!res.ok) {
+    logApiCall(url, 'ERROR');
+    throw new Error('Erro ao buscar ranking');
+  }
+  const result = await res.json();
+  logApiCall(url, 'SUCCESS');
+  return result;
 }
 
 export default function ExtratoRanking() {

@@ -1,27 +1,39 @@
 // Configuração dinâmica de URLs das APIs para funcionar em rede
 export const getApiUrl = (port: string | number, envVarName?: string) => {
-  // Primeiro, tenta usar a variável de ambiente se fornecida
-  if (envVarName && import.meta.env[envVarName]) {
-    const envUrl = import.meta.env[envVarName];
-    // Se a URL do .env já contém o hostname correto para o contexto atual, usa ela
-    if (typeof window !== 'undefined' && envUrl.includes(window.location.hostname)) {
-      return envUrl;
-    }
-    // Se contém localhost e estamos no browser, substitui pelo hostname atual
-    if (typeof window !== 'undefined' && envUrl.includes('localhost')) {
-      return envUrl.replace('localhost', window.location.hostname);
-    }
-    // Senão, usa a URL do .env como está
-    return envUrl;
-  }
-  
   // Se estiver no browser, usa o hostname atual
   if (typeof window !== 'undefined') {
-    return `http://${window.location.hostname}:${port}`;
+    const currentHostname = window.location.hostname;
+    console.log(`[API-CONFIG] Current hostname: ${currentHostname}, Port: ${port}`);
+    
+    // Se a variável de ambiente existe
+    if (envVarName && import.meta.env[envVarName]) {
+      const envUrl = import.meta.env[envVarName];
+      console.log(`[API-CONFIG] Env var ${envVarName}: ${envUrl}`);
+      
+      // Se a URL do .env contém localhost, substitui pelo hostname atual
+      if (envUrl.includes('localhost')) {
+        const dynamicUrl = envUrl.replace('localhost', currentHostname);
+        console.log(`[API-CONFIG] Dynamic URL: ${dynamicUrl}`);
+        return dynamicUrl;
+      }
+      
+      // Se já contém o hostname correto, usa como está
+      if (envUrl.includes(currentHostname)) {
+        console.log(`[API-CONFIG] Using env URL as is: ${envUrl}`);
+        return envUrl;
+      }
+    }
+    
+    // Construir URL dinamicamente
+    const dynamicUrl = `http://${currentHostname}:${port}`;
+    console.log(`[API-CONFIG] Constructed dynamic URL: ${dynamicUrl}`);
+    return dynamicUrl;
   }
   
   // Fallback para localhost (usado em SSR/build)
-  return `http://localhost:${port}`;
+  const fallbackUrl = `http://localhost:${port}`;
+  console.log(`[API-CONFIG] Using fallback URL: ${fallbackUrl}`);
+  return fallbackUrl;
 };
 
 // URLs das APIs com fallback inteligente
@@ -30,6 +42,9 @@ export const API_URLS = {
   POSTGRES: getApiUrl(3002, 'VITE_API_POSTGRES_URL'), 
   EXTRATO: getApiUrl(3003, 'VITE_EXTRATO_API_URL'),
 } as const;
+
+// Log das URLs geradas para debug
+console.log('[API-CONFIG] URLs geradas:', API_URLS);
 
 // Função para obter URL da API com path
 export const getApiEndpoint = (apiType: keyof typeof API_URLS, path: string) => {

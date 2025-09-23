@@ -19,7 +19,15 @@ const dbConfig = {
 const pool = new Pool(dbConfig);
 
 // Middlewares
-app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
+app.use(cors({ 
+  origin: [
+    'http://localhost:3000',
+    /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+    /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+    /^http:\/\/172\.(1[6-9]|2[0-9]|3[0-1])\.\d+\.\d+:3000$/
+  ], 
+  credentials: true 
+}));
 app.use(express.json());
 // Ranking de clientes por saldo
 app.get('/api/statement/ranking', async (req, res) => {
