@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { TrendingUp, Users, DollarSign, Target, Crown, Filter, Search, ChevronUp, ChevronDown } from 'lucide-react';
 import { getApiEndpoint, logApiCall } from '@/lib/api-config';
+import { useSync } from '@/providers/sync-provider';
 
 // Função para buscar ranking dos clientes
 async function fetchRankingClientes(nome?: string, dataInicio?: string, dataFim?: string) {
@@ -32,6 +33,8 @@ async function fetchRankingClientes(nome?: string, dataInicio?: string, dataFim?
 }
 
 export default function ExtratoRanking() {
+  const { updateSync, setRefreshing } = useSync();
+  
   // Função para agrupar saldos em faixas
   function getFaixasSaldos(clientes: any[]) {
     const faixas = [
@@ -49,8 +52,7 @@ export default function ExtratoRanking() {
     });
     return result.filter(f => f.total > 0);
   }
-  // ...existing code...
-  // ...existing code...
+  
   const [filtroNome, setFiltroNome] = useState('');
   const [filtroDataInicio, setFiltroDataInicio] = useState('');
   const [filtroDataFim, setFiltroDataFim] = useState('');
@@ -58,12 +60,30 @@ export default function ExtratoRanking() {
   
   const [activeFilters, setActiveFilters] = useState({ nome: '', dataInicio: '', dataFim: '' });
   
-  const { data, isLoading, error, refetch } = useQuery({
+  const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['extratoRanking', activeFilters.nome, activeFilters.dataInicio, activeFilters.dataFim],
     queryFn: () => fetchRankingClientes(activeFilters.nome, activeFilters.dataInicio, activeFilters.dataFim),
-    staleTime: 5 * 60 * 1000,
-    enabled: true, // Sempre habilitado, mas só muda quando activeFilters mudar
+    refetchInterval: 30000, // Atualiza a cada 30 segundos
+    refetchIntervalInBackground: true, // Continua atualizando mesmo quando a aba não está ativa
+    staleTime: 0, // Considera os dados sempre obsoletos para garantir atualizações
+    enabled: true,
   });
+
+  // Atualizar sync quando dados chegarem
+  useEffect(() => {
+    if (data) {
+      const now = new Date();
+      const timestamp = now.toLocaleTimeString('pt-BR');
+      console.log('[RANKING] Atualizando sync para:', timestamp);
+      updateSync(timestamp);
+    }
+  }, [data, updateSync]);
+
+  // Atualizar estado de refreshing
+  useEffect(() => {
+    setRefreshing(isFetching);
+  }, [isFetching, setRefreshing]);
+
   // Calcular faixas de saldo após data estar disponível
   const faixasSaldos = getFaixasSaldos(data?.clientes || []);
 
@@ -107,6 +127,9 @@ export default function ExtratoRanking() {
           <h1 className="text-3xl font-bold text-white flex items-center gap-3">
             <Crown className="h-8 w-8 text-yellow-500" />
             Ranking de Clientes por Saldo
+            {isFetching && (
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-yellow-500"></div>
+            )}
           </h1>
           <p className="text-slate-400 mt-2">
             {activeFilters.dataInicio || activeFilters.dataFim
@@ -130,6 +153,7 @@ export default function ExtratoRanking() {
             <Users className="h-3 w-3 mr-1" />
             {data?.clientes?.length || 0} clientes
           </Badge>
+
         </div>
       </div>
 

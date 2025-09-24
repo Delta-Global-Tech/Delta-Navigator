@@ -18,6 +18,7 @@ export function SyncProvider({ children }: SyncProviderProps) {
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false)
 
   const updateSync = (timestamp: string) => {
+    console.log('[SYNC PROVIDER] Recebendo timestamp:', timestamp);
     setLastSync(timestamp)
   }
 

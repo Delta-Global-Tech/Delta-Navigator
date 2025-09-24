@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -10,14 +10,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell } from 'recharts';
 import { CreditCard, AlertTriangle, CheckCircle, Clock, DollarSign, Users, Calendar, Search, Filter, Download, TrendingUp, TrendingDown } from 'lucide-react';
 import { getFaturasData, FaturaData, FaturasSummary } from '@/data/faturasApi';
-import { useAutoRefresh } from '@/hooks/useAutoRefresh';
 import { useSync } from '@/providers/sync-provider';
 
 const Faturas = () => {
   const { updateSync, setRefreshing } = useSync()
-  
-  // Ref para armazenar dados anteriores para comparação
-  const previousDataRef = useRef<any>(null)
   
   // Estados para filtros (inputs não aplicados)
   const [inputPersonalDocument, setInputPersonalDocument] = useState('');
@@ -54,48 +50,28 @@ const Faturas = () => {
   };
 
   // Query para buscar dados das faturas
-  const { data: faturasResponse, isLoading, error, refetch } = useQuery({
+  const { data: faturasResponse, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['faturas', personalDocument, status],
     queryFn: () => getFaturasData(personalDocument, status),
-    staleTime: 5 * 60 * 1000, // 5 minutos
+    refetchInterval: 30000, // Atualiza a cada 30 segundos
+    refetchIntervalInBackground: true, // Continua atualizando mesmo quando a aba não está ativa
+    staleTime: 0, // Considera os dados sempre obsoletos para garantir atualizações
   });
 
-  // Função para atualizar dados
-  const refreshData = async () => {
-    setRefreshing(true)
-    try {
-      const result = await refetch()
-      const newData = result.data
-      
-      // Comparar com dados anteriores
-      const hasNewData = !previousDataRef.current || 
-        JSON.stringify(previousDataRef.current) !== JSON.stringify(newData)
-      
-      if (hasNewData) {
-        previousDataRef.current = newData
-        const now = new Date()
-        updateSync(now.toLocaleTimeString('pt-BR', {
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit'
-        }))
-      }
-      
-      return { hasNewData }
-    } catch (error) {
-      console.error('Erro ao atualizar dados de faturas:', error)
-      return { hasNewData: false }
-    } finally {
-      setRefreshing(false)
+  // Atualizar sync quando dados chegarem
+  useEffect(() => {
+    if (faturasResponse) {
+      const now = new Date();
+      const timestamp = now.toLocaleTimeString('pt-BR');
+      console.log('[FATURAS] Atualizando sync para:', timestamp);
+      updateSync(timestamp);
     }
-  }
+  }, [faturasResponse, updateSync]);
 
-  // Auto-refresh configurado para 30 segundos
-  useAutoRefresh({
-    onRefresh: refreshData,
-    interval: 30000, // 30 segundos
-    enabled: true
-  })
+  // Atualizar estado de refreshing
+  useEffect(() => {
+    setRefreshing(isFetching);
+  }, [isFetching, setRefreshing]);
 
   const faturasData = faturasResponse?.data || [];
   const faturasSummary = faturasResponse?.summary || {
@@ -206,7 +182,18 @@ const Faturas = () => {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <h1 className="text-3xl font-bold">Faturas de Cartão de Crédito</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold flex items-center gap-3">
+          <CreditCard className="h-8 w-8 text-blue-600" />
+          Faturas de Cartão de Crédito
+          {isFetching && (
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+          )}
+        </h1>
+        <div className="flex items-center gap-2">
+
+        </div>
+      </div>
       
       {/* Filtros */}
       <Card>

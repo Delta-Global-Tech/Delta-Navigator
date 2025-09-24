@@ -98,11 +98,13 @@ export default function ProducaoAnalytics() {
       
       // Atualizar indicador de sincronização
       const now = new Date()
-      updateSync(now.toLocaleTimeString('pt-BR', {
+      const timestamp = now.toLocaleTimeString('pt-BR', {
         hour: '2-digit',
         minute: '2-digit',
         second: '2-digit'
-      }))
+      })
+      console.log('[ProducaoAnalytics] Dados atualizados:', timestamp);
+      updateSync(timestamp)
       
       return { hasNewData: true } // Sempre retorna hasNewData: true
     } catch (error) {

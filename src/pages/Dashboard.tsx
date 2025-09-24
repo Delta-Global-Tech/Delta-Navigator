@@ -34,11 +34,14 @@ export default function Dashboard() {
   const previousDataRef = useRef<any>(null)
 
   // Carregar dados do Supabase
-  const { data: kpis, isLoading: kpisLoading, refetch: refetchKpis } = useExecutiveKPIs()
-  const { data: volumeData, isLoading: volumeLoading, refetch: refetchVolume } = useVolumeData()
-  const { data: funnelData = [], isLoading: funnelLoading, refetch: refetchFunnel } = useFunnelData()
-  const { data: abcData = [], isLoading: abcLoading, refetch: refetchAbc } = useABCRevenue()
-  const { data: docData = [], isLoading: docLoading, refetch: refetchDoc } = useDocumentPerformance()
+  const { data: kpis, isLoading: kpisLoading, refetch: refetchKpis, isFetching: isFetchingKpis } = useExecutiveKPIs()
+  const { data: volumeData, isLoading: volumeLoading, refetch: refetchVolume, isFetching: isFetchingVolume } = useVolumeData()
+  const { data: funnelData = [], isLoading: funnelLoading, refetch: refetchFunnel, isFetching: isFetchingFunnel } = useFunnelData()
+  const { data: abcData = [], isLoading: abcLoading, refetch: refetchAbc, isFetching: isFetchingAbc } = useABCRevenue()
+  const { data: docData = [], isLoading: docLoading, refetch: refetchDoc, isFetching: isFetchingDoc } = useDocumentPerformance()
+
+  // Flag para saber se alguma query está fazendo fetch
+  const isAnyFetching = isFetchingKpis || isFetchingVolume || isFetchingFunnel || isFetchingAbc || isFetchingDoc
 
   // Função para atualizar todos os dados
   const refreshAllData = async () => {
@@ -116,6 +119,9 @@ export default function Dashboard() {
           <h1 className="section-title">
             <LayoutDashboard className="h-6 w-6 text-primary" />
             Visão Geral Executiva
+            {isAnyFetching && (
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary ml-3"></div>
+            )}
           </h1>
           <p className="section-subtitle">
             Dashboard empresarial com métricas de produção e conversão
@@ -126,10 +132,7 @@ export default function Dashboard() {
             <CheckCircle className="h-3 w-3 mr-1" />
             Sistema Online
           </Badge>
-          <Badge variant="outline" className="border-warning/20 text-warning">
-            <Clock className="h-3 w-3 mr-1" />
-            Sem Dados
-          </Badge>
+
         </div>
       </div>
 

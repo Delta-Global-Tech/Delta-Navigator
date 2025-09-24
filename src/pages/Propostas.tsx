@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,7 +10,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import { FileText, Users, DollarSign, TrendingUp, TrendingDown, Calendar, Filter, BarChart3, RotateCcw, FileSpreadsheet, Search } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { useAutoRefresh } from '@/hooks/useAutoRefresh';
 import { useSync } from '@/providers/sync-provider';
 import { getApiEndpoint, logApiCall } from '@/lib/api-config';
 
@@ -53,8 +52,8 @@ interface KPIData {
 const Propostas = () => {
   const { updateSync, setRefreshing } = useSync()
   
-  // Ref para armazenar dados anteriores para comparação
-  const previousDataRef = useRef<any>(null)
+  // Debug: verificar se hooks estão funcionando
+  console.log('[PROPOSTAS DEBUG] Component mounted, updateSync:', typeof updateSync);
   
   // Estados para valores dos inputs (não aplicados ainda)
   const [inputStatus, setInputStatus] = useState('todos');
@@ -194,7 +193,7 @@ const Propostas = () => {
   };
 
   // Buscar dados das propostas
-  const { data: propostas, isLoading: loadingPropostas, error: errorPropostas, refetch: refetchPropostas } = useQuery({
+  const { data: propostas, isLoading: loadingPropostas, error: errorPropostas, refetch: refetchPropostas, isFetching: isFetchingPropostas } = useQuery({
     queryKey: ['propostas', status, dataInicio, dataFim],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -210,11 +209,13 @@ const Propostas = () => {
       logApiCall(url, 'SUCCESS');
       return result;
     },
-    staleTime: 5 * 60 * 1000, // 5 minutos
+    staleTime: 0,
+    refetchInterval: 30000,
+    refetchIntervalInBackground: true,
   });
 
   // Buscar KPIs
-  const { data: kpis, isLoading: loadingKPIs, refetch: refetchKpis } = useQuery({
+  const { data: kpis, isLoading: loadingKPIs, refetch: refetchKpis, isFetching: isFetchingKpis } = useQuery({
     queryKey: ['propostas-kpis', status, dataInicio, dataFim],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -230,7 +231,9 @@ const Propostas = () => {
       logApiCall(url, 'SUCCESS');
       return result;
     },
-    staleTime: 5 * 60 * 1000, // 5 minutos
+    staleTime: 0,
+    refetchInterval: 30000,
+    refetchIntervalInBackground: true,
   });
 
   // Buscar status disponíveis
@@ -245,10 +248,13 @@ const Propostas = () => {
       logApiCall(url, 'SUCCESS');
       return result;
     },
+    staleTime: 0,
+    refetchInterval: 30000,
+    refetchIntervalInBackground: true,
   });
 
   // Buscar evolução diária
-  const { data: evolucao, isLoading: loadingEvolucao, refetch: refetchEvolucao } = useQuery({
+  const { data: evolucao, isLoading: loadingEvolucao, refetch: refetchEvolucao, isFetching: isFetchingEvolucao } = useQuery({
     queryKey: ['propostas-evolucao', status, dataInicio, dataFim],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -264,57 +270,25 @@ const Propostas = () => {
       logApiCall(url, 'SUCCESS');
       return result;
     },
-    staleTime: 5 * 60 * 1000, // 5 minutos
+    staleTime: 0,
+    refetchInterval: 30000,
+    refetchIntervalInBackground: true,
   });
 
-  // Função para atualizar todos os dados
-  const refreshAllData = async () => {
-    setRefreshing(true)
-    try {
-      const results = await Promise.all([
-        refetchPropostas(),
-        refetchKpis(),
-        refetchStatus(),
-        refetchEvolucao()
-      ])
-      
-      // Combinar todos os dados para comparação
-      const newData = {
-        propostas: results[0].data,
-        kpis: results[1].data,
-        status: results[2].data,
-        evolucao: results[3].data
-      }
-      
-      // Comparar com dados anteriores
-      const hasNewData = !previousDataRef.current || 
-        JSON.stringify(previousDataRef.current) !== JSON.stringify(newData)
-      
-      if (hasNewData) {
-        previousDataRef.current = newData
-        const now = new Date()
-        updateSync(now.toLocaleTimeString('pt-BR', {
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit'
-        }))
-      }
-      
-      return { hasNewData }
-    } catch (error) {
-      console.error('Erro ao atualizar dados de propostas:', error)
-      return { hasNewData: false }
-    } finally {
-      setRefreshing(false)
+  // Atualizar sync quando dados chegarem - padrão igual ao ExtratoRanking
+  useEffect(() => {
+    if (propostas || kpis || evolucao) {
+      const now = new Date();
+      const timestamp = now.toLocaleTimeString('pt-BR');
+      console.log('[PROPOSTAS] Atualizando sync para:', timestamp);
+      updateSync(timestamp);
     }
-  }
+  }, [propostas, kpis, evolucao, updateSync]);
 
-  // Auto-refresh configurado para 30 segundos
-  useAutoRefresh({
-    onRefresh: refreshAllData,
-    interval: 30000, // 30 segundos
-    enabled: true
-  })
+  // Atualizar estado de refreshing
+  useEffect(() => {
+    setRefreshing(isFetchingPropostas || isFetchingKpis || isFetchingEvolucao);
+  }, [isFetchingPropostas, isFetchingKpis, isFetchingEvolucao, setRefreshing]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {

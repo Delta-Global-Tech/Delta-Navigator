@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { 
   LayoutDashboard, 
   UserPlus, 
@@ -142,38 +142,6 @@ function NavSection({ title, items }: NavSectionProps) {
 }
 
 export function Sidebar() {
-  const [ultimaSyncExtrato, setUltimaSyncExtrato] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      const raw = localStorage.getItem('ultimaSyncExtrato') || '-';
-      return raw.split(' ')[0];
-    }
-    return '-';
-  });
-
-  useEffect(() => {
-    function handleStorage(e: StorageEvent) {
-      if (e.key === 'ultimaSyncExtrato') {
-        const value = e.newValue || '-';
-        setUltimaSyncExtrato(value.split(' ')[0]);
-      }
-    }
-    function handleCustomSync() {
-      const value = localStorage.getItem('ultimaSyncExtrato') || '-';
-      setUltimaSyncExtrato(value.split(' ')[0]);
-    }
-    window.addEventListener('storage', handleStorage);
-    window.addEventListener('ultimaSyncExtratoUpdate', handleCustomSync);
-    // Fallback: atualiza a cada 30s
-    const interval = setInterval(() => {
-      const value = localStorage.getItem('ultimaSyncExtrato') || '-';
-      setUltimaSyncExtrato(value.split(' ')[0]);
-    }, 30000);
-    return () => {
-      window.removeEventListener('storage', handleStorage);
-      window.removeEventListener('ultimaSyncExtratoUpdate', handleCustomSync);
-      clearInterval(interval);
-    };
-  }, []);
   return (
     <aside className="fixed left-0 top-0 z-50 w-64 h-screen bg-sidebar-background border-r border-sidebar-border flex flex-col">
       {/* Sidebar Header */}
@@ -195,16 +163,7 @@ export function Sidebar() {
         <NavSection title="Delta Global Bank" items={analysisNavItems} />
       </div>
 
-      {/* Sidebar Footer */}
-          <div className="p-4 border-t border-sidebar-border">
-            <div className="flex items-center gap-2 p-3 bg-accent/30 rounded-lg">
-              <AlertCircle className="h-4 w-4 text-warning" />
-              <div className="flex-1">
-                <p className="text-xs font-medium text-foreground">Sistema Online</p>
-                <p className="text-xs text-muted-foreground">Última sync: {ultimaSyncExtrato}</p>
-              </div>
-            </div>
-          </div>
+
     </aside>
   )
 }

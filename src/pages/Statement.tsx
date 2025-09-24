@@ -11,9 +11,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useExport } from '@/hooks/useExport';
+import { useSync } from '@/providers/sync-provider';
 
 export default function Statement() {
-  // Estado para controle da última sincronização
+  const { updateSync, setRefreshing } = useSync();
+  
+  // Estado para controle da última sincronização (mantido para compatibilidade)
   const [lastSync, setLastSync] = useState<string>('');
   // Estados para valores dos inputs (não aplicados ainda)
   const [inputStartDate, setInputStartDate] = useState('');
@@ -50,57 +53,36 @@ export default function Statement() {
   const { exportToPDF, exportToExcel } = useExport();
 
   // Query para buscar dados do extrato
-  const { data: statementResponse, isLoading, error, refetch } = useQuery({
+  const { data: statementResponse, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['statement', startDate, endDate, personalDocument],
     queryFn: () => getStatementData(
       startDate || undefined,
       endDate || undefined, 
       personalDocument || undefined
     ),
-    staleTime: 5 * 60 * 1000, // 5 minutos
     refetchInterval: 30000, // Atualiza a cada 30 segundos
+    refetchIntervalInBackground: true, // Continua atualizando mesmo quando a aba não está ativa
+    staleTime: 0, // Considera os dados sempre obsoletos para garantir atualizações
   });
 
-  // Fallback: força o refetch manualmente a cada 30s com atualização sempre do sync
-  useEffect(() => {
-    const interval = setInterval(() => {
-      refetch().then(() => {
-        // Sempre atualiza o sync independente dos dados
-        const now = new Date();
-        const syncTime = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-        setLastSync(syncTime);
-        if (typeof window !== 'undefined') {
-          const syncValue = `${syncTime} (${Date.now()})`;
-          (window as any).__LAST_SYNC_EXTRATO__ = syncValue;
-          localStorage.setItem('ultimaSyncExtrato', syncValue);
-          console.log('[SYNC] ultimaSyncExtrato atualizado:', syncValue);
-          // Dispara evento customizado para atualizar Sidebar imediatamente
-          window.dispatchEvent(new Event('ultimaSyncExtratoUpdate'));
-        }
-      });
-    }, 30000);
-    return () => clearInterval(interval);
-  }, [refetch]);
-
-  const statementData = statementResponse?.data || [];
-  // Atualiza o lastSync sempre que os dados mudarem
+  // Atualizar sync quando dados chegarem
   useEffect(() => {
     if (statementResponse) {
       const now = new Date();
-      const syncTime = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-      setLastSync(syncTime);
-      if (typeof window !== 'undefined') {
-        const syncValue = `${syncTime} (${Date.now()})`;
-        (window as any).__LAST_SYNC_EXTRATO__ = syncValue;
-        localStorage.setItem('ultimaSyncExtrato', syncValue);
-        console.log('[SYNC] ultimaSyncExtrato atualizado:', syncValue);
-        // Dispara evento customizado para atualizar Sidebar imediatamente
-        window.dispatchEvent(new Event('ultimaSyncExtratoUpdate'));
-      }
+      const timestamp = now.toLocaleTimeString('pt-BR');
+      console.log('[STATEMENT] Atualizando sync para:', timestamp);
+      updateSync(timestamp);
+      setLastSync(timestamp); // Mantém compatibilidade local
     }
-  }, [statementResponse]);
-  // Exemplo de uso do lastSync:
-  // <div>Última sync: {lastSync}</div>
+  }, [statementResponse, updateSync]);
+
+  // Atualizar estado de refreshing
+  useEffect(() => {
+    setRefreshing(isFetching);
+  }, [isFetching, setRefreshing]);
+
+  const statementData = statementResponse?.data || [];
+  
   const statementSummary = statementResponse?.summary || {
     totalCredits: 0,
     totalDebits: 0,
@@ -304,7 +286,15 @@ export default function Statement() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <h1 className="text-3xl font-bold">Extrato Executivo</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold flex items-center gap-3">
+          Extrato Executivo
+          {isFetching && (
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+          )}
+        </h1>
+
+      </div>
       
       {/* Filtros */}
       <Card>

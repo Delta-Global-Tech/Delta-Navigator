@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useQuery } from "@tanstack/react-query"
 import { getFunilData, getFunilKPIs, getFunilDataByStep, getFunilStatus } from "@/data/postgres"
-import { useState, useMemo, useRef } from "react"
+import { useState, useMemo, useRef, useEffect } from "react"
 import * as XLSX from 'xlsx'
 import { useAutoRefresh } from "@/hooks/useAutoRefresh"
 import { useSync } from "@/providers/sync-provider"
@@ -27,7 +27,10 @@ export default function FunilPage() {
   // Buscar status disponíveis
   const { data: statusList = [], refetch: refetchStatus } = useQuery({
     queryKey: ['funil-status'],
-    queryFn: getFunilStatus
+    queryFn: getFunilStatus,
+    staleTime: 0,
+    refetchInterval: 30000,
+    refetchIntervalInBackground: true,
   })
 
   // Buscar dados do funil (geral ou por etapa)
@@ -42,7 +45,10 @@ export default function FunilPage() {
       } else {
         return getFunilData(produto, status)
       }
-    }
+    },
+    staleTime: 0,
+    refetchInterval: 30000,
+    refetchIntervalInBackground: true,
   })
 
   // Buscar KPIs do funil
@@ -52,8 +58,35 @@ export default function FunilPage() {
       const produto = selectedProduct === "todos" ? "" : selectedProduct
       const status = selectedStatus === "todos" ? "" : selectedStatus
       return getFunilKPIs(produto, status)
-    }
+    },
+    staleTime: 0,
+    refetchInterval: 30000,
+    refetchIntervalInBackground: true,
   })
+
+  // Atualizar sync quando dados mudarem
+  useEffect(() => {
+    if (funilData) {
+      const now = new Date();
+      const timestamp = now.toLocaleTimeString('pt-BR');
+      console.log('[Funil] Dados do funil atualizados:', timestamp);
+      updateSync(timestamp);
+    }
+  }, [funilData, updateSync]);
+
+  useEffect(() => {
+    if (kpisData) {
+      const now = new Date();
+      const timestamp = now.toLocaleTimeString('pt-BR');
+      console.log('[Funil] KPIs do funil atualizados:', timestamp);
+      updateSync(timestamp);
+    }
+  }, [kpisData, updateSync]);
+
+  // Atualizar estado de refreshing
+  useEffect(() => {
+    setRefreshing(funilLoading || kpisLoading);
+  }, [funilLoading, kpisLoading, setRefreshing]);
 
   // Função para atualizar todos os dados
   const refreshAllData = async () => {

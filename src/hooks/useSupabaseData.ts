@@ -13,7 +13,10 @@ export function useFunnelData() {
       
       if (error) throw error
       return data || []
-    }
+    },
+    refetchInterval: 30000, // Atualiza a cada 30 segundos
+    refetchIntervalInBackground: true,
+    staleTime: 0,
   })
 }
 
@@ -21,6 +24,9 @@ export function useFunnelData() {
 export function useExecutiveKPIs() {
   return useQuery({
     queryKey: ['executive-kpis'],
+    refetchInterval: 30000, // Atualiza a cada 30 segundos
+    refetchIntervalInBackground: true,
+    staleTime: 0,
     queryFn: async () => {
       // Total de registros
       const [totalNovo, totalCompra, filaNovo, filaCompra, pagaNovo, pagaCompra] = await Promise.all([
@@ -68,6 +74,9 @@ export function useExecutiveKPIs() {
 export function useVolumeData() {
   return useQuery({
     queryKey: ['volume-data'],
+    refetchInterval: 30000, // Atualiza a cada 30 segundos
+    refetchIntervalInBackground: true,
+    staleTime: 0,
     queryFn: async () => {
       const { data: totalData } = await supabase.from('vw_total_mensal').select('*')
       const { data: pagaData } = await supabase.from('vw_paga_mensal').select('*')
@@ -93,6 +102,9 @@ export function useVolumeData() {
 export function useABCRevenue() {
   return useQuery({
     queryKey: ['abc-revenue'],
+    refetchInterval: 30000, // Atualiza a cada 30 segundos
+    refetchIntervalInBackground: true,
+    staleTime: 0,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('vw_abc_receita')
@@ -109,6 +121,9 @@ export function useABCRevenue() {
 export function useDocumentPerformance() {
   return useQuery({
     queryKey: ['document-performance'],
+    refetchInterval: 30000, // Atualiza a cada 30 segundos
+    refetchIntervalInBackground: true,
+    staleTime: 0,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('vw_documento_performance')
