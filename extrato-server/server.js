@@ -18,6 +18,53 @@ const dbConfig = {
 
 const pool = new Pool(dbConfig);
 
+// Sistema de cache com TTL de 30 segundos
+const cache = new Map();
+const CACHE_TTL = 30000; // 30 segundos
+
+function getCacheKey(route, params) {
+  return `${route}:${JSON.stringify(params)}`;
+}
+
+function getFromCache(key) {
+  const cached = cache.get(key);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    console.log(`Cache HIT para ${key}`);
+    return cached.data;
+  }
+  cache.delete(key);
+  return null;
+}
+
+function setCache(key, data) {
+  cache.set(key, {
+    data,
+    timestamp: Date.now()
+  });
+  console.log(`Cache SET para ${key}`);
+  
+  // Limpar cache expirado periodicamente
+  setTimeout(() => {
+    if (cache.has(key)) {
+      const cached = cache.get(key);
+      if (Date.now() - cached.timestamp >= CACHE_TTL) {
+        cache.delete(key);
+        console.log(`Cache EXPIRED para ${key}`);
+      }
+    }
+  }, CACHE_TTL);
+}
+
+// Limpar cache expirado a cada minuto
+setInterval(() => {
+  for (const [key, value] of cache.entries()) {
+    if (Date.now() - value.timestamp >= CACHE_TTL) {
+      cache.delete(key);
+      console.log(`Cache CLEANUP para ${key}`);
+    }
+  }
+}, 60000);
+
 // Middlewares
 app.use(cors({ 
   origin: [
@@ -33,6 +80,17 @@ app.use(express.json());
 app.get('/api/statement/ranking', async (req, res) => {
   try {
     const { nome, dataInicio, dataFim } = req.query;
+    
+    // Gerar chave do cache
+    const cacheKey = getCacheKey('ranking', { nome, dataInicio, dataFim });
+    
+    // Verificar se existe no cache
+    const cachedData = getFromCache(cacheKey);
+    if (cachedData) {
+      console.log(`[CACHE HIT] Ranking cache hit: ${cacheKey}`);
+      return res.json(cachedData);
+    }
+    
     let query = `
       SELECT 
         da.personal_name AS nome,
@@ -99,7 +157,14 @@ app.get('/api/statement/ranking', async (req, res) => {
     
     query += ` ORDER BY saldo DESC LIMIT 100`;
     const result = await pool.query(query, params);
-    res.json({ clientes: result.rows });
+    
+    const response = { clientes: result.rows };
+    
+    // Armazenar no cache
+    setCache(cacheKey, response);
+    console.log(`[CACHE SET] Ranking cache set: ${cacheKey}`);
+    
+    res.json(response);
   } catch (error) {
     res.status(500).json({ error: 'Erro ao buscar ranking', details: error.message });
   }
@@ -233,6 +298,16 @@ app.get('/api/statement', async (req, res) => {
   try {
     const { dataInicio, dataFim, personalDocument } = req.query;
     
+    // Gerar chave do cache
+    const cacheKey = getCacheKey('statement', { dataInicio, dataFim, personalDocument });
+    
+    // Verificar se existe no cache
+    const cachedData = getFromCache(cacheKey);
+    if (cachedData) {
+      console.log(`[CACHE HIT] Statement cache hit: ${cacheKey}`);
+      return res.json(cachedData);
+    }
+    
     let query = `
       select 
         da.personal_name 
@@ -296,11 +371,17 @@ app.get('/api/statement', async (req, res) => {
     
     const result = await pool.query(query, params);
     
-    res.json({
+    const response = {
       success: true,
       data: result.rows,
       count: result.rowCount
-    });
+    };
+    
+    // Armazenar no cache
+    setCache(cacheKey, response);
+    console.log(`[CACHE SET] Statement cache set: ${cacheKey}`);
+    
+    res.json(response);
     
   } catch (error) {
     res.status(500).json({ 
@@ -314,6 +395,16 @@ app.get('/api/statement', async (req, res) => {
 app.get('/api/statement/summary', async (req, res) => {
   try {
     const { dataInicio, dataFim, personalDocument } = req.query;
+    
+    // Gerar chave do cache
+    const cacheKey = getCacheKey('summary', { dataInicio, dataFim, personalDocument });
+    
+    // Verificar se existe no cache
+    const cachedData = getFromCache(cacheKey);
+    if (cachedData) {
+      console.log(`[CACHE HIT] Summary cache hit: ${cacheKey}`);
+      return res.json(cachedData);
+    }
     
     let query = `
       select 
@@ -374,7 +465,7 @@ app.get('/api/statement/summary', async (req, res) => {
     const currentBalance = parseFloat(summary.current_balance) || 0;
     const previousBalance = currentBalance - netFlow;
     
-    res.json({
+    const response = {
       success: true,
       summary: {
         totalCredits,
@@ -388,7 +479,13 @@ app.get('/api/statement/summary', async (req, res) => {
           end: summary.end_date
         }
       }
-    });
+    };
+    
+    // Armazenar no cache
+    setCache(cacheKey, response);
+    console.log(`[CACHE SET] Summary cache set: ${cacheKey}`);
+    
+    res.json(response);
     
   } catch (error) {
     res.status(500).json({ 
@@ -403,6 +500,15 @@ app.get('/api/faturas', async (req, res) => {
   try {
     const { personalDocument, status } = req.query;
     
+    // Gerar chave do cache
+    const cacheKey = getCacheKey('faturas', { personalDocument, status });
+    
+    // Verificar se existe no cache
+    const cachedData = getFromCache(cacheKey);
+    if (cachedData) {
+      console.log(`[CACHE HIT] Faturas cache hit: ${cacheKey}`);
+      return res.json(cachedData);
+    }
     
     let query = `
       SELECT
@@ -467,15 +573,20 @@ app.get('/api/faturas', async (req, res) => {
       vencimento: row.vencimento ? row.vencimento : null
     }));
     
-    
-    res.json({
+    const response = {
       data: processedData,
       count: processedData.length,
       query: {
         personalDocument,
         status
       }
-    });
+    };
+    
+    // Armazenar no cache
+    setCache(cacheKey, response);
+    console.log(`[CACHE SET] Faturas cache set: ${cacheKey}`);
+    
+    res.json(response);
     
   } catch (error) {
     res.status(500).json({ 
