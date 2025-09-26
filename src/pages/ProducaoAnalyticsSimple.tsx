@@ -16,11 +16,11 @@ import { getApiEndpoint, logApiCall } from "@/lib/api-config"
 export default function ProducaoAnalytics() {
   const { updateSync, setRefreshing } = useSync()
   
-  // Estados básicos
-  const [startDate, setStartDate] = useState('2025-01-01')
-  const [endDate, setEndDate] = useState('2025-09-22')
+  // Estados básicos - inicializar com strings vazias para não ter datas fixas
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
   const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(true) // Começa como true para mostrar loading inicial
+  const [loading, setLoading] = useState(false) // Não carrega dados automaticamente
   const [selectedStatus, setSelectedStatus] = useState(null) // Novo estado para status selecionado
   const [contractDetails, setContractDetails] = useState([]) // Novo estado para detalhes dos contratos (array vazio por padrão)
   const [loadingDetails, setLoadingDetails] = useState(false) // Loading para detalhes dos contratos
@@ -118,11 +118,12 @@ export default function ProducaoAnalytics() {
     }
   }
 
-  // Auto-refresh configurado para 30 segundos
+  // Auto-refresh configurado para 30 segundos - só ativa após primeiro filtro
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false)
   const { executeRefresh } = useAutoRefresh({
-    onRefresh: fetchData,
+    onRefresh: () => fetchData(startDate, endDate), // Passa as datas atuais
     interval: 30000, // 30 segundos
-    enabled: true
+    enabled: autoRefreshEnabled
   })
 
   // Carregar dados automaticamente quando o componente montar
@@ -130,12 +131,8 @@ export default function ProducaoAnalytics() {
     loadFiltersData()
   }, []) // Array vazio para executar apenas uma vez
 
-  // Recarregar dados quando filtros de banco ou equipe mudarem
-  useEffect(() => {
-    if (bancos.length > 0 || equipes.length > 0) { // Só recarrega se os filtros já foram carregados
-      executeRefresh()
-    }
-  }, [selectedBanco, selectedEquipe]) // Dependências dos filtros
+  // Removido o useEffect automático que recarregava dados quando filtros mudavam
+  // Agora os dados só são recarregados quando o usuário clica no botão "Filtrar Dados"
 
   // Função para carregar dados dos filtros (bancos e equipes)
   const loadFiltersData = async () => {
@@ -165,7 +162,8 @@ export default function ProducaoAnalytics() {
 
   // Função para refiltrar dados quando mudarem as datas ou filtros
   const handleFilterChange = () => {
-    executeRefresh()
+    setAutoRefreshEnabled(true) // Ativa auto-refresh após primeiro filtro
+    fetchData(startDate, endDate) // Busca dados com as datas atuais
     if (selectedStatus) {
       if (selectedStatus === 'ALL') {
         fetchAllContracts()
@@ -270,6 +268,19 @@ export default function ProducaoAnalytics() {
     setSelectedStatus(null)
     setContractDetails([])
     console.log('Filtro limpo')
+  }
+
+  // Função para limpar todos os filtros
+  const clearAllFilters = () => {
+    setStartDate('')
+    setEndDate('')
+    setSelectedBanco('')
+    setSelectedEquipe('')
+    setSelectedStatus(null)
+    setContractDetails([])
+    setData(null)
+    setAutoRefreshEnabled(false) // Desativa auto-refresh
+    console.log('Todos os filtros limpos')
   }
 
   // Função para exportar para Excel
@@ -471,7 +482,7 @@ export default function ProducaoAnalytics() {
             </div>
           </div>
           
-          <div className="mt-4">
+          <div className="mt-4 space-y-3">
             <Button 
               onClick={handleFilterChange}
               disabled={loading}
@@ -479,6 +490,19 @@ export default function ProducaoAnalytics() {
             >
               {loading ? 'Carregando...' : 'Filtrar Dados'}
             </Button>
+            
+            {/* Mostrar botão de limpar apenas quando há filtros aplicados */}
+            {(selectedBanco || 
+              selectedEquipe || 
+              startDate || 
+              endDate) && (
+              <Button
+                onClick={clearAllFilters}
+                className="w-full bg-gray-500 hover:bg-gray-600 text-white"
+              >
+                Limpar Filtros
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
