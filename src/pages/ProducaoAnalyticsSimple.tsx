@@ -131,6 +131,33 @@ export default function ProducaoAnalytics() {
     loadFiltersData()
   }, []) // Array vazio para executar apenas uma vez
 
+  // Carregar dados automaticamente na primeira vez com datas padrão
+  useEffect(() => {
+    const loadInitialData = async () => {
+      // Aguardar um pouco para os filtros carregarem primeiro
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      // Definir datas padrão: primeiro dia do mês atual até hoje
+      const today = new Date()
+      const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+      
+      const defaultStartDate = firstDayOfMonth.toISOString().split('T')[0]
+      const defaultEndDate = today.toISOString().split('T')[0]
+      
+      // Definir as datas nos estados
+      setStartDate(defaultStartDate)
+      setEndDate(defaultEndDate)
+      
+      // Carregar dados automaticamente
+      await fetchData(defaultStartDate, defaultEndDate)
+      
+      console.log('🚀 Dados carregados automaticamente na primeira entrada')
+      console.log('📅 Período padrão:', defaultStartDate, 'até', defaultEndDate)
+    }
+    
+    loadInitialData()
+  }, []) // Array vazio para executar apenas uma vez
+
   // Removido o useEffect automático que recarregava dados quando filtros mudavam
   // Agora os dados só são recarregados quando o usuário clica no botão "Filtrar Dados"
 
