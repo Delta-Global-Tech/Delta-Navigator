@@ -423,7 +423,8 @@ export default function ProducaoAnalytics() {
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="bg-background"
+                className="bg-background [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:brightness-0 [&::-webkit-calendar-picker-indicator]:invert"
+                style={{ colorScheme: 'dark' }}
               />
             </div>
             <div className="space-y-2">
@@ -432,7 +433,8 @@ export default function ProducaoAnalytics() {
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="bg-background"
+                className="bg-background [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:brightness-0 [&::-webkit-calendar-picker-indicator]:invert"
+                style={{ colorScheme: 'dark' }}
               />
             </div>
             <div className="space-y-2">

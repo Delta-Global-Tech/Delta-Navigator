@@ -401,7 +401,8 @@ export default function Statement() {
                 value={inputStartDate}
                 onChange={(e) => setInputStartDate(e.target.value)}
                 onKeyPress={handleKeyPress}
-                className="cursor-pointer"
+                className="cursor-pointer [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:brightness-0 [&::-webkit-calendar-picker-indicator]:invert"
+                style={{ colorScheme: 'dark' }}
               />
             </div>
             
@@ -413,7 +414,8 @@ export default function Statement() {
                 value={inputEndDate}
                 onChange={(e) => setInputEndDate(e.target.value)}
                 onKeyPress={handleKeyPress}
-                className="cursor-pointer"
+                className="cursor-pointer [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:brightness-0 [&::-webkit-calendar-picker-indicator]:invert"
+                style={{ colorScheme: 'dark' }}
               />
             </div>
             

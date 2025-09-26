@@ -174,7 +174,8 @@ export default function ExtratoRanking() {
                 type="date"
                 value={filtroDataInicio}
                 onChange={(e) => setFiltroDataInicio(e.target.value)}
-                className="cursor-pointer"
+                className="cursor-pointer [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:brightness-0 [&::-webkit-calendar-picker-indicator]:invert"
+                style={{ colorScheme: 'dark' }}
               />
             </div>
             
@@ -185,7 +186,8 @@ export default function ExtratoRanking() {
                 type="date"
                 value={filtroDataFim}
                 onChange={(e) => setFiltroDataFim(e.target.value)}
-                className="cursor-pointer"
+                className="cursor-pointer [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:brightness-0 [&::-webkit-calendar-picker-indicator]:invert"
+                style={{ colorScheme: 'dark' }}
               />
             </div>
             

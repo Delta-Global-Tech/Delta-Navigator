@@ -554,9 +554,9 @@ const Propostas = () => {
                 onChange={(e) => handleDataInicioChange(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="dd/mm/aaaa"
-                className="cursor-pointer [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:bg-white [&::-webkit-calendar-picker-indicator]:rounded [&::-webkit-calendar-picker-indicator]:border [&::-webkit-calendar-picker-indicator]:border-gray-300 [&::-webkit-calendar-picker-indicator]:p-1 [&::-webkit-calendar-picker-indicator]:mr-1"
+                className="cursor-pointer [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:brightness-0 [&::-webkit-calendar-picker-indicator]:invert"
                 style={{
-                  colorScheme: 'light'
+                  colorScheme: 'dark'
                 }}
               />
             </div>
@@ -570,9 +570,9 @@ const Propostas = () => {
                 onChange={(e) => handleDataFimChange(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="dd/mm/aaaa"
-                className="cursor-pointer [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:bg-white [&::-webkit-calendar-picker-indicator]:rounded [&::-webkit-calendar-picker-indicator]:border [&::-webkit-calendar-picker-indicator]:border-gray-300 [&::-webkit-calendar-picker-indicator]:p-1 [&::-webkit-calendar-picker-indicator]:mr-1"
+                className="cursor-pointer [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:brightness-0 [&::-webkit-calendar-picker-indicator]:invert"
                 style={{
-                  colorScheme: 'light'
+                  colorScheme: 'dark'
                 }}
               />
             </div>
