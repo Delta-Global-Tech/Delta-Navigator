@@ -22,12 +22,14 @@ export default function Statement() {
   const [inputStartDate, setInputStartDate] = useState('');
   const [inputEndDate, setInputEndDate] = useState('');
   const [inputPersonalDocument, setInputPersonalDocument] = useState('');
+  const [inputPersonalName, setInputPersonalName] = useState('');
   const [inputSearchTerm, setInputSearchTerm] = useState('');
   
   // Estados para valores aplicados nos filtros
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [personalDocument, setPersonalDocument] = useState('');
+  const [personalName, setPersonalName] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedChartDate, setSelectedChartDate] = useState<string>(''); // Data selecionada no gráfico
 
@@ -52,14 +54,28 @@ export default function Statement() {
   // Hook para exportação
   const { exportToPDF, exportToExcel } = useExport();
 
+  // Função para converter data do formato YYYY-MM-DD para DD/MM/YYYY
+  const formatDateForAPI = (dateString: string) => {
+    if (!dateString) return '';
+    const [year, month, day] = dateString.split('-');
+    return `${day}/${month}/${year}`;
+  };
+
   // Query para buscar dados do extrato
   const { data: statementResponse, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['statement', startDate, endDate, personalDocument],
-    queryFn: () => getStatementData(
-      startDate || undefined,
-      endDate || undefined, 
-      personalDocument || undefined
-    ),
+    queryFn: () => {
+      console.log('[STATEMENT] Fazendo requisição para API com:', {
+        startDate: formatDateForAPI(startDate) || undefined,
+        endDate: formatDateForAPI(endDate) || undefined,
+        personalDocument: personalDocument || undefined
+      });
+      return getStatementData(
+        formatDateForAPI(startDate) || undefined,
+        formatDateForAPI(endDate) || undefined, 
+        personalDocument || undefined
+      );
+    },
     refetchInterval: 30000, // Atualiza a cada 30 segundos
     refetchIntervalInBackground: true, // Continua atualizando mesmo quando a aba não está ativa
     staleTime: 0, // Considera os dados sempre obsoletos para garantir atualizações
@@ -71,6 +87,12 @@ export default function Statement() {
       const now = new Date();
       const timestamp = now.toLocaleTimeString('pt-BR');
       console.log('[STATEMENT] Atualizando sync para:', timestamp);
+      console.log('[STATEMENT] Dados recebidos:', {
+        totalTransactions: statementResponse.data.length,
+        summary: statementResponse.summary,
+        firstTransaction: statementResponse.data[0],
+        lastTransaction: statementResponse.data[statementResponse.data.length - 1]
+      });
       updateSync(timestamp);
       setLastSync(timestamp); // Mantém compatibilidade local
     }
@@ -166,9 +188,18 @@ export default function Statement() {
 
   // Função para aplicar os filtros quando o botão for clicado
   const handleApplyFilters = () => {
+    console.log('[STATEMENT] Aplicando filtros:', {
+      inputStartDate,
+      inputEndDate,
+      inputPersonalDocument,
+      formattedStartDate: formatDateForAPI(inputStartDate),
+      formattedEndDate: formatDateForAPI(inputEndDate)
+    });
+    
     setStartDate(inputStartDate);
     setEndDate(inputEndDate);
     setPersonalDocument(inputPersonalDocument);
+    setPersonalName(inputPersonalName);
     setSearchTerm(inputSearchTerm);
   };
 
@@ -181,17 +212,36 @@ export default function Statement() {
 
   // Filtro local por termo de busca e data do gráfico
   const filteredData = statementData.filter(item => {
-    // Filtro por texto
-    const matchesSearch = item.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    // Filtro por nome específico
+    const matchesName = personalName ? 
+      item.personal_name.toLowerCase().includes(personalName.toLowerCase()) : true;
+    
+    // Filtro por texto geral
+    const matchesSearch = searchTerm ? (
+      item.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.personal_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.beneficiario?.toLowerCase().includes(searchTerm.toLowerCase());
+      item.beneficiario?.toLowerCase().includes(searchTerm.toLowerCase())
+    ) : true;
     
     // Filtro por data selecionada no gráfico
     const matchesChartDate = selectedChartDate ? 
       item.transaction_date.startsWith(selectedChartDate) : true;
     
-    return matchesSearch && matchesChartDate;
+    return matchesName && matchesSearch && matchesChartDate;
   });
+
+  // Log para debug dos dados filtrados
+  React.useEffect(() => {
+    console.log('[STATEMENT] Dados após filtro local:', {
+      totalOriginal: statementData.length,
+      totalFiltrado: filteredData.length,
+      filtrosAtivos: {
+        personalName: personalName || 'nenhum',
+        searchTerm: searchTerm || 'nenhum',
+        selectedChartDate: selectedChartDate || 'nenhum'
+      }
+    });
+  }, [statementData.length, filteredData.length, personalName, searchTerm, selectedChartDate]);
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -305,7 +355,7 @@ export default function Statement() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="space-y-2">
               <Label htmlFor="data-inicio">Data Início</Label>
               <Input
@@ -327,6 +377,17 @@ export default function Statement() {
                 onChange={(e) => setInputEndDate(e.target.value)}
                 onKeyPress={handleKeyPress}
                 className="cursor-pointer"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="nome">Nome</Label>
+              <Input
+                id="nome"
+                placeholder="Digite o nome..."
+                value={inputPersonalName}
+                onChange={(e) => setInputPersonalName(e.target.value)}
+                onKeyPress={handleKeyPress}
               />
             </div>
             
@@ -586,6 +647,7 @@ export default function Statement() {
                   <TableHead>Beneficiário</TableHead>
                   <TableHead className="text-right">Valor</TableHead>
                   <TableHead>Data</TableHead>
+                  <TableHead className="text-right">Saldo Posterior</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -626,6 +688,9 @@ export default function Statement() {
                       </TableCell>
                       <TableCell className="text-xs">
                         {item.transaction_date}
+                      </TableCell>
+                      <TableCell className="text-right font-medium text-green-600">
+                        {formatCurrency(parseFloat(item.saldo_posterior))}
                       </TableCell>
                     </TableRow>
                   );

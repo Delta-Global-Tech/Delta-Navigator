@@ -43,11 +43,11 @@ export const getStatementData = async (
     const params = new URLSearchParams();
     
     if (startDate) {
-      params.append('startDate', startDate);
+      params.append('dataInicio', startDate);
     }
     
     if (endDate) {
-      params.append('endDate', endDate);
+      params.append('dataFim', endDate);
     }
     
     if (personalDocument) {
