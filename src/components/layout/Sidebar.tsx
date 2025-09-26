@@ -59,21 +59,18 @@ const analysisNavItems: NavItem[] = [
     url: "/extrato",
     icon: Receipt,
     description: "Extrato Clientes",
-    badge: "Novo"
   },
   {
     title: "Ranking Extrato",
     url: "/extrato-ranking",
     icon: TrendingUp,
     description: "Ranking por Saldo",
-    badge: "Novo"
   },
   {
     title: "Faturas",
     url: "/faturas",
     icon: CreditCard,
     description: "Faturas Cartão",
-    badge: "Novo"
   }
 ];
 
