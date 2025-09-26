@@ -233,6 +233,51 @@ export default function Statement() {
     return matchesName && matchesSearch && matchesChartDate;
   });
 
+  // Calcular KPIs baseados nos dados filtrados localmente
+  const filteredSummary = React.useMemo(() => {
+    const credits = filteredData.filter(item => item.type === 'credit');
+    const debits = filteredData.filter(item => item.type === 'debit');
+    
+    const totalCredits = credits.reduce((sum, item) => sum + Math.abs(parseFloat(item.amount)), 0);
+    const totalDebits = debits.reduce((sum, item) => sum + Math.abs(parseFloat(item.amount)), 0);
+    
+    // Calcular ticket médio das transações filtradas
+    const totalTransactionValue = totalCredits + totalDebits;
+    const transactionCount = credits.length + debits.length;
+    const ticketMedio = transactionCount > 0 ? totalTransactionValue / transactionCount : 0;
+    
+    // Calcular saldo consolidado dos dados filtrados
+    const uniqueBalancesByPerson = new Map<string, number>();
+    
+    // Obter o saldo mais recente por pessoa nos dados filtrados
+    const sortedFilteredData = [...filteredData].sort((a, b) => 
+      new Date(b.transaction_date.split(' ')[0].split('/').reverse().join('-')).getTime() - 
+      new Date(a.transaction_date.split(' ')[0].split('/').reverse().join('-')).getTime()
+    );
+    
+    // Para cada pessoa, pegar apenas o saldo mais recente
+    for (const item of sortedFilteredData) {
+      if (!uniqueBalancesByPerson.has(item.personal_document)) {
+        uniqueBalancesByPerson.set(item.personal_document, parseFloat(item.saldo_posterior));
+      }
+    }
+    
+    // Somar todos os saldos únicos
+    const currentBalance = Array.from(uniqueBalancesByPerson.values())
+      .reduce((sum, balance) => sum + balance, 0);
+    
+    return {
+      totalCredits,
+      totalDebits,
+      ticketMedio,
+      currentBalance,
+      transactionCount,
+    };
+  }, [filteredData]);
+
+  // Usar KPIs filtrados se há filtros locais ativos, senão usar os da API
+  const displaySummary = (personalName || searchTerm) ? filteredSummary : statementSummary;
+
   // Aplicar ordenação aos dados filtrados
   const sortedData = React.useMemo(() => {
     if (!sortOrder) return filteredData;
@@ -460,22 +505,28 @@ export default function Statement() {
                 Limpar Filtro de Data ({selectedChartDate})
               </Button>
             )}
-            <Button
-              onClick={() => {
-                setInputStartDate('');
-                setInputEndDate('');
-                setInputPersonalDocument('');
-                setInputSearchTerm('');
-                setStartDate('');
-                setEndDate('');
-                setPersonalDocument('');
-                setSearchTerm('');
-                setSelectedChartDate('');
-              }}
-              variant="outline"
-            >
-              Limpar Filtros
-            </Button>
+            {(startDate || endDate || personalDocument || personalName || searchTerm || selectedChartDate || sortOrder) && (
+              <Button
+                onClick={() => {
+                  setInputStartDate('');
+                  setInputEndDate('');
+                  setInputPersonalDocument('');
+                  setInputPersonalName('');
+                  setInputSearchTerm('');
+                  setStartDate('');
+                  setEndDate('');
+                  setPersonalDocument('');
+                  setPersonalName('');
+                  setSearchTerm('');
+                  setSelectedChartDate('');
+                  setSortOrder(null);
+                }}
+                variant="outline"
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                Limpar Filtros
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -570,57 +621,80 @@ export default function Statement() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Saldo Atual</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Saldo Atual
+              {(personalName || searchTerm) && (
+                <span className="ml-1 text-xs text-blue-600">• Filtrado</span>
+              )}
+            </CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              {formatCurrency(statementSummary.currentBalance)}
+              {formatCurrency(displaySummary.currentBalance)}
             </div>
             <p className="text-xs text-muted-foreground">
+              {(personalName || searchTerm) ? 'Baseado nos dados filtrados' : ''}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Entradas</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Entradas
+              {(personalName || searchTerm) && (
+                <span className="ml-1 text-xs text-blue-600">• Filtrado</span>
+              )}
+            </CardTitle>
             <TrendingUp className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              {formatCurrency(statementSummary.totalCredits)}
+              {formatCurrency(displaySummary.totalCredits)}
             </div>
             <p className="text-xs text-muted-foreground">
+              {(personalName || searchTerm) ? 'Baseado nos dados filtrados' : ''}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Saídas</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Saídas
+              {(personalName || searchTerm) && (
+                <span className="ml-1 text-xs text-blue-600">• Filtrado</span>
+              )}
+            </CardTitle>
             <TrendingDown className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">
-              {formatCurrency(statementSummary.totalDebits)}
+              {formatCurrency(displaySummary.totalDebits)}
             </div>
             <p className="text-xs text-muted-foreground">
+              {(personalName || searchTerm) ? 'Baseado nos dados filtrados' : ''}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ticket Médio</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Ticket Médio
+              {(personalName || searchTerm) && (
+                <span className="ml-1 text-xs text-blue-600">• Filtrado</span>
+              )}
+            </CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">
-              {formatCurrency(statementSummary.ticketMedio)}
+              {formatCurrency(displaySummary.ticketMedio)}
             </div>
             <p className="text-xs text-muted-foreground">
-              Valor médio por transação
+              {(personalName || searchTerm) ? 'Baseado nos dados filtrados' : 'Valor médio por transação'}
             </p>
           </CardContent>
         </Card>
@@ -632,7 +706,7 @@ export default function Statement() {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <CardTitle className="flex items-center gap-2">
               <Activity className="h-5 w-5" />
-              Transações ({statementSummary.transactionCount})
+              Transações ({displaySummary.transactionCount})
               {sortOrder && (
                 <span className="text-sm font-normal text-blue-600">
                   {sortOrder === 'asc' ? '↑ Mais antigas primeiro' : '↓ Mais recentes primeiro'}

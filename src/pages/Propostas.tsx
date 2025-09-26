@@ -594,13 +594,15 @@ const Propostas = () => {
               <FileSpreadsheet className="h-4 w-4" />
               Exportar Excel
             </button>
-            <button
-              onClick={limparFiltros}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground border border-border rounded-md hover:bg-accent transition-colors"
-            >
-              <RotateCcw className="h-4 w-4" />
-              Limpar Filtros
-            </button>
+            {(status !== 'todos' || dataInicio || dataFim || selectedChartDate) && (
+              <button
+                onClick={limparFiltros}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 border border-red-300 hover:bg-red-50 rounded-md transition-colors"
+              >
+                <RotateCcw className="h-4 w-4" />
+                Limpar Filtros
+              </button>
+            )}
           </div>
         </CardContent>
       </Card>

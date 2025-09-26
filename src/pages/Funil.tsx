@@ -442,7 +442,7 @@ export default function FunilPage() {
               {selectedStep !== null && (
                 <button
                   onClick={() => setSelectedStep(null)}
-                  className="ml-2 px-2 py-1 text-xs bg-slate-600 hover:bg-slate-500 text-white rounded transition-colors"
+                  className="ml-2 px-2 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
                   title="Mostrar todos os registros"
                 >
                   ✕ Limpar Filtro

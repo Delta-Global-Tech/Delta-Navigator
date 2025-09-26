@@ -518,7 +518,12 @@ export default function ProducaoAnalytics() {
                       }
                     </p>
                   </div>
-                  <Button onClick={clearSelection} variant="outline" size="sm">
+                  <Button 
+                    onClick={clearSelection} 
+                    variant="outline" 
+                    size="sm"
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
                     Limpar Filtro
                   </Button>
                 </div>
@@ -666,7 +671,12 @@ export default function ProducaoAnalytics() {
                 </Button>
                 
                 {selectedStatus && selectedStatus !== 'ALL' && (
-                  <Button onClick={clearSelection} variant="outline" size="sm">
+                  <Button 
+                    onClick={clearSelection} 
+                    variant="outline" 
+                    size="sm"
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
                     🔄 Limpar Filtro
                   </Button>
                 )}

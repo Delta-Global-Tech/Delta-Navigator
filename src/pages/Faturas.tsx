@@ -256,12 +256,15 @@ const Faturas = () => {
               <Search className="h-4 w-4" />
               Pesquisar
             </Button>
-            <Button
-              onClick={limparFiltros}
-              variant="outline"
-            >
-              Limpar Filtros
-            </Button>
+            {(personalDocument || status !== 'todos' || searchTerm) && (
+              <Button
+                onClick={limparFiltros}
+                variant="outline"
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                Limpar Filtros
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
