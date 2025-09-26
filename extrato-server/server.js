@@ -336,25 +336,25 @@ app.get('/api/statement', async (req, res) => {
     if (dataInicio && dataFim) {
       if (dataInicio === dataFim) {
         // Se as datas são iguais, busca transações daquela data específica
-        query += ` AND DATE(fas.transaction_date) = $${paramIndex}`;
+        query += ` AND DATE(fas.transaction_date) = TO_DATE($${paramIndex}, 'DD/MM/YYYY')`;
         params.push(dataInicio);
         paramIndex++;
       } else {
         // Se há faixa de datas, usa between
-        query += ` AND DATE(fas.transaction_date) BETWEEN $${paramIndex} AND $${paramIndex + 1}`;
+        query += ` AND DATE(fas.transaction_date) BETWEEN TO_DATE($${paramIndex}, 'DD/MM/YYYY') AND TO_DATE($${paramIndex + 1}, 'DD/MM/YYYY')`;
         params.push(dataInicio);
         params.push(dataFim);
         paramIndex += 2;
       }
     } else {
       if (dataInicio) {
-        query += ` AND DATE(fas.transaction_date) >= $${paramIndex}`;
+        query += ` AND DATE(fas.transaction_date) >= TO_DATE($${paramIndex}, 'DD/MM/YYYY')`;
         params.push(dataInicio);
         paramIndex++;
       }
       
       if (dataFim) {
-        query += ` AND DATE(fas.transaction_date) <= $${paramIndex}`;
+        query += ` AND DATE(fas.transaction_date) <= TO_DATE($${paramIndex}, 'DD/MM/YYYY')`;
         params.push(dataFim);
         paramIndex++;
       }
