@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getStatementData, StatementItem, StatementSummary } from '@/data/statementApi';
-import { TrendingUp, TrendingDown, DollarSign, Activity, Download, Filter, Search, Calendar, FileText, FileSpreadsheet } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Activity, Download, Filter, Search, Calendar, FileText, FileSpreadsheet, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,6 +32,9 @@ export default function Statement() {
   const [personalName, setPersonalName] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedChartDate, setSelectedChartDate] = useState<string>(''); // Data selecionada no gráfico
+  
+  // Estados para ordenação
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | null>(null);
 
   // CSS para cursor pointer nas barras do gráfico
   React.useEffect(() => {
@@ -229,6 +232,40 @@ export default function Statement() {
     
     return matchesName && matchesSearch && matchesChartDate;
   });
+
+  // Aplicar ordenação aos dados filtrados
+  const sortedData = React.useMemo(() => {
+    if (!sortOrder) return filteredData;
+    
+    return [...filteredData].sort((a, b) => {
+      // Converter strings de data DD/MM/YYYY HH:MM:SS para Date objects para comparação
+      const parseDate = (dateStr: string) => {
+        const [datePart] = dateStr.split(' ');
+        const [day, month, year] = datePart.split('/');
+        return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      };
+      
+      const dateA = parseDate(a.transaction_date);
+      const dateB = parseDate(b.transaction_date);
+      
+      if (sortOrder === 'asc') {
+        return dateA.getTime() - dateB.getTime();
+      } else {
+        return dateB.getTime() - dateA.getTime();
+      }
+    });
+  }, [filteredData, sortOrder]);
+
+  // Função para alternar ordenação
+  const toggleDateSort = () => {
+    if (sortOrder === null) {
+      setSortOrder('asc');
+    } else if (sortOrder === 'asc') {
+      setSortOrder('desc');
+    } else {
+      setSortOrder(null);
+    }
+  };
 
   // Log para debug dos dados filtrados
   React.useEffect(() => {
@@ -594,6 +631,11 @@ export default function Statement() {
             <CardTitle className="flex items-center gap-2">
               <Activity className="h-5 w-5" />
               Transações ({statementSummary.transactionCount})
+              {sortOrder && (
+                <span className="text-sm font-normal text-blue-600">
+                  {sortOrder === 'asc' ? '↑ Mais antigas primeiro' : '↓ Mais recentes primeiro'}
+                </span>
+              )}
             </CardTitle>
             <div className="flex items-center gap-2">
               <div className="relative">
@@ -615,7 +657,7 @@ export default function Statement() {
                 Buscar
               </Button>
               <Button
-                onClick={() => exportToPDF(filteredData, 'extrato-executivo')}
+                onClick={() => exportToPDF(sortedData, 'extrato-executivo')}
                 size="sm"
                 variant="outline"
                 className="flex items-center gap-2"
@@ -624,7 +666,7 @@ export default function Statement() {
                 PDF
               </Button>
               <Button
-                onClick={() => exportToExcel(filteredData, 'extrato-executivo')}
+                onClick={() => exportToExcel(sortedData, 'extrato-executivo')}
                 size="sm"
                 variant="outline"
                 className="flex items-center gap-2"
@@ -646,12 +688,24 @@ export default function Statement() {
                   <TableHead>Pagador</TableHead>
                   <TableHead>Beneficiário</TableHead>
                   <TableHead className="text-right">Valor</TableHead>
-                  <TableHead>Data</TableHead>
+                  <TableHead>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={toggleDateSort}
+                      className="flex items-center gap-1 p-0 h-auto font-medium hover:bg-transparent"
+                    >
+                      Data
+                      {sortOrder === null && <ArrowUpDown className="h-4 w-4 text-gray-400" />}
+                      {sortOrder === 'asc' && <ArrowUp className="h-4 w-4 text-blue-600" />}
+                      {sortOrder === 'desc' && <ArrowDown className="h-4 w-4 text-blue-600" />}
+                    </Button>
+                  </TableHead>
                   <TableHead className="text-right">Saldo Posterior</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredData.map((item, index) => {
+                {sortedData.map((item, index) => {
                   // Lógica para determinar pagador e beneficiário baseado no tipo PIX
                   let pagador = item.nome_pagador || '-';
                   let beneficiario = item.beneficiario || '-';
