@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell } from 'recharts';
-import { CreditCard, AlertTriangle, CheckCircle, Clock, DollarSign, Users, Calendar, Search, Filter, Download, TrendingUp, TrendingDown } from 'lucide-react';
+import { CreditCard, AlertTriangle, CheckCircle, Clock, DollarSign, Users, Calendar, Search, Filter, Download, TrendingUp, TrendingDown, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { getFaturasData, FaturaData, FaturasSummary } from '@/data/faturasApi';
 import { useSync } from '@/providers/sync-provider';
 
@@ -24,6 +24,10 @@ const Faturas = () => {
   const [personalDocument, setPersonalDocument] = useState('');
   const [status, setStatus] = useState('todos');
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Estados para ordenação da tabela
+  const [sortBy, setSortBy] = useState('fechamento'); // 'balance' ou 'fechamento'
+  const [sortOrder, setSortOrder] = useState('desc'); // 'asc' ou 'desc'
 
   // Função para aplicar os filtros
   const handleApplyFilters = () => {
@@ -47,6 +51,32 @@ const Faturas = () => {
     if (e.key === 'Enter') {
       handleApplyFilters();
     }
+  };
+
+  // Função para ordenar faturas
+  const sortFaturas = (faturas: FaturaData[]) => {
+    if (!faturas || faturas.length === 0) return faturas;
+    
+    return [...faturas].sort((a, b) => {
+      let aValue, bValue;
+      
+      if (sortBy === 'balance') {
+        aValue = Number(a.balance || 0);
+        bValue = Number(b.balance || 0);
+      } else if (sortBy === 'fechamento') {
+        aValue = new Date(a.fechamento || '1970-01-01');
+        bValue = new Date(b.fechamento || '1970-01-01');
+      } else if (sortBy === 'vencimento') {
+        aValue = new Date(a.vencimento || '1970-01-01');
+        bValue = new Date(b.vencimento || '1970-01-01');
+      }
+      
+      if (sortOrder === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
   };
 
   // Query para buscar dados das faturas
@@ -87,15 +117,19 @@ const Faturas = () => {
     valorPago: 0,
   };
 
-  // Filtrar dados localmente por termo de busca
-  const filteredData = faturasData.filter(item => {
-    const matchesSearch = item.personal_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.personal_document.includes(searchTerm) ||
-      item.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.statement_id.toLowerCase().includes(searchTerm.toLowerCase());
+  // Filtrar e ordenar dados localmente
+  const filteredData = useMemo(() => {
+    const filtered = faturasData.filter(item => {
+      const matchesSearch = item.personal_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.personal_document.includes(searchTerm) ||
+        item.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.statement_id.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      return matchesSearch;
+    });
     
-    return matchesSearch;
-  });
+    return sortFaturas(filtered);
+  }, [faturasData, searchTerm, sortBy, sortOrder]);
 
   // Preparar dados para gráfico de status
   const statusChartData = useMemo(() => {
@@ -449,9 +483,63 @@ const Faturas = () => {
                   <TableHead>Documento</TableHead>
                   <TableHead>ID Fatura</TableHead>
                   <TableHead>Tipo</TableHead>
-                  <TableHead className="text-right">Valor Fatura</TableHead>
-                  <TableHead>Fechamento</TableHead>
-                  <TableHead>Vencimento</TableHead>
+                  <TableHead 
+                    className="text-right cursor-pointer hover:bg-muted/50 select-none"
+                    onClick={() => {
+                      if (sortBy === 'balance') {
+                        setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
+                      } else {
+                        setSortBy('balance');
+                        setSortOrder('desc');
+                      }
+                    }}
+                  >
+                    <div className="flex items-center justify-end gap-1">
+                      Valor Fatura
+                      {sortBy === 'balance' && (
+                        sortOrder === 'desc' ? <ArrowDown className="h-3 w-3" /> : <ArrowUp className="h-3 w-3" />
+                      )}
+                      {sortBy !== 'balance' && <ArrowUpDown className="h-3 w-3 opacity-50" />}
+                    </div>
+                  </TableHead>
+                  <TableHead 
+                    className="cursor-pointer hover:bg-muted/50 select-none"
+                    onClick={() => {
+                      if (sortBy === 'fechamento') {
+                        setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
+                      } else {
+                        setSortBy('fechamento');
+                        setSortOrder('desc');
+                      }
+                    }}
+                  >
+                    <div className="flex items-center gap-1">
+                      Fechamento
+                      {sortBy === 'fechamento' && (
+                        sortOrder === 'desc' ? <ArrowDown className="h-3 w-3" /> : <ArrowUp className="h-3 w-3" />
+                      )}
+                      {sortBy !== 'fechamento' && <ArrowUpDown className="h-3 w-3 opacity-50" />}
+                    </div>
+                  </TableHead>
+                  <TableHead 
+                    className="cursor-pointer hover:bg-muted/50 select-none"
+                    onClick={() => {
+                      if (sortBy === 'vencimento') {
+                        setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
+                      } else {
+                        setSortBy('vencimento');
+                        setSortOrder('desc');
+                      }
+                    }}
+                  >
+                    <div className="flex items-center gap-1">
+                      Vencimento
+                      {sortBy === 'vencimento' && (
+                        sortOrder === 'desc' ? <ArrowDown className="h-3 w-3" /> : <ArrowUp className="h-3 w-3" />
+                      )}
+                      {sortBy !== 'vencimento' && <ArrowUpDown className="h-3 w-3 opacity-50" />}
+                    </div>
+                  </TableHead>
                   <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>

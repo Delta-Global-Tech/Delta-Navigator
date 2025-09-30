@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
-import { FileText, Users, DollarSign, TrendingUp, TrendingDown, Calendar, Filter, BarChart3, RotateCcw, FileSpreadsheet, Search } from 'lucide-react';
+import { FileText, Users, DollarSign, TrendingUp, TrendingDown, Calendar, Filter, BarChart3, RotateCcw, FileSpreadsheet, Search, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useSync } from '@/providers/sync-provider';
 import { getApiEndpoint, logApiCall } from '@/lib/api-config';
@@ -67,6 +67,10 @@ const Propostas = () => {
   
   // Estado para controlar a data selecionada no gráfico
   const [selectedChartDate, setSelectedChartDate] = useState<string | null>(null);
+
+  // Estados para ordenação da tabela
+  const [sortBy, setSortBy] = useState('data_contrato'); // 'data_contrato' ou 'valor_total'
+  const [sortOrder, setSortOrder] = useState('desc'); // 'asc' ou 'desc'
 
   // Função para aplicar os filtros quando o botão for clicado
   const handleApplyFilters = () => {
@@ -134,15 +138,44 @@ const Propostas = () => {
     setInputDataFim(value);
   };
 
+  // Função para ordenar propostas
+  const sortPropostas = (propostas: PropostaData[]) => {
+    if (!propostas || propostas.length === 0) return propostas;
+    
+    return [...propostas].sort((a, b) => {
+      let aValue, bValue;
+      
+      if (sortBy === 'data_contrato') {
+        aValue = new Date(a.data_contrato || '1970-01-01');
+        bValue = new Date(b.data_contrato || '1970-01-01');
+      } else if (sortBy === 'valor_total') {
+        aValue = Number(a.valor_total || 0);
+        bValue = Number(b.valor_total || 0);
+      } else if (sortBy === 'valor_liquido') {
+        aValue = Number(a.valor_liquido || 0);
+        bValue = Number(b.valor_liquido || 0);
+      } else if (sortBy === 'data_finalizacao') {
+        aValue = new Date(a.data_finalizacao || '1970-01-01');
+        bValue = new Date(b.data_finalizacao || '1970-01-01');
+      }
+      
+      if (sortOrder === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+  };
+
   // Função para exportar para Excel
   const exportToExcel = () => {
-    if (!propostas?.data || propostas.data.length === 0) {
+    if (!sortedPropostas || sortedPropostas.length === 0) {
       alert('Não há dados para exportar');
       return;
     }
 
     // Preparar dados para o Excel
-    const excelData = propostas.data.map((proposta: PropostaData, index: number) => ({
+    const excelData = sortedPropostas.map((proposta: PropostaData, index: number) => ({
       'Linha': index + 1,
       'Cliente': proposta.cliente,
       'Telefone': proposta.telefone,
@@ -274,6 +307,12 @@ const Propostas = () => {
     refetchInterval: 30000,
     refetchIntervalInBackground: true,
   });
+
+  // Dados ordenados para exibição
+  const sortedPropostas = useMemo(() => {
+    if (!propostas?.data) return [];
+    return sortPropostas(propostas.data);
+  }, [propostas?.data, sortBy, sortOrder]);
 
   // Atualizar sync quando dados chegarem - padrão igual ao ExtratoRanking
   useEffect(() => {
@@ -722,7 +761,7 @@ const Propostas = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
-            Propostas ({propostas?.data?.length || 0})
+            Propostas ({sortedPropostas?.length || 0})
             {selectedChartDate && (
               <Badge variant="secondary" className="ml-2">
                 📅 {selectedChartDate.split('-').reverse().join('/')}
@@ -751,16 +790,88 @@ const Propostas = () => {
                   <TableHead className="w-[150px]">Cliente</TableHead>
                   <TableHead className="w-[200px]">Contato</TableHead>
                   <TableHead className="w-[100px]">Proposta ID</TableHead>
-                  <TableHead className="w-[120px]">Data Contrato</TableHead>
-                  <TableHead className="w-[120px]">Valor Total</TableHead>
-                  <TableHead className="w-[120px]">Valor Líquido</TableHead>
+                  <TableHead 
+                    className="w-[120px] cursor-pointer hover:bg-muted/50 select-none"
+                    onClick={() => {
+                      if (sortBy === 'data_contrato') {
+                        setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
+                      } else {
+                        setSortBy('data_contrato');
+                        setSortOrder('desc');
+                      }
+                    }}
+                  >
+                    <div className="flex items-center gap-1">
+                      Data Contrato
+                      {sortBy === 'data_contrato' && (
+                        sortOrder === 'desc' ? <ArrowDown className="h-3 w-3" /> : <ArrowUp className="h-3 w-3" />
+                      )}
+                      {sortBy !== 'data_contrato' && <ArrowUpDown className="h-3 w-3 opacity-50" />}
+                    </div>
+                  </TableHead>
+                  <TableHead 
+                    className="w-[120px] cursor-pointer hover:bg-muted/50 select-none"
+                    onClick={() => {
+                      if (sortBy === 'valor_total') {
+                        setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
+                      } else {
+                        setSortBy('valor_total');
+                        setSortOrder('desc');
+                      }
+                    }}
+                  >
+                    <div className="flex items-center gap-1">
+                      Valor Total
+                      {sortBy === 'valor_total' && (
+                        sortOrder === 'desc' ? <ArrowDown className="h-3 w-3" /> : <ArrowUp className="h-3 w-3" />
+                      )}
+                      {sortBy !== 'valor_total' && <ArrowUpDown className="h-3 w-3 opacity-50" />}
+                    </div>
+                  </TableHead>
+                  <TableHead 
+                    className="w-[120px] cursor-pointer hover:bg-muted/50 select-none"
+                    onClick={() => {
+                      if (sortBy === 'valor_liquido') {
+                        setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
+                      } else {
+                        setSortBy('valor_liquido');
+                        setSortOrder('desc');
+                      }
+                    }}
+                  >
+                    <div className="flex items-center gap-1">
+                      Valor Líquido
+                      {sortBy === 'valor_liquido' && (
+                        sortOrder === 'desc' ? <ArrowDown className="h-3 w-3" /> : <ArrowUp className="h-3 w-3" />
+                      )}
+                      {sortBy !== 'valor_liquido' && <ArrowUpDown className="h-3 w-3 opacity-50" />}
+                    </div>
+                  </TableHead>
                   <TableHead className="w-[80px]">Parcelas</TableHead>
                   <TableHead className="w-[140px]">Status</TableHead>
-                  <TableHead className="w-[120px]">Data Finalização</TableHead>
+                  <TableHead 
+                    className="w-[120px] cursor-pointer hover:bg-muted/50 select-none"
+                    onClick={() => {
+                      if (sortBy === 'data_finalizacao') {
+                        setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
+                      } else {
+                        setSortBy('data_finalizacao');
+                        setSortOrder('desc');
+                      }
+                    }}
+                  >
+                    <div className="flex items-center gap-1">
+                      Data Finalização
+                      {sortBy === 'data_finalizacao' && (
+                        sortOrder === 'desc' ? <ArrowDown className="h-3 w-3" /> : <ArrowUp className="h-3 w-3" />
+                      )}
+                      {sortBy !== 'data_finalizacao' && <ArrowUpDown className="h-3 w-3 opacity-50" />}
+                    </div>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {propostas?.data?.map((proposta: PropostaData, index: number) => (
+                {sortedPropostas.map((proposta: PropostaData, index: number) => (
                   <TableRow key={index}>
                     <TableCell className="font-medium w-[150px] truncate p-3">
                       {proposta.cliente}
@@ -788,7 +899,7 @@ const Propostas = () => {
             </Table>
           </div>
           
-          {propostas?.data?.length === 0 && (
+          {sortedPropostas?.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
               Nenhuma proposta encontrada com os filtros selecionados.
             </div>

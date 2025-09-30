@@ -34,7 +34,8 @@ export default function Statement() {
   const [selectedChartDate, setSelectedChartDate] = useState<string>(''); // Data selecionada no gráfico
   
   // Estados para ordenação
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | null>(null);
+  const [sortBy, setSortBy] = useState('saldo_posterior'); // Campo para ordenação
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc'); // Direção da ordenação
 
   // CSS para cursor pointer nas barras do gráfico
   React.useEffect(() => {
@@ -280,35 +281,47 @@ export default function Statement() {
 
   // Aplicar ordenação aos dados filtrados
   const sortedData = React.useMemo(() => {
-    if (!sortOrder) return filteredData;
-    
     return [...filteredData].sort((a, b) => {
-      // Converter strings de data DD/MM/YYYY HH:MM:SS para Date objects para comparação
-      const parseDate = (dateStr: string) => {
-        const [datePart] = dateStr.split(' ');
-        const [day, month, year] = datePart.split('/');
-        return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-      };
+      let aValue, bValue;
       
-      const dateA = parseDate(a.transaction_date);
-      const dateB = parseDate(b.transaction_date);
+      if (sortBy === 'saldo_posterior') {
+        aValue = Number(a.saldo_posterior || 0);
+        bValue = Number(b.saldo_posterior || 0);
+      } else if (sortBy === 'transaction_date') {
+        // Converter strings de data DD/MM/YYYY HH:MM:SS para Date objects para comparação
+        const parseDate = (dateStr: string) => {
+          const [datePart] = dateStr.split(' ');
+          const [day, month, year] = datePart.split('/');
+          return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+        };
+        
+        aValue = parseDate(a.transaction_date);
+        bValue = parseDate(b.transaction_date);
+      }
       
       if (sortOrder === 'asc') {
-        return dateA.getTime() - dateB.getTime();
+        if (sortBy === 'transaction_date') {
+          return aValue.getTime() - bValue.getTime();
+        } else {
+          return aValue > bValue ? 1 : -1;
+        }
       } else {
-        return dateB.getTime() - dateA.getTime();
+        if (sortBy === 'transaction_date') {
+          return bValue.getTime() - aValue.getTime();
+        } else {
+          return aValue < bValue ? 1 : -1;
+        }
       }
     });
-  }, [filteredData, sortOrder]);
+  }, [filteredData, sortBy, sortOrder]);
 
   // Função para alternar ordenação
-  const toggleDateSort = () => {
-    if (sortOrder === null) {
-      setSortOrder('asc');
-    } else if (sortOrder === 'asc') {
-      setSortOrder('desc');
+  const handleSort = (field: string) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
     } else {
-      setSortOrder(null);
+      setSortBy(field);
+      setSortOrder('desc');
     }
   };
 
@@ -764,20 +777,30 @@ export default function Statement() {
                   <TableHead>Pagador</TableHead>
                   <TableHead>Beneficiário</TableHead>
                   <TableHead className="text-right">Valor</TableHead>
-                  <TableHead>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={toggleDateSort}
-                      className="flex items-center gap-1 p-0 h-auto font-medium hover:bg-transparent"
-                    >
+                  <TableHead 
+                    className="cursor-pointer hover:bg-muted/50 select-none"
+                    onClick={() => handleSort('transaction_date')}
+                  >
+                    <div className="flex items-center gap-1">
                       Data
-                      {sortOrder === null && <ArrowUpDown className="h-4 w-4 text-gray-400" />}
-                      {sortOrder === 'asc' && <ArrowUp className="h-4 w-4 text-blue-600" />}
-                      {sortOrder === 'desc' && <ArrowDown className="h-4 w-4 text-blue-600" />}
-                    </Button>
+                      {sortBy === 'transaction_date' && (
+                        sortOrder === 'desc' ? <ArrowDown className="h-3 w-3" /> : <ArrowUp className="h-3 w-3" />
+                      )}
+                      {sortBy !== 'transaction_date' && <ArrowUpDown className="h-3 w-3 opacity-50" />}
+                    </div>
                   </TableHead>
-                  <TableHead className="text-right">Saldo Posterior</TableHead>
+                  <TableHead 
+                    className="text-right cursor-pointer hover:bg-muted/50 select-none"
+                    onClick={() => handleSort('saldo_posterior')}
+                  >
+                    <div className="flex items-center justify-end gap-1">
+                      Saldo Posterior
+                      {sortBy === 'saldo_posterior' && (
+                        sortOrder === 'desc' ? <ArrowDown className="h-3 w-3" /> : <ArrowUp className="h-3 w-3" />
+                      )}
+                      {sortBy !== 'saldo_posterior' && <ArrowUpDown className="h-3 w-3 opacity-50" />}
+                    </div>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
