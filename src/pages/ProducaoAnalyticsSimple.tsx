@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import { TrendingUp, Filter, Calendar, DollarSign, FileText, Download, FileSpreadsheet } from "lucide-react"
+import { TrendingUp, Filter, Calendar, DollarSign, FileText, Download, FileSpreadsheet, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
 import * as XLSX from 'xlsx'
 import { saveAs } from 'file-saver'
 import jsPDF from 'jspdf'
@@ -32,6 +32,10 @@ export default function ProducaoAnalytics() {
   const [equipes, setEquipes] = useState([])
   const [loadingFilters, setLoadingFilters] = useState(false)
 
+  // Estados para ordenação da tabela
+  const [sortBy, setSortBy] = useState('data') // 'data' ou 'valor'
+  const [sortOrder, setSortOrder] = useState('desc') // 'asc' ou 'desc'
+
   // Função para formatar valores dinamicamente
   const formatValue = (value) => {
     if (!value || value === 0) return 'R$ 0'
@@ -48,6 +52,32 @@ export default function ProducaoAnalytics() {
       return `R$ ${value.toFixed(0)}`
     }
   }
+
+  // Função para ordenar contratos
+  const sortContracts = (contracts) => {
+    if (!contracts || contracts.length === 0) return contracts
+    
+    return [...contracts].sort((a, b) => {
+      let aValue, bValue
+      
+      if (sortBy === 'data') {
+        aValue = new Date(a.dataCadastro || '1970-01-01')
+        bValue = new Date(b.dataCadastro || '1970-01-01')
+      } else if (sortBy === 'valor') {
+        aValue = Number(a.valores || 0)
+        bValue = Number(b.valores || 0)
+      }
+      
+      if (sortOrder === 'asc') {
+        return aValue > bValue ? 1 : -1
+      } else {
+        return aValue < bValue ? 1 : -1
+      }
+    })
+  }
+
+  // Dados ordenados para exibição
+  const sortedContractDetails = sortContracts(contractDetails)
 
   // CSS para cursor pointer nas barras do gráfico
   useEffect(() => {
@@ -312,12 +342,12 @@ export default function ProducaoAnalytics() {
 
   // Função para exportar para Excel
   const exportToExcel = () => {
-    if (!contractDetails || contractDetails.length === 0) {
+    if (!sortedContractDetails || sortedContractDetails.length === 0) {
       alert('Nenhum dado para exportar')
       return
     }
 
-    const dataForExport = contractDetails.map(contract => ({
+    const dataForExport = sortedContractDetails.map(contract => ({
       'ID': contract.id,
       'Cliente': contract.clienteNome || 'N/A',
       'Status': contract.statusNome?.replace(/\?\?\?\?/g, 'ção').replace(/\?\?/g, 'ã') || 'N/A',
@@ -342,7 +372,7 @@ export default function ProducaoAnalytics() {
 
   // Função para exportar para PDF
   const exportToPDF = () => {
-    if (!contractDetails || contractDetails.length === 0) {
+    if (!sortedContractDetails || sortedContractDetails.length === 0) {
       alert('Nenhum dado para exportar')
       return
     }
@@ -358,13 +388,13 @@ export default function ProducaoAnalytics() {
     const filterText = selectedStatus === 'ALL' ? 'Todos os Status' : selectedStatus?.replace(/\?\?\?\?/g, 'ção').replace(/\?\?/g, 'ã') || 'Filtrado'
     doc.text(`Filtro: ${filterText}`, 14, 25)
     doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, 14, 35)
-    doc.text(`Total de Contratos: ${contractDetails.length}`, 14, 45)
+    doc.text(`Total de Contratos: ${sortedContractDetails.length}`, 14, 45)
 
     // Preparar dados para tabela
     const tableData: string[][] = []
     
-    if (Array.isArray(contractDetails)) {
-      contractDetails.forEach((contract: any) => {
+    if (Array.isArray(sortedContractDetails)) {
+      sortedContractDetails.forEach((contract: any) => {
         tableData.push([
           String(contract.id || ''),
           contract.clienteNome || 'N/A',
@@ -757,6 +787,58 @@ export default function ProducaoAnalytics() {
                      `Exibindo ${contractDetails?.length || 0} contratos neste status`
                   }
                 </p>
+                
+                {/* Controles de Ordenação */}
+                {!loadingDetails && contractDetails && contractDetails.length > 0 && (
+                  <div className="flex items-center gap-4 mt-3">
+                    <span className="text-sm font-medium text-muted-foreground">Ordenar por:</span>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => {
+                          if (sortBy === 'data') {
+                            setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')
+                          } else {
+                            setSortBy('data')
+                            setSortOrder('desc')
+                          }
+                        }}
+                        variant={sortBy === 'data' ? 'default' : 'outline'}
+                        size="sm"
+                        className={`flex items-center gap-1 ${
+                          sortBy === 'data' ? 'bg-[#ac7b39] hover:bg-[#8d6631] text-white' : ''
+                        }`}
+                      >
+                        <Calendar className="h-3 w-3" />
+                        Data
+                        {sortBy === 'data' && (
+                          sortOrder === 'desc' ? <ArrowDown className="h-3 w-3" /> : <ArrowUp className="h-3 w-3" />
+                        )}
+                      </Button>
+                      
+                      <Button
+                        onClick={() => {
+                          if (sortBy === 'valor') {
+                            setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')
+                          } else {
+                            setSortBy('valor')
+                            setSortOrder('desc')
+                          }
+                        }}
+                        variant={sortBy === 'valor' ? 'default' : 'outline'}
+                        size="sm"
+                        className={`flex items-center gap-1 ${
+                          sortBy === 'valor' ? 'bg-[#ac7b39] hover:bg-[#8d6631] text-white' : ''
+                        }`}
+                      >
+                        <DollarSign className="h-3 w-3" />
+                        Valor
+                        {sortBy === 'valor' && (
+                          sortOrder === 'desc' ? <ArrowDown className="h-3 w-3" /> : <ArrowUp className="h-3 w-3" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
               
               {/* Botões de Exportação */}
@@ -796,7 +878,7 @@ export default function ProducaoAnalytics() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {contractDetails.map((contract, index) => (
+                      {sortedContractDetails.map((contract, index) => (
                         <TableRow key={contract.id} className="hover:bg-muted/50">
                           <TableCell className="text-sm font-medium">{contract.clienteNome || 'N/A'}</TableCell>
                           <TableCell className="text-sm">
