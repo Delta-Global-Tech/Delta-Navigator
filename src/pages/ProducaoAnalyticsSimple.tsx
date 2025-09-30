@@ -788,57 +788,7 @@ export default function ProducaoAnalytics() {
                   }
                 </p>
                 
-                {/* Controles de Ordenação */}
-                {!loadingDetails && contractDetails && contractDetails.length > 0 && (
-                  <div className="flex items-center gap-4 mt-3">
-                    <span className="text-sm font-medium text-muted-foreground">Ordenar por:</span>
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => {
-                          if (sortBy === 'data') {
-                            setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')
-                          } else {
-                            setSortBy('data')
-                            setSortOrder('desc')
-                          }
-                        }}
-                        variant={sortBy === 'data' ? 'default' : 'outline'}
-                        size="sm"
-                        className={`flex items-center gap-1 ${
-                          sortBy === 'data' ? 'bg-[#ac7b39] hover:bg-[#8d6631] text-white' : ''
-                        }`}
-                      >
-                        <Calendar className="h-3 w-3" />
-                        Data
-                        {sortBy === 'data' && (
-                          sortOrder === 'desc' ? <ArrowDown className="h-3 w-3" /> : <ArrowUp className="h-3 w-3" />
-                        )}
-                      </Button>
-                      
-                      <Button
-                        onClick={() => {
-                          if (sortBy === 'valor') {
-                            setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')
-                          } else {
-                            setSortBy('valor')
-                            setSortOrder('desc')
-                          }
-                        }}
-                        variant={sortBy === 'valor' ? 'default' : 'outline'}
-                        size="sm"
-                        className={`flex items-center gap-1 ${
-                          sortBy === 'valor' ? 'bg-[#ac7b39] hover:bg-[#8d6631] text-white' : ''
-                        }`}
-                      >
-                        <DollarSign className="h-3 w-3" />
-                        Valor
-                        {sortBy === 'valor' && (
-                          sortOrder === 'desc' ? <ArrowDown className="h-3 w-3" /> : <ArrowUp className="h-3 w-3" />
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                )}
+
               </div>
               
               {/* Botões de Exportação */}
@@ -873,8 +823,44 @@ export default function ProducaoAnalytics() {
                         <TableHead className="text-[#ac7b39]">Banco</TableHead>
                         <TableHead className="text-[#ac7b39]">Equipe</TableHead>
                         <TableHead className="text-[#ac7b39]">CPF/CNPJ</TableHead>
-                        <TableHead className="text-[#ac7b39] text-right">Valor</TableHead>
-                        <TableHead className="text-[#ac7b39]">Data</TableHead>
+                        <TableHead 
+                          className="text-[#ac7b39] text-right cursor-pointer hover:bg-muted/50 select-none"
+                          onClick={() => {
+                            if (sortBy === 'valor') {
+                              setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')
+                            } else {
+                              setSortBy('valor')
+                              setSortOrder('desc')
+                            }
+                          }}
+                        >
+                          <div className="flex items-center justify-end gap-1">
+                            Valor
+                            {sortBy === 'valor' && (
+                              sortOrder === 'desc' ? <ArrowDown className="h-3 w-3" /> : <ArrowUp className="h-3 w-3" />
+                            )}
+                            {sortBy !== 'valor' && <ArrowUpDown className="h-3 w-3 opacity-50" />}
+                          </div>
+                        </TableHead>
+                        <TableHead 
+                          className="text-[#ac7b39] cursor-pointer hover:bg-muted/50 select-none"
+                          onClick={() => {
+                            if (sortBy === 'data') {
+                              setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')
+                            } else {
+                              setSortBy('data')
+                              setSortOrder('desc')
+                            }
+                          }}
+                        >
+                          <div className="flex items-center gap-1">
+                            Data
+                            {sortBy === 'data' && (
+                              sortOrder === 'desc' ? <ArrowDown className="h-3 w-3" /> : <ArrowUp className="h-3 w-3" />
+                            )}
+                            {sortBy !== 'data' && <ArrowUpDown className="h-3 w-3 opacity-50" />}
+                          </div>
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
