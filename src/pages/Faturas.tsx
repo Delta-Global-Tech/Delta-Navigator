@@ -11,6 +11,7 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Toolti
 import { CreditCard, AlertTriangle, CheckCircle, Clock, DollarSign, Users, Calendar, Search, Filter, Download, TrendingUp, TrendingDown, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { getFaturasData, FaturaData, FaturasSummary } from '@/data/faturasApi';
 import { useSync } from '@/providers/sync-provider';
+import * as XLSX from 'xlsx';
 
 const Faturas = () => {
   const { updateSync, setRefreshing } = useSync()
@@ -191,7 +192,40 @@ const Faturas = () => {
   };
 
   const handleExport = () => {
-    console.log('Exportando faturas...');
+    if (!filteredData || filteredData.length === 0) {
+      alert('Não há dados para exportar');
+      return;
+    }
+
+    // Preparar dados para o Excel
+    const excelData = filteredData.map((fatura, index) => ({
+      '#': index + 1,
+      'Nome': fatura.personal_name,
+      'Documento': fatura.personal_document,
+      'Email': fatura.email,
+      'ID Fatura': fatura.statement_id,
+      'Tipo': fatura.kind,
+      'Valor Fatura': fatura.balance,
+      'Fechamento': formatDate(fatura.fechamento),
+      'Vencimento': formatDate(fatura.vencimento),
+      'Status': fatura.status
+    }));
+
+    // Criar worksheet
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    
+    // Criar workbook
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Faturas');
+    
+    // Gerar nome do arquivo com timestamp
+    const timestamp = new Date().toISOString().split('T')[0];
+    const fileName = `faturas_${timestamp}.xlsx`;
+    
+    // Salvar arquivo
+    XLSX.writeFile(workbook, fileName);
+    
+    console.log('Faturas exportadas para:', fileName);
   };
 
   if (isLoading) {

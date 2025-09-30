@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useExport } from '@/hooks/useExport';
 import { useSync } from '@/providers/sync-provider';
+import * as XLSX from 'xlsx';
 
 export default function Statement() {
   const { updateSync, setRefreshing } = useSync();
@@ -387,7 +388,43 @@ export default function Statement() {
   };
 
   const handleExport = () => {
-    console.log('Exportando extrato...');
+    if (!sortedData || sortedData.length === 0) {
+      alert('Não há dados para exportar');
+      return;
+    }
+
+    // Preparar dados para o Excel
+    const excelData = sortedData.map((item, index) => ({
+      '#': index + 1,
+      'Nome': item.personal_name,
+      'Documento': item.personal_document,
+      'Data': item.transaction_date,
+      'Tipo': item.type,
+      'Descrição': item.description,
+      'PIX Descrição': item.pix_free_description,
+      'Valor': item.amount,
+      'Saldo Posterior': item.saldo_posterior,
+      'Beneficiário': item.beneficiario,
+      'Banco Beneficiário': item.banco_beneficiario,
+      'Pagador': item.nome_pagador,
+      'Status': item.status_description
+    }));
+
+    // Criar worksheet
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    
+    // Criar workbook
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Extrato');
+    
+    // Gerar nome do arquivo com timestamp
+    const timestamp = new Date().toISOString().split('T')[0];
+    const fileName = `extrato_${timestamp}.xlsx`;
+    
+    // Salvar arquivo
+    XLSX.writeFile(workbook, fileName);
+    
+    console.log('Extrato exportado para:', fileName);
   };
 
   const getStatusColor = (status: string) => {
