@@ -450,13 +450,14 @@ export default function ProducaoAnalytics() {
 
   // Filtrar dados dos KPIs baseado no status selecionado
   const filteredKPIs = useMemo(() => {
-    if (!data?.statusBreakdown) return null
+    if (!data?.statusBreakdown) return []
     
-    if (selectedStatus) {
+    if (selectedStatus && selectedStatus !== 'ALL') {
       const statusData = data.statusBreakdown.find(item => item.status === selectedStatus)
       return statusData ? [statusData] : []
     }
     
+    // Para 'ALL' ou quando não há status selecionado, retorna todos
     return data.statusBreakdown
   }, [data, selectedStatus])
 
@@ -620,7 +621,7 @@ export default function ProducaoAnalytics() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold tracking-tight text-[#ac7b39]">
-                  {filteredKPIs.reduce((sum, item) => sum + item.quantidade, 0).toLocaleString('pt-BR')}
+                  {(filteredKPIs || []).reduce((sum, item) => sum + (item?.quantidade || 0), 0).toLocaleString('pt-BR')}
                 </div>
               </CardContent>
             </Card>
@@ -632,7 +633,7 @@ export default function ProducaoAnalytics() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold tracking-tight text-[#ac7b39]">
-                  {formatValue(filteredKPIs.reduce((sum, item) => sum + item.valorReferencia, 0))}
+                  {formatValue((filteredKPIs || []).reduce((sum, item) => sum + (item?.valorReferencia || 0), 0))}
                 </div>
               </CardContent>
             </Card>
@@ -644,7 +645,7 @@ export default function ProducaoAnalytics() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold tracking-tight text-[#ac7b39]">
-                  {formatValue(filteredKPIs.reduce((sum, item) => sum + item.valorFinanciado, 0))}
+                  {formatValue((filteredKPIs || []).reduce((sum, item) => sum + (item?.valorFinanciado || 0), 0))}
                 </div>
               </CardContent>
             </Card>
@@ -656,7 +657,7 @@ export default function ProducaoAnalytics() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold tracking-tight text-[#ac7b39]">
-                  {formatValue(filteredKPIs.reduce((sum, item) => sum + item.valorLiberado, 0))}
+                  {formatValue((filteredKPIs || []).reduce((sum, item) => sum + (item?.valorLiberado || 0), 0))}
                 </div>
               </CardContent>
             </Card>
@@ -668,7 +669,7 @@ export default function ProducaoAnalytics() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold tracking-tight text-[#ac7b39]">
-                  {formatValue(filteredKPIs.reduce((sum, item) => sum + item.valorParcela, 0))}
+                  {formatValue((filteredKPIs || []).reduce((sum, item) => sum + (item?.valorParcela || 0), 0))}
                 </div>
               </CardContent>
             </Card>
