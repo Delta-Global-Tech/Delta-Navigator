@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import ProducaoAnalyticsSimple from "./pages/ProducaoAnalyticsSimple";
 import Funil from "./pages/Funil";
 import Propostas from "./pages/Propostas";
+import PropostasAbertura from "./pages/PropostasAbertura";
 import Statement from './pages/Statement';
 import Faturas from './pages/Faturas';
 import NotFound from "./pages/NotFound";
@@ -32,6 +33,7 @@ function AppContent() {
             <Route path="/producao/analytics" element={<ProducaoAnalyticsSimple />} />
             <Route path="/funil" element={<Funil />} />
             <Route path="/propostas" element={<Propostas />} />
+            <Route path="/propostas-abertura" element={<PropostasAbertura />} />
             <Route path="/extrato" element={<Statement />} />
             <Route path="/extrato-ranking" element={<ExtratoRanking />} />
             <Route path="/faturas" element={<Faturas />} />

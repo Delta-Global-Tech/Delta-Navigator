@@ -55,6 +55,12 @@ const analysisNavItems: NavItem[] = [
     description: "Gestão de Propostas"
   },
   {
+    title: "Propostas Abertura",
+    url: "/propostas-abertura",
+    icon: UserPlus,
+    description: "Abertura de Contas"
+  },
+  {
     title: "Extrato",
     url: "/extrato",
     icon: Receipt,
