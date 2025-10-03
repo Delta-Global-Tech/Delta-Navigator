@@ -10,6 +10,7 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Toolti
 import { FileText, Users, CheckCircle, XCircle, Clock, Search, RotateCcw, FileSpreadsheet, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useSync } from '@/providers/sync-provider';
+import { useExport } from '@/hooks/useExport';
 
 interface PropostaAberturaData {
   proposal_id: number;
@@ -56,41 +57,21 @@ const PropostasAbertura = () => {
   const [sortBy, setSortBy] = useState<'proposed_at' | 'proposal_id'>('proposed_at'); // Começar ordenando por data
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   
+  // Hooks
+  const { exportPropostasAberturaToPDF } = useExport();
+
   // Query para buscar dados das propostas
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['propostas-abertura'],
     queryFn: async () => {
-      try {
-        const response = await fetch('http://localhost:3002/api/propostas-abertura');
-        if (!response.ok) {
-          throw new Error('Erro ao buscar propostas de abertura');
-        }
-        return response.json();
-      } catch (error) {
-        // Se não conseguir conectar, usar dados mockados para demonstração
-        console.warn('Usando dados mockados para propostas de abertura:', error);
-        return {
-          propostas: [
-            { proposal_id: 1001, document: '123.456.789-00', applicant_name: 'João Silva Santos', proposed_at: '2025-07-13 15:07:36.000 -0300', status_desc: 'Aprovada automaticamente', status_description: 'Conta Ativa' },
-            { proposal_id: 1002, document: '987.654.321-00', applicant_name: 'Maria Oliveira Costa', proposed_at: '2025-07-14 10:30:25.000 -0300', status_desc: 'Aprovada manualmente', status_description: 'Conta Ativa' },
-            { proposal_id: 1003, document: '456.789.123-00', applicant_name: 'Pedro Almeida Lima', proposed_at: '2025-07-15 14:22:18.000 -0300', status_desc: 'Reprovada manualmente', status_description: null },
-            { proposal_id: 1004, document: '789.123.456-00', applicant_name: 'Ana Carla Ferreira', proposed_at: '2025-07-16 09:15:42.000 -0300', status_desc: 'Aprovada automaticamente', status_description: 'Conta Bloqueada' },
-            { proposal_id: 1005, document: '321.654.987-00', applicant_name: 'Carlos Eduardo Souza', proposed_at: '2025-07-17 16:45:33.000 -0300', status_desc: 'Aprovada manualmente', status_description: 'Conta Ativa' },
-            { proposal_id: 1006, document: '159.753.486-00', applicant_name: 'Lucia Helena Martins', proposed_at: '2025-07-18 11:20:15.000 -0300', status_desc: 'Aprovada automaticamente', status_description: 'Conta Ativa' },
-            { proposal_id: 1007, document: '951.357.654-00', applicant_name: 'Roberto Carlos Silva', proposed_at: '2025-07-19 13:55:28.000 -0300', status_desc: 'Reprovada manualmente', status_description: null },
-            { proposal_id: 1008, document: '753.951.258-00', applicant_name: 'Patricia Santos Lima', proposed_at: '2025-07-20 08:40:12.000 -0300', status_desc: 'Aprovada manualmente', status_description: 'Conta Inativa' },
-          ],
-          estatisticas: {
-            total: 8,
-            aprovadas_automaticamente: 3,
-            aprovadas_manualmente: 3,
-            reprovadas_manualmente: 2,
-            total_aprovadas: 6,
-            total_reprovadas: 2,
-            outros: 0
-          }
-        };
+      // Usar o extrato-server (porta 3003) que tem acesso ao banco com IP 116
+      const response = await fetch(`${window.location.protocol}//${window.location.hostname}:3003/api/propostas-abertura`);
+      if (!response.ok) {
+        throw new Error(`Erro ao buscar propostas de abertura: ${response.status}`);
       }
+      const data = await response.json();
+      console.log('Dados reais de propostas carregados:', data);
+      return data;
     },
     refetchInterval: 30000, // Atualiza a cada 30 segundos
     refetchIntervalInBackground: true, // Continua atualizando mesmo quando a aba não está ativa
@@ -107,7 +88,7 @@ const PropostasAbertura = () => {
         totalPropostas: data.propostas?.length || 0,
         estatisticas: data.estatisticas
       });
-      updateSync(timestamp);
+      if (updateSync) updateSync(timestamp);
     }
   }, [data, updateSync]);
 
@@ -121,7 +102,7 @@ const PropostasAbertura = () => {
     setRefreshing(true);
     try {
       await refetch();
-      updateSync(new Date().toISOString());
+      if (updateSync) updateSync(new Date().toISOString());
     } finally {
       setRefreshing(false);
     }
@@ -314,6 +295,15 @@ const PropostasAbertura = () => {
           )}
         </h1>
         <div className="flex gap-2">
+          <Button
+            onClick={() => exportPropostasAberturaToPDF(sortedData, data?.estatisticas)}
+            variant="outline"
+            size="sm"
+            disabled={!sortedData.length}
+          >
+            <FileText className="w-4 h-4 mr-2" />
+            Exportar PDF
+          </Button>
           <Button
             onClick={exportarParaExcel}
             variant="outline"

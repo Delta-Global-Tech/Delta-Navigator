@@ -596,6 +596,67 @@ app.get('/api/faturas', async (req, res) => {
   }
 });
 
+// Endpoint para propostas de abertura
+app.get('/api/propostas-abertura', async (req, res) => {
+  try {
+    console.log('Buscando propostas de abertura');
+    
+    const cacheKey = getCacheKey('propostas-abertura', {});
+    const cachedResult = getFromCache(cacheKey);
+    
+    if (cachedResult) {
+      console.log('Retornando dados do cache para propostas de abertura');
+      return res.json(cachedResult);
+    }
+
+    const query = `
+      select 
+          dp.proposal_id,
+          dp.document,
+          dp.applicant_name,
+          dp.proposed_at,
+          dps.status_desc,
+          da.status_description 
+      from dim_proposal dp
+      left join dim_proposal_status dps 
+      on dp.status_code = dps.status_code
+      left join dim_account da 
+      on dp."document" = da.personal_document
+      ORDER BY dp.proposed_at DESC
+    `;
+
+    const result = await pool.query(query);
+    const propostas = result.rows;
+
+    // Calcular estatísticas
+    const stats = {
+      total: propostas.length,
+      aprovadas_automaticamente: propostas.filter(p => p.status_desc && p.status_desc.toLowerCase().includes('aprovada automaticamente')).length,
+      aprovadas_manualmente: propostas.filter(p => p.status_desc && p.status_desc.toLowerCase().includes('aprovada manualmente')).length,
+      reprovadas_manualmente: propostas.filter(p => p.status_desc && p.status_desc.toLowerCase().includes('reprovada')).length,
+      outros: propostas.filter(p => !p.status_desc || (!p.status_desc.toLowerCase().includes('aprovada') && !p.status_desc.toLowerCase().includes('reprovada'))).length
+    };
+    
+    stats.total_aprovadas = stats.aprovadas_automaticamente + stats.aprovadas_manualmente;
+    stats.total_reprovadas = stats.reprovadas_manualmente;
+
+    const responseData = {
+      propostas,
+      estatisticas: stats
+    };
+
+    setCache(cacheKey, responseData);
+    res.json(responseData);
+    
+  } catch (error) {
+    console.error('Erro ao buscar propostas de abertura:', error);
+    res.status(500).json({ 
+      error: 'Erro interno do servidor', 
+      details: error.message 
+    });
+  }
+});
+
 // Iniciar servidor
   app.listen(port, '0.0.0.0', () => {
 });

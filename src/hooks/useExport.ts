@@ -134,8 +134,71 @@ export const useExport = () => {
     saveAs(dataBlob, `${fileName}.xlsx`);
   };
 
+  const exportPropostasAberturaToPDF = (propostas: any[], estatisticas: any, fileName: string = 'propostas-abertura') => {
+    const pdf = new jsPDF();
+    
+    // Título
+    pdf.setFontSize(18);
+    pdf.text('Relatório de Propostas de Abertura', 14, 20);
+    
+    // Data do relatório
+    pdf.setFontSize(10);
+    pdf.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, 14, 30);
+    
+    // Estatísticas
+    pdf.setFontSize(14);
+    pdf.text('Resumo Estatístico', 14, 45);
+    pdf.setFontSize(10);
+    pdf.text(`Total de Propostas: ${estatisticas?.total || 0}`, 14, 55);
+    pdf.text(`Aprovadas Automaticamente: ${estatisticas?.aprovadas_automaticamente || 0}`, 14, 62);
+    pdf.text(`Aprovadas Manualmente: ${estatisticas?.aprovadas_manualmente || 0}`, 14, 69);
+    pdf.text(`Reprovadas: ${estatisticas?.total_reprovadas || 0}`, 14, 76);
+    pdf.text(`Outros Status: ${estatisticas?.outros || 0}`, 14, 83);
+    
+    // Preparar dados para a tabela
+    const tableData = propostas.map((proposta) => [
+      proposta.proposal_id || '-',
+      proposta.document || '-',
+      proposta.applicant_name || '-',
+      proposta.proposed_at ? new Date(proposta.proposed_at).toLocaleDateString('pt-BR') : '-',
+      proposta.status_desc || '-',
+      proposta.status_description || '-'
+    ]);
+    
+    // Adicionar tabela
+    autoTable(pdf, {
+      startY: 95,
+      head: [['ID Proposta', 'Documento', 'Nome do Solicitante', 'Data da Proposta', 'Status da Proposta', 'Status da Conta']],
+      body: tableData,
+      styles: {
+        fontSize: 8,
+        cellPadding: 2,
+      },
+      headStyles: {
+        fillColor: [41, 128, 185],
+        textColor: 255,
+        fontStyle: 'bold'
+      },
+      alternateRowStyles: {
+        fillColor: [245, 245, 245]
+      },
+      columnStyles: {
+        0: { cellWidth: 20 },
+        1: { cellWidth: 30 },
+        2: { cellWidth: 45 },
+        3: { cellWidth: 25 },
+        4: { cellWidth: 35 },
+        5: { cellWidth: 30 }
+      }
+    });
+    
+    // Salvar PDF
+    pdf.save(`${fileName}.pdf`);
+  };
+
   return {
     exportToPDF,
-    exportToExcel
+    exportToExcel,
+    exportPropostasAberturaToPDF
   };
 };
