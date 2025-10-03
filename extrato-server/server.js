@@ -609,6 +609,16 @@ app.get('/api/propostas-abertura', async (req, res) => {
       return res.json(cachedResult);
     }
 
+    // Primeiro, buscar o total de propostas com COUNT
+    const countQuery = `
+      SELECT COUNT(dp.proposal_id) as total_propostas
+      FROM dim_proposal dp
+    `;
+    
+    const countResult = await pool.query(countQuery);
+    const totalPropostas = parseInt(countResult.rows[0].total_propostas) || 0;
+
+    // Depois, buscar os dados das propostas para a tabela
     const query = `
       select 
           dp.proposal_id,
@@ -630,7 +640,7 @@ app.get('/api/propostas-abertura', async (req, res) => {
 
     // Calcular estatísticas
     const stats = {
-      total: propostas.length,
+      total: totalPropostas, // Usar o COUNT do banco ao invés do length do array
       aprovadas_automaticamente: propostas.filter(p => p.status_desc && p.status_desc.toLowerCase().includes('aprovada automaticamente')).length,
       aprovadas_manualmente: propostas.filter(p => p.status_desc && p.status_desc.toLowerCase().includes('aprovada manualmente')).length,
       reprovadas_manualmente: propostas.filter(p => p.status_desc && p.status_desc.toLowerCase().includes('reprovada')).length,
