@@ -644,7 +644,13 @@ app.get('/api/propostas-abertura', async (req, res) => {
       aprovadas_automaticamente: propostas.filter(p => p.status_desc && p.status_desc.toLowerCase().includes('aprovada automaticamente')).length,
       aprovadas_manualmente: propostas.filter(p => p.status_desc && p.status_desc.toLowerCase().includes('aprovada manualmente')).length,
       reprovadas_manualmente: propostas.filter(p => p.status_desc && p.status_desc.toLowerCase().includes('reprovada')).length,
-      outros: propostas.filter(p => !p.status_desc || (!p.status_desc.toLowerCase().includes('aprovada') && !p.status_desc.toLowerCase().includes('reprovada'))).length
+      aguardando_analise_manual: propostas.filter(p => p.status_desc && (p.status_desc.toLowerCase().includes('aguardando') || p.status_desc.toLowerCase().includes('análise'))).length,
+      outros: propostas.filter(p => !p.status_desc || (
+        !p.status_desc.toLowerCase().includes('aprovada') && 
+        !p.status_desc.toLowerCase().includes('reprovada') && 
+        !p.status_desc.toLowerCase().includes('aguardando') && 
+        !p.status_desc.toLowerCase().includes('análise')
+      )).length
     };
     
     stats.total_aprovadas = stats.aprovadas_automaticamente + stats.aprovadas_manualmente;

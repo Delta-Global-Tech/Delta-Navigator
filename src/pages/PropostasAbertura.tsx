@@ -28,6 +28,7 @@ interface EstatisticasData {
   reprovadas_manualmente: number;
   total_aprovadas: number;
   total_reprovadas: number;
+  aguardando_analise_manual: number;
   outros: number;
 }
 
@@ -176,6 +177,7 @@ const PropostasAbertura = () => {
       { name: 'Aprovadas Automaticamente', value: data.estatisticas.aprovadas_automaticamente, color: '#22C55E' },
       { name: 'Aprovadas Manualmente', value: data.estatisticas.aprovadas_manualmente, color: '#3B82F6' },
       { name: 'Reprovadas Manualmente', value: data.estatisticas.reprovadas_manualmente, color: '#EF4444' },
+      { name: 'Aguardando Análise Manual', value: data.estatisticas.aguardando_analise_manual, color: '#F59E0B' },
       { name: 'Outros', value: data.estatisticas.outros, color: '#6B7280' },
     ].filter(item => item.value > 0);
   }, [data?.estatisticas]);
@@ -281,6 +283,7 @@ const PropostasAbertura = () => {
     reprovadas_manualmente: 0, 
     total_aprovadas: 0, 
     total_reprovadas: 0, 
+    aguardando_analise_manual: 0,
     outros: 0 
   };
 
@@ -321,7 +324,7 @@ const PropostasAbertura = () => {
       </div>
 
       {/* KPIs Cards */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total de Propostas</CardTitle>
@@ -386,6 +389,19 @@ const PropostasAbertura = () => {
             </p>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Aguardando Análise Manual</CardTitle>
+            <Clock className="h-4 w-4 text-amber-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-amber-600">{estatisticas.aguardando_analise_manual.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">
+              {estatisticas.total > 0 ? `${((estatisticas.aguardando_analise_manual / estatisticas.total) * 100).toFixed(1)}%` : '0%'} do total
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Gráficos */}
@@ -395,25 +411,65 @@ const PropostasAbertura = () => {
             <CardTitle>Distribuição por Status</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={380}>
               <PieChart>
                 <Pie
                   data={dadosGraficoPizza}
                   cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
+                  cy="45%"
+                  labelLine={true}
+                  label={({ name, percent, value }) => {
+                    if (percent < 3) return ''; // Não mostrar labels muito pequenos
+                    
+                    // Nomes abreviados para o gráfico
+                    const nomeAbreviado = name
+                      .replace('Aprovadas Automaticamente', 'Aprov. Auto')
+                      .replace('Aprovadas Manualmente', 'Aprov. Manual')
+                      .replace('Reprovadas Manualmente', 'Reprovadas')
+                      .replace('Aguardando Análise Manual', 'Aguardando')
+                      .replace('Outros', 'Outros');
+                    
+                    return `${nomeAbreviado}\n${value} (${(percent * 100).toFixed(0)}%)`;
+                  }}
+                  outerRadius={85}
                   fill="#8884d8"
                   dataKey="value"
+                  stroke="#1e293b"
+                  strokeWidth={2}
                 >
                   {dadosGraficoPizza.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip 
+                  formatter={(value, name) => [
+                    `${Number(value)} (${((Number(value) / dadosGraficoPizza.reduce((acc, item) => acc + Number(item.value), 0)) * 100).toFixed(1)}%)`,
+                    name
+                  ]}
+                  contentStyle={{ 
+                    backgroundColor: 'hsl(var(--card))', 
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                    fontSize: '12px'
+                  }}
+                />
               </PieChart>
             </ResponsiveContainer>
+            
+            {/* Legenda compacta */}
+            <div className="mt-2 flex flex-wrap justify-center gap-4 text-xs">
+              {dadosGraficoPizza.map((item, index) => (
+                <div key={index} className="flex items-center gap-1">
+                  <div 
+                    className="w-2 h-2 rounded-full" 
+                    style={{ backgroundColor: item.color }}
+                  ></div>
+                  <span className="text-muted-foreground font-medium">
+                    {item.name}
+                  </span>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
 
