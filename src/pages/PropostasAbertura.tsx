@@ -447,10 +447,17 @@ const PropostasAbertura = () => {
                     name
                   ]}
                   contentStyle={{ 
-                    backgroundColor: 'hsl(var(--card))', 
-                    border: '1px solid hsl(var(--border))',
+                    backgroundColor: '#1e293b',
+                    border: '1px solid #475569',
                     borderRadius: '8px',
+                    color: '#f8fafc',
                     fontSize: '12px'
+                  }}
+                  labelStyle={{
+                    color: '#f8fafc'
+                  }}
+                  itemStyle={{
+                    color: '#f8fafc'
                   }}
                 />
               </PieChart>
