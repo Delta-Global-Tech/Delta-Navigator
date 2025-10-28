@@ -23,7 +23,6 @@ import NetworkTest from "./pages/NetworkTest";
 import ADesembolsar from "./pages/ADesembolsar";
 import Desembolso from "./pages/Desembolso";
 import Licitacoes from "./pages/Licitacoes";
-import TomadaDecisao from "./pages/TomadaDecisao";
 import ComparativoDesembolso from "./pages/ComparativoDesembolso";
 import ComparativoPosicaoContratos from "./pages/ComparativoPosicaoContratos";
 import Cadastral from "./pages/Cadastral";
@@ -52,7 +51,6 @@ function AppContent() {
             <Route path="/a-desembolsar" element={<ADesembolsar />} />
             <Route path="/desembolso" element={<Desembolso />} />
             <Route path="/licitacoes" element={<Licitacoes />} />
-            <Route path="/tomada-decisao" element={<TomadaDecisao />} />
             <Route path="/comparativo-desembolso" element={<ComparativoDesembolso />} />
             <Route path="/posicao-contratos" element={<ComparativoPosicaoContratos />} />
             <Route path="/cadastral" element={<Cadastral />} />
