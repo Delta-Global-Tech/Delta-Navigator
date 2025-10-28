@@ -96,8 +96,10 @@ const ComparativoDesembolso: React.FC = () => {
     setError(null);
     
     try {
-      // Buscar dados principais - usando endpoint único com tipo como parâmetro
-      const endpoint = getApiEndpoint('POSTGRES', `/api/contratos/desembolso?tipo=${type === 'monthly' ? 'mensal' : 'diario'}`);
+      // Buscar dados principais - CONTRATOS rodaна porta 3004
+      const endpoint = type === 'monthly' 
+        ? getApiEndpoint('CONTRATOS', '/api/contratos/desembolso-comparativo-mensal')
+        : getApiEndpoint('CONTRATOS', '/api/contratos/desembolso-comparativo-diario');
       
       logApiCall(endpoint, 'REQUEST');
       const response = await fetch(endpoint);
@@ -109,9 +111,11 @@ const ComparativoDesembolso: React.FC = () => {
       const data = await response.json();
       setComparativeData(data);
 
-      // Para produtos, usar o mesmo endpoint se disponível
+      // Para produtos, usar endpoints específicos
       try {
-        const productEndpoint = getApiEndpoint('POSTGRES', `/api/contratos/desembolso?tipo=${type === 'monthly' ? 'mensal' : 'diario'}&com_produtos=true`);
+        const productEndpoint = type === 'monthly' 
+          ? getApiEndpoint('CONTRATOS', '/api/contratos/desembolso-comparativo-mensal-produtos')
+          : getApiEndpoint('CONTRATOS', '/api/contratos/desembolso-comparativo-diario-produtos');
         
         logApiCall(productEndpoint, 'REQUEST');
         const productResponse = await fetch(productEndpoint);
