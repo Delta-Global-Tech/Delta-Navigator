@@ -6,7 +6,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Calendar, TrendingUp, TrendingDown, ArrowUp, ArrowDown, Minus, RefreshCw, FileSpreadsheet, BarChart3, DollarSign, Filter, X } from 'lucide-react';
 import { getApiEndpoint, logApiCall } from '@/lib/api-config';
 import * as XLSX from 'xlsx';
-import { StaggeredContainer } from '@/components/motion/StaggeredContainer';
 
 // Adicionando estilos personalizados dinamicamente
 if (typeof document !== 'undefined') {
@@ -97,10 +96,8 @@ const ComparativoDesembolso: React.FC = () => {
     setError(null);
     
     try {
-      // Buscar dados principais
-      const endpoint = type === 'monthly' 
-        ? getApiEndpoint('POSTGRES', '/api/contratos/desembolso-comparativo-mensal')
-        : getApiEndpoint('POSTGRES', '/api/contratos/desembolso-comparativo-diario');
+      // Buscar dados principais - usando endpoint único com tipo como parâmetro
+      const endpoint = getApiEndpoint('POSTGRES', `/api/contratos/desembolso?tipo=${type === 'monthly' ? 'mensal' : 'diario'}`);
       
       logApiCall(endpoint, 'REQUEST');
       const response = await fetch(endpoint);
@@ -112,30 +109,36 @@ const ComparativoDesembolso: React.FC = () => {
       const data = await response.json();
       setComparativeData(data);
 
-      // Buscar dados de produtos para ambos os tipos de comparação
-      const productEndpoint = type === 'monthly' 
-        ? getApiEndpoint('POSTGRES', '/api/contratos/desembolso-comparativo-mensal-produtos')
-        : getApiEndpoint('POSTGRES', '/api/contratos/desembolso-comparativo-diario-produtos');
-      
-      logApiCall(productEndpoint, 'REQUEST');
-      const productResponse = await fetch(productEndpoint);
-      
-      if (productResponse.ok) {
-        const products = await productResponse.json();
-        setProductData(products);
+      // Para produtos, usar o mesmo endpoint se disponível
+      try {
+        const productEndpoint = getApiEndpoint('POSTGRES', `/api/contratos/desembolso?tipo=${type === 'monthly' ? 'mensal' : 'diario'}&com_produtos=true`);
         
-        // Extrair lista de produtos únicos para o filtro
-        const uniqueProducts = new Set<string>();
-        products.forEach((period: any) => {
-          if (period.produtos) {
-            period.produtos.forEach((produto: any) => {
-              uniqueProducts.add(produto.produto);
+        logApiCall(productEndpoint, 'REQUEST');
+        const productResponse = await fetch(productEndpoint);
+        
+        if (productResponse.ok) {
+          const products = await productResponse.json();
+          setProductData(products);
+          
+          // Extrair lista de produtos únicos para o filtro
+          const uniqueProducts = new Set<string>();
+          if (Array.isArray(products)) {
+            products.forEach((item: any) => {
+              if (item.produtos) {
+                item.produtos.forEach((produto: any) => {
+                  uniqueProducts.add(produto.produto || produto.descricao_do_produto || 'Sem nome');
+                });
+              }
             });
           }
-        });
-        setAvailableProducts(Array.from(uniqueProducts).sort());
-      } else {
-        console.warn('Não foi possível carregar dados de produtos');
+          setAvailableProducts(Array.from(uniqueProducts).sort());
+        } else {
+          console.warn('Não foi possível carregar dados de produtos');
+          setProductData([]);
+          setAvailableProducts([]);
+        }
+      } catch (err) {
+        console.warn('Erro ao carregar produtos:', err);
         setProductData([]);
         setAvailableProducts([]);
       }
@@ -702,7 +705,7 @@ const ComparativoDesembolso: React.FC = () => {
           <div className="space-y-4">
             <p className="text-xs text-gray-400">{description}</p>
 
-            <StaggeredContainer stagger={0.1} delay={0.1} className="grid grid-cols-1 gap-3">
+            <div>
               {periods.map((period, index) => {
                 const isLatest = index === periods.length - 1;
                 const isSecondMostRecent = index === periods.length - 2;
@@ -786,7 +789,7 @@ const ComparativoDesembolso: React.FC = () => {
                   </div>
                 );
               })}
-            </StaggeredContainer>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -874,7 +877,7 @@ const ComparativoDesembolso: React.FC = () => {
             {!loadingProductDesembolso && productDesembolso && !productDesembolso.error && (
               <div className="space-y-4">
                 {/* Estatísticas Principais */}
-                <StaggeredContainer stagger={0.1} delay={0.1} className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div>
                   <div className="p-3 bg-gradient-to-br from-slate-800 to-slate-900 rounded-md border" style={{ borderColor: 'rgba(196, 138, 63, 0.3)' }}>
                     <div className="text-xs text-slate-300">
                       {productDesembolso.isAggregated ? 'Registros' : 'Desembolsos'}
@@ -897,7 +900,7 @@ const ComparativoDesembolso: React.FC = () => {
                     <div className="text-xs text-slate-300">Total IOF</div>
                     <div className="text-lg font-bold text-white">{formatCurrencyForModal(productDesembolso.estatisticas.totalIof || 0)}</div>
                   </div>
-                </StaggeredContainer>
+                </div>
 
                 {/* Tabela de Desembolsos */}
                 {!productDesembolso.isAggregated && productDesembolso.desembolsos && productDesembolso.desembolsos.length > 0 && (
@@ -969,7 +972,7 @@ const ComparativoDesembolso: React.FC = () => {
                               {expanded && (
                                 <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.02)', background: 'rgba(0,0,0,0.3)' }}>
                                   <td colSpan={9} className="p-4">
-                                    <StaggeredContainer stagger={0.1} delay={0.1} className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                    <div>
                                       <div>
                                         <div className="mb-2"><strong style={{ color: '#C48A3F' }}>Solicitado:</strong> {formatCurrencyForModal(detalhe.valor_solic || 0)}</div>
                                         <div className="mb-2"><strong style={{ color: '#C48A3F' }}>Financiado:</strong> {formatCurrencyForModal(detalhe.vl_financ || 0)}</div>
@@ -982,7 +985,7 @@ const ComparativoDesembolso: React.FC = () => {
                                         <div className="mb-2"><strong style={{ color: '#C48A3F' }}>Taxa CET (%):</strong> {(detalhe.taxa_cet || 0).toFixed(2)}%</div>
                                         <div className="mb-2"><strong style={{ color: '#C48A3F' }}>Instituição:</strong> {detalhe.nome_inst || '-'}</div>
                                       </div>
-                                    </StaggeredContainer>
+                                    </div>
                                     <div className="mt-3 grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
                                       <div>
                                         <span style={{ color: 'rgba(255,255,255,0.6)' }}>Status:</span>
@@ -1265,7 +1268,7 @@ const ComparativoDesembolso: React.FC = () => {
         {!loading && getFilteredMainData.length > 0 && (
           <>
             {/* Primeira Linha - KPIs Principais */}
-            <StaggeredContainer stagger={0.1} delay={0.1} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+            <div>
               {renderAdvancedMetricCard(
                 'Quantidade de Registros',
                 (data) => data.qtdRegistros,
@@ -1297,10 +1300,10 @@ const ComparativoDesembolso: React.FC = () => {
                 'valor médio por registro',
                 <TrendingUp className="h-5 w-5" />
               )}
-            </StaggeredContainer>
+            </div>
 
             {/* Segunda Linha - KPIs Financeiros */}
-            <StaggeredContainer stagger={0.1} delay={0.1} className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div>
               {renderAdvancedMetricCard(
                 'Valor Financiado',
                 (data) => data.valorFinanciado,
@@ -1324,10 +1327,10 @@ const ComparativoDesembolso: React.FC = () => {
                 'taxa média ponderada',
                 <TrendingUp className="h-5 w-5" />
               )}
-            </StaggeredContainer>
+            </div>
 
             {/* Terceira Linha - KPIs Operacionais */}
-            <StaggeredContainer stagger={0.1} delay={0.1} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div>
               {renderAdvancedMetricCard(
                 'Valor TAC',
                 (data) => data.valorTac,
@@ -1351,7 +1354,7 @@ const ComparativoDesembolso: React.FC = () => {
                 'valores diversos',
                 <TrendingDown className="h-5 w-5" />
               )}
-            </StaggeredContainer>
+            </div>
 
             {/* Detalhes por Produto - para ambas as comparações */}
             {filteredProductData.length > 0 && (
@@ -1384,7 +1387,7 @@ const ComparativoDesembolso: React.FC = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <StaggeredContainer stagger={0.1} delay={0.1} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div>
                     {filteredProductData.map((dayData, index) => (
                       <div key={dayData.period} className="space-y-4">
                         <div 
@@ -1504,7 +1507,7 @@ const ComparativoDesembolso: React.FC = () => {
                         )}
                       </div>
                     ))}
-                  </StaggeredContainer>
+                  </div>
                 </CardContent>
               </Card>
             )}
