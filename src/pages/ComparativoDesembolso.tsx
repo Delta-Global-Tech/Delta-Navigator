@@ -1504,7 +1504,7 @@ const ComparativoDesembolso: React.FC = () => {
                         )}
                       </div>
                     ))}
-                  </div>
+                  </StaggeredContainer>
                 </CardContent>
               </Card>
             )}

@@ -725,7 +725,7 @@ const TomadaDecisao: React.FC = () => {
               <div className="text-xs mt-1" style={{ color: themeColors.textMuted }}>→ REAVALIAR ESTRATÉGIA</div>
             </CardContent>
           </Card>
-        </div>
+        </StaggeredContainer>
 
         {/* Top 10 Produtos na Matriz */}
         <StaggeredContainer stagger={0.1} delay={0.1} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -783,7 +783,7 @@ const TomadaDecisao: React.FC = () => {
               </Card>
             );
           })}
-        </div>
+        </StaggeredContainer>
       </div>
 
       {/* Análise de Tendências e Previsões */}
