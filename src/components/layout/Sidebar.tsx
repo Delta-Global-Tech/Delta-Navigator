@@ -30,7 +30,56 @@ interface NavItem {
   variant?: "warning" | "default"
 }
 
-const mainNavItems: NavItem[] = [];
+const mainNavItems: NavItem[] = [
+  {
+    title: "Dashboard",
+    url: "/",
+    icon: LayoutDashboard,
+    description: "Visão Geral"
+  }
+];
+
+const emModuleItems: NavItem[] = [
+  {
+    title: "A Desembolsar",
+    url: "/a-desembolsar",
+    icon: Clock,
+    description: "Pendências de Desembolso"
+  },
+  {
+    title: "Desembolso",
+    url: "/desembolso",
+    icon: TrendingUp,
+    description: "Análise de Desembolsos"
+  },
+  {
+    title: "Licitações",
+    url: "/licitacoes",
+    icon: FileText,
+    description: "Gestão de Licitações"
+  },
+  {
+    title: "Tomada de Decisão",
+    url: "/tomada-decisao",
+    icon: AlertCircle,
+    description: "Análise Inteligente"
+  }
+];
+
+const comparativoNavItems: NavItem[] = [
+  {
+    title: "Comparativo Desembolso",
+    url: "/comparativo-desembolso",
+    icon: TrendingDown,
+    description: "Comparação de Desembolsos"
+  },
+  {
+    title: "Posição Contratos",
+    url: "/posicao-contratos",
+    icon: Shield,
+    description: "Status Geral de Contratos"
+  }
+];
 
 const productionNavItems: NavItem[] = [
   {
@@ -38,6 +87,18 @@ const productionNavItems: NavItem[] = [
     url: "/producao/analytics",
     icon: FileText,
     description: "Análise Completa por Status"
+  },
+  {
+    title: "Produção Novo",
+    url: "/producao-novo",
+    icon: ShoppingCart,
+    description: "Nova Produção"
+  },
+  {
+    title: "Produção Compra",
+    url: "/producao-compra",
+    icon: CheckCircle,
+    description: "Compras Processadas"
   }
 ];
 
@@ -64,19 +125,34 @@ const analysisNavItems: NavItem[] = [
     title: "Extrato",
     url: "/extrato",
     icon: Receipt,
-    description: "Extrato Clientes",
+    description: "Extrato Clientes"
   },
   {
     title: "Ranking Extrato",
     url: "/extrato-ranking",
     icon: TrendingUp,
-    description: "Ranking por Saldo",
+    description: "Ranking por Saldo"
   },
   {
     title: "Faturas",
     url: "/faturas",
     icon: CreditCard,
-    description: "Faturas Cartão",
+    description: "Faturas Cartão"
+  }
+];
+
+const adminNavItems: NavItem[] = [
+  {
+    title: "Cadastral",
+    url: "/cadastral",
+    icon: Search,
+    description: "Gestão Cadastral"
+  },
+  {
+    title: "Backoffice",
+    url: "/backoffice",
+    icon: Shield,
+    description: "Dashboard Admin"
   }
 ];
 
@@ -162,8 +238,12 @@ export function Sidebar() {
 
       {/* Navigation */}
       <div className="flex-1 overflow-y-auto py-4">
-        <NavSection title="Treynor" items={productionNavItems} />
-        <NavSection title="Delta Global Bank" items={analysisNavItems} />
+        <NavSection title="Principal" items={mainNavItems} />
+        <NavSection title="EM Module" items={emModuleItems} />
+        <NavSection title="Comparativos" items={comparativoNavItems} />
+        <NavSection title="Produção" items={productionNavItems} />
+        <NavSection title="Análise & Gestão" items={analysisNavItems} />
+        <NavSection title="Administração" items={adminNavItems} />
       </div>
 
 

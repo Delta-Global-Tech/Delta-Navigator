@@ -10,6 +10,8 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { Layout } from "@/components/layout/Layout";
 import Dashboard from "./pages/Dashboard";
 import ProducaoAnalyticsSimple from "./pages/ProducaoAnalyticsSimple";
+import ProducaoNovo from "./pages/ProducaoNovo";
+import ProducaoCompra from "./pages/ProducaoCompra";
 import Funil from "./pages/Funil";
 import Propostas from "./pages/Propostas";
 import PropostasAbertura from "./pages/PropostasAbertura";
@@ -18,6 +20,14 @@ import Faturas from './pages/Faturas';
 import NotFound from "./pages/NotFound";
 import ExtratoRanking from "./pages/ExtratoRanking";
 import NetworkTest from "./pages/NetworkTest";
+import ADesembolsar from "./pages/ADesembolsar";
+import Desembolso from "./pages/Desembolso";
+import Licitacoes from "./pages/Licitacoes";
+import TomadaDecisao from "./pages/TomadaDecisao";
+import ComparativoDesembolso from "./pages/ComparativoDesembolso";
+import ComparativoPosicaoContratos from "./pages/ComparativoPosicaoContratos";
+import Cadastral from "./pages/Cadastral";
+import BackofficeDeltatype from "./pages/BackofficeDeltatype";
 
 const queryClient = new QueryClient();
 
@@ -31,12 +41,22 @@ function AppContent() {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/producao/analytics" element={<ProducaoAnalyticsSimple />} />
+            <Route path="/producao-novo" element={<ProducaoNovo />} />
+            <Route path="/producao-compra" element={<ProducaoCompra />} />
             <Route path="/funil" element={<Funil />} />
             <Route path="/propostas" element={<Propostas />} />
             <Route path="/propostas-abertura" element={<PropostasAbertura />} />
             <Route path="/extrato" element={<Statement />} />
             <Route path="/extrato-ranking" element={<ExtratoRanking />} />
             <Route path="/faturas" element={<Faturas />} />
+            <Route path="/a-desembolsar" element={<ADesembolsar />} />
+            <Route path="/desembolso" element={<Desembolso />} />
+            <Route path="/licitacoes" element={<Licitacoes />} />
+            <Route path="/tomada-decisao" element={<TomadaDecisao />} />
+            <Route path="/comparativo-desembolso" element={<ComparativoDesembolso />} />
+            <Route path="/posicao-contratos" element={<ComparativoPosicaoContratos />} />
+            <Route path="/cadastral" element={<Cadastral />} />
+            <Route path="/backoffice" element={<BackofficeDeltatype />} />
             <Route path="/network-test" element={<NetworkTest />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

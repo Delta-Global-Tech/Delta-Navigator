@@ -1,0 +1,254 @@
+/* Executive Statement Dashboard Styles - Clean & Professional */
+
+/* Animações Simples e Otimizadas */
+@keyframes float {
+  0%, 100% { 
+    transform: translateY(0px); 
+    opacity: 0.3; 
+  }
+  50% { 
+    transform: translateY(-10px); 
+    opacity: 0.6; 
+  }
+}
+
+@keyframes shimmer {
+  0% { 
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  50% { 
+    transform: translateX(0%);
+    opacity: 0.5;
+  }
+  100% { 
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { 
+    opacity: 0.6; 
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 1; 
+    transform: scale(1.05);
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Container Principal */
+.epic-dashboard-container {
+  position: relative;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #031226 0%, #031226 100%);
+  overflow-x: hidden;
+}
+
+/* KPI Cards Executivos */
+.executive-kpi-card {
+  background: linear-gradient(135deg, rgba(3, 18, 38, 0.95) 0%, rgba(10, 27, 51, 0.9) 100%);
+  border: 1px solid rgba(192, 134, 58, 0.3);
+  border-radius: 12px;
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.executive-kpi-card:hover {
+  border-color: rgba(192, 134, 58, 0.6);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(192, 134, 58, 0.2);
+  transform: translateY(-2px);
+}
+
+.executive-kpi-card .shimmer-effect {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(192, 134, 58, 0.1), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  animation: shimmer 2s infinite;
+}
+
+.executive-kpi-card:hover .shimmer-effect {
+  opacity: 1;
+}
+
+/* Chart Containers */
+.executive-chart-container {
+  background: linear-gradient(135deg, rgba(3, 18, 38, 0.9) 0%, rgba(10, 25, 41, 0.8) 100%);
+  border: 1px solid rgba(192, 134, 58, 0.4);
+  border-radius: 16px;
+  padding: 2rem;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(15px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  transition: all 0.3s ease;
+}
+
+.executive-chart-container:hover {
+  border-color: rgba(192, 134, 58, 0.6);
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5), 0 0 30px rgba(192, 134, 58, 0.2);
+}
+
+/* Table Styles */
+.executive-table {
+  background: linear-gradient(135deg, rgba(3, 18, 38, 0.95) 0%, rgba(10, 27, 51, 0.9) 100%);
+  border: 1px solid rgba(192, 134, 58, 0.3);
+  border-radius: 12px;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+}
+
+.executive-table-header {
+  background: linear-gradient(90deg, rgba(192, 134, 58, 0.2), rgba(192, 134, 58, 0.1));
+  border-bottom: 1px solid rgba(192, 134, 58, 0.3);
+}
+
+.executive-table-row {
+  border-bottom: 1px solid rgba(192, 134, 58, 0.1);
+  transition: all 0.2s ease;
+}
+
+.executive-table-row:hover {
+  background: rgba(192, 134, 58, 0.05);
+  transform: translateX(2px);
+}
+
+.executive-table-cell {
+  padding: 1rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: 'system-ui', -apple-system, sans-serif;
+}
+
+.executive-table-cell.header {
+  color: #C0863A;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Loading States */
+.executive-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #031226 0%, #031226 100%);
+}
+
+.executive-spinner {
+  width: 60px;
+  height: 60px;
+  border: 3px solid rgba(192, 134, 58, 0.3);
+  border-top: 3px solid #C0863A;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  filter: drop-shadow(0 0 20px rgba(192, 134, 58, 0.5));
+}
+
+/* Filters */
+.executive-filters {
+  background: linear-gradient(135deg, rgba(3, 18, 38, 0.9) 0%, rgba(10, 27, 51, 0.8) 100%);
+  border: 1px solid rgba(192, 134, 58, 0.3);
+  border-radius: 12px;
+  padding: 1.5rem;
+  backdrop-filter: blur(10px);
+  margin-bottom: 2rem;
+}
+
+.executive-input {
+  background: rgba(3, 18, 38, 0.8);
+  border: 1px solid rgba(192, 134, 58, 0.3);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  color: #C0863A;
+  font-family: 'system-ui', -apple-system, sans-serif;
+}
+
+.executive-input:focus {
+  outline: none;
+  border-color: rgba(192, 134, 58, 0.6);
+  box-shadow: 0 0 0 2px rgba(192, 134, 58, 0.2);
+}
+
+.executive-button {
+  background: linear-gradient(135deg, #C0863A 0%, rgba(192, 134, 58, 0.8) 100%);
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  color: #031226;
+  font-weight: 600;
+  font-family: 'system-ui', -apple-system, sans-serif;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.executive-button:hover {
+  background: linear-gradient(135deg, rgba(192, 134, 58, 0.9) 0%, #C0863A 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(192, 134, 58, 0.3);
+}
+
+/* Headers */
+.executive-header {
+  text-align: center;
+  margin-bottom: 3rem;
+  padding: 2rem;
+  background: linear-gradient(135deg, rgba(3, 18, 38, 0.9) 0%, rgba(10, 27, 51, 0.8) 100%);
+  border: 1px solid rgba(192, 134, 58, 0.3);
+  border-radius: 16px;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.executive-title {
+  font-size: 3rem;
+  font-weight: 800;
+  color: #C0863A;
+  text-shadow: 0 0 20px rgba(192, 134, 58, 0.8);
+  font-family: 'system-ui', -apple-system, sans-serif;
+  margin-bottom: 1rem;
+}
+
+.executive-subtitle {
+  font-size: 1.25rem;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 0 10px rgba(192, 134, 58, 0.6);
+  font-family: 'system-ui', -apple-system, sans-serif;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .executive-title {
+    font-size: 2rem;
+  }
+  
+  .executive-chart-container {
+    padding: 1rem;
+  }
+  
+  .executive-kpi-card {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .executive-title {
+    font-size: 1.5rem;
+  }
+  
+  .executive-header {
+    padding: 1rem;
+  }
+}

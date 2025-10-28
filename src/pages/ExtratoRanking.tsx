@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { TrendingUp, Users, DollarSign, Target, Crown, Filter, Search, ChevronUp, ChevronDown } from 'lucide-react';
+import { StaggeredContainer } from '@/components/motion/StaggeredContainer';
 import { getApiEndpoint, logApiCall } from '@/lib/api-config';
 import { useSync } from '@/providers/sync-provider';
 

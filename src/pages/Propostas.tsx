@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { usePageXP } from '@/components/gamification';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -12,6 +13,7 @@ import { FileText, Users, DollarSign, TrendingUp, TrendingDown, Calendar, Filter
 import * as XLSX from 'xlsx';
 import { useSync } from '@/providers/sync-provider';
 import { getApiEndpoint, logApiCall } from '@/lib/api-config';
+import { StaggeredContainer } from '@/components/motion/StaggeredContainer';
 
 interface PropostaData {
   cliente: string;
@@ -50,6 +52,9 @@ interface KPIData {
 }
 
 const Propostas = () => {
+  // Gamification
+  usePageXP('page_visit');
+  
   const { updateSync, setRefreshing } = useSync()
   
   // Debug: verificar se hooks estão funcionando
@@ -167,7 +172,6 @@ const Propostas = () => {
     });
   };
 
-  // Função para exportar para Excel
   const exportToExcel = () => {
     if (!sortedPropostas || sortedPropostas.length === 0) {
       alert('Não há dados para exportar');
@@ -467,7 +471,7 @@ const Propostas = () => {
     const custoNominal = kpis.valor_total - kpis.valor_liquido;
     
     return (
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+      <StaggeredContainer stagger={0.1} delay={0.1} className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Valor Total</CardTitle>
@@ -532,7 +536,7 @@ const Propostas = () => {
             </p>
           </CardContent>
         </Card>
-      </div>
+      </StaggeredContainer>
     );
   };
 
@@ -568,7 +572,7 @@ const Propostas = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <StaggeredContainer stagger={0.1} delay={0.1} className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
               <Select value={inputStatus} onValueChange={setInputStatus}>
@@ -615,7 +619,7 @@ const Propostas = () => {
                 }}
               />
             </div>
-          </div>
+          </StaggeredContainer>
           
           <div className="mt-4 flex justify-end gap-2">
             <Button
