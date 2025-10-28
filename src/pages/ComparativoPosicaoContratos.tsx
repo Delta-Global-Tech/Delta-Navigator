@@ -6,7 +6,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Calendar, TrendingUp, TrendingDown, ArrowUp, ArrowDown, Minus, RefreshCw, FileSpreadsheet, BarChart3, Filter, X, Users, DollarSign, Clock, PieChart } from 'lucide-react';
 import { getApiEndpoint, logApiCall } from '@/lib/api-config';
 import * as XLSX from 'xlsx';
-import { StaggeredContainer } from '@/components/motion/StaggeredContainer';
 
 // Adicionando estilos personalizados dinamicamente
 if (typeof document !== 'undefined') {
@@ -101,8 +100,8 @@ const ComparativoPosicaoContratos: React.FC = () => {
     try {
       // Buscar dados principais
       const endpoint = type === 'monthly' 
-        ? getApiEndpoint('CONTRATOS', '/api/contratos/comparativo-mensal')
-        : getApiEndpoint('CONTRATOS', '/api/contratos/comparativo-diario');
+        ? getApiEndpoint('POSTGRES', '/api/contratos/comparativo-mensal')
+        : getApiEndpoint('POSTGRES', '/api/contratos/comparativo-diario');
       
       logApiCall(endpoint, 'REQUEST');
       const response = await fetch(endpoint);
@@ -116,8 +115,8 @@ const ComparativoPosicaoContratos: React.FC = () => {
 
       // Buscar dados de produtos para ambos os tipos de comparação
       const productEndpoint = type === 'monthly' 
-        ? getApiEndpoint('CONTRATOS', '/api/contratos/comparativo-mensal-produtos')
-        : getApiEndpoint('CONTRATOS', '/api/contratos/comparativo-diario-produtos');
+        ? getApiEndpoint('POSTGRES', '/api/contratos/comparativo-mensal-produtos')
+        : getApiEndpoint('POSTGRES', '/api/contratos/comparativo-diario-produtos');
       
       logApiCall(productEndpoint, 'REQUEST');
       const productResponse = await fetch(productEndpoint);
@@ -190,7 +189,7 @@ const ComparativoPosicaoContratos: React.FC = () => {
 
             {!loadingProductPosicao && productPosicao && !productPosicao.error && (
               <div className="space-y-4">
-                <StaggeredContainer stagger={0.1} delay={0.1} className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-2">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-2">
                   <div className="p-3 bg-gradient-to-br from-slate-800 to-slate-900 rounded-md">
                     <div className="text-xs text-slate-300">Contratos encontrados</div>
                     <div className="text-lg font-bold">{productPosicao.estatisticas.totalContratos}</div>
@@ -203,7 +202,7 @@ const ComparativoPosicaoContratos: React.FC = () => {
                     <div className="text-xs text-slate-300">Total Devedor</div>
                     <div className="text-lg font-bold">{formatCurrency(productPosicao.estatisticas.totalDevedor || 0)}</div>
                   </div>
-                </StaggeredContainer>
+                </div>
 
                 <div className="overflow-x-auto rounded-md" style={{ border: '1px solid rgba(255,255,255,0.03)' }}>
                   <table className="w-full text-sm">
@@ -248,7 +247,7 @@ const ComparativoPosicaoContratos: React.FC = () => {
                                   </div>
 
                                   {expanded ? (
-                                    <StaggeredContainer stagger={0.1} delay={0.1} className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-slate-200">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-slate-200">
                                       {/* Render common fields in two columns */}
                                       <div>
                                         <div><strong>Nome do Cliente:</strong> {c.nomeCliente || c.nome_do_cliente || '-'}</div>
@@ -278,7 +277,7 @@ const ComparativoPosicaoContratos: React.FC = () => {
                                           <pre className="whitespace-pre-wrap">{JSON.stringify(c, null, 2)}</pre>
                                         </div>
                                       </div>
-                                    </StaggeredContainer>
+                                    </div>
                                   ) : (
                                     <div className="text-sm text-slate-400">Clique em "Ver detalhes" para expandir todas as informações do contrato.</div>
                                   )}
@@ -388,7 +387,7 @@ const ComparativoPosicaoContratos: React.FC = () => {
       setProductPosicao(null);
       console.log('[COMPARATIVO] fetchPosicaoPorProduto iniciada para:', produto);
       // fetch full posicao-completa and filter by product name (tolerant match)
-      const endpoint = getApiEndpoint('CONTRATOS', '/api/contratos/posicao-completa');
+      const endpoint = getApiEndpoint('POSTGRES', '/api/contratos/posicao-completa');
       logApiCall(endpoint, 'REQUEST');
       const res = await fetch(endpoint);
       if (!res.ok) throw new Error(`Erro na API posicao: ${res.status}`);
@@ -763,7 +762,7 @@ const ComparativoPosicaoContratos: React.FC = () => {
             <p className="text-xs text-gray-400">{description}</p>
             
             {/* Grid dos 3 períodos */}
-            <StaggeredContainer stagger={0.1} delay={0.1} className="grid grid-cols-1 gap-3">
+            <div className="grid grid-cols-1 gap-3">
               {periods.map((period, index) => {
                 const isLatest = index === periods.length - 1;
                 const isMostRecent = index === periods.length - 1;
@@ -866,7 +865,7 @@ const ComparativoPosicaoContratos: React.FC = () => {
                   </div>
                 );
               })}
-            </StaggeredContainer>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -1100,7 +1099,7 @@ const ComparativoPosicaoContratos: React.FC = () => {
         {!loading && getFilteredMainData.length > 0 && (
           <>
             {/* Primeira Linha - KPIs Principais */}
-            <StaggeredContainer stagger={0.1} delay={0.1} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
               {renderAdvancedMetricCard(
                 'Total de Contratos',
                 (data) => data.qtdContratos,
@@ -1132,10 +1131,10 @@ const ComparativoPosicaoContratos: React.FC = () => {
                 'saldo em aberto',
                 <TrendingDown className="h-6 w-6" style={{ color: '#ef4444' }} />
               )}
-            </StaggeredContainer>
+            </div>
 
             {/* Segunda Linha - KPIs Analíticos */}
-            <StaggeredContainer stagger={0.1} delay={0.1} className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
               {renderAdvancedMetricCard(
                 'Ticket Médio',
                 (data) => data.ticketMedio,
@@ -1159,10 +1158,10 @@ const ComparativoPosicaoContratos: React.FC = () => {
                 'parcelas quitadas',
                 <Calendar className="h-6 w-6" style={{ color: '#C48A3F' }} />
               )}
-            </StaggeredContainer>
+            </div>
 
             {/* Terceira Linha - KPIs Operacionais */}
-            <StaggeredContainer stagger={0.1} delay={0.1} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               {renderAdvancedMetricCard(
                 'Custo de Emissão',
                 (data) => data.custoEmissao,
@@ -1195,7 +1194,7 @@ const ComparativoPosicaoContratos: React.FC = () => {
                 '% média de parcelas pagas',
                 <ArrowUp className="h-5 w-5" style={{ color: '#C48A3F' }} />
               )}
-            </StaggeredContainer>
+            </div>
 
             {/* Detalhes por Produto - para ambas as comparações */}
             {filteredProductData.length > 0 && (
@@ -1228,7 +1227,7 @@ const ComparativoPosicaoContratos: React.FC = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <StaggeredContainer stagger={0.1} delay={0.1} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {filteredProductData.map((dayData, index) => (
                       <div key={dayData.period} className="space-y-4">
                         <div 
@@ -1348,7 +1347,7 @@ const ComparativoPosicaoContratos: React.FC = () => {
                         )}
                       </div>
                     ))}
-                  </StaggeredContainer>
+                  </div>
                 </CardContent>
               </Card>
             )}
