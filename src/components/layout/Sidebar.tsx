@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   LayoutDashboard, 
   UserPlus, 
@@ -13,7 +13,8 @@ import {
   TrendingDown,
   FileText,
   Receipt,
-  CreditCard
+  CreditCard,
+  ChevronDown
 } from "lucide-react"
 import { NavLink, useLocation } from "react-router-dom"
 import { cn } from "@/lib/utils"
@@ -39,7 +40,28 @@ const mainNavItems: NavItem[] = [
   }
 ];
 
+const treynoItems: NavItem[] = [
+  {
+    title: "Produção Analytics",
+    url: "/producao/analytics",
+    icon: FileText,
+    description: "Análise Completa por Status"
+  }
+];
+
 const emModuleItems: NavItem[] = [
+  {
+    title: "Comparativo Desembolso",
+    url: "/comparativo-desembolso",
+    icon: TrendingDown,
+    description: "Análise Comparativa de Desembolsos"
+  },
+  {
+    title: "Comparativo por Contrato",
+    url: "/comparativo-contrato",
+    icon: TrendingDown,
+    description: "Comparação entre Contratos"
+  },
   {
     title: "A Desembolsar",
     url: "/a-desembolsar",
@@ -53,27 +75,6 @@ const emModuleItems: NavItem[] = [
     description: "Análise de Desembolsos"
   },
   {
-    title: "Licitações",
-    url: "/licitacoes",
-    icon: FileText,
-    description: "Gestão de Licitações"
-  },
-  {
-    title: "Tomada de Decisão",
-    url: "/tomada-decisao",
-    icon: AlertCircle,
-    description: "Análise Inteligente"
-  }
-];
-
-const comparativoNavItems: NavItem[] = [
-  {
-    title: "Comparativo Desembolso",
-    url: "/comparativo-desembolso",
-    icon: TrendingDown,
-    description: "Comparação de Desembolsos"
-  },
-  {
     title: "Posição Contratos",
     url: "/posicao-contratos",
     icon: Shield,
@@ -81,45 +82,18 @@ const comparativoNavItems: NavItem[] = [
   }
 ];
 
-const productionNavItems: NavItem[] = [
-  {
-    title: "Produção Analytics",
-    url: "/producao/analytics",
-    icon: FileText,
-    description: "Análise Completa por Status"
-  },
-  {
-    title: "Produção Novo",
-    url: "/producao-novo",
-    icon: ShoppingCart,
-    description: "Nova Produção"
-  },
-  {
-    title: "Produção Compra",
-    url: "/producao-compra",
-    icon: CheckCircle,
-    description: "Compras Processadas"
-  }
-];
-
-const analysisNavItems: NavItem[] = [
-  {
-    title: "Funil",
-    url: "/funil",
-    icon: TrendingDown,
-    description: "Funil de Conversão"
-  },
-  {
-    title: "Propostas",
-    url: "/propostas",
-    icon: FileText,
-    description: "Gestão de Propostas"
-  },
+const deltaGlobalBankItems: NavItem[] = [
   {
     title: "Propostas Abertura",
     url: "/propostas-abertura",
     icon: UserPlus,
     description: "Abertura de Contas"
+  },
+  {
+    title: "Cadastral",
+    url: "/cadastral",
+    icon: Search,
+    description: "Gestão Cadastral"
   },
   {
     title: "Extrato",
@@ -141,81 +115,105 @@ const analysisNavItems: NavItem[] = [
   }
 ];
 
-const adminNavItems: NavItem[] = [
+const fgtsItems: NavItem[] = [
   {
-    title: "Cadastral",
-    url: "/cadastral",
-    icon: Search,
-    description: "Gestão Cadastral"
+    title: "Funil",
+    url: "/funil",
+    icon: TrendingDown,
+    description: "Funil de Conversão"
   },
+  {
+    title: "Propostas",
+    url: "/propostas",
+    icon: FileText,
+    description: "Gestão de Propostas"
+  }
+];
+
+const comparativoNavItems: NavItem[] = [];
+
+const productionNavItems: NavItem[] = [
   {
     title: "Backoffice",
     url: "/backoffice",
     icon: Shield,
     description: "Dashboard Admin"
+  },
+  {
+    title: "Licitações",
+    url: "/licitacoes",
+    icon: FileText,
+    description: "Gestão de Licitações"
   }
 ];
+
+const analysisNavItems: NavItem[] = [];
 
 interface NavSectionProps {
   title: string
   items: NavItem[]
 }
 
-function NavSection({ title, items }: NavSectionProps) {
+interface CollapsibleNavSectionProps {
+  title: string
+  items: NavItem[]
+  defaultOpen?: boolean
+}
+
+function CollapsibleNavSection({ title, items, defaultOpen = true }: CollapsibleNavSectionProps) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
   const location = useLocation();
+
   return (
-    <div className="mb-6">
-      <h3 className="mb-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-        {title}
-      </h3>
-      <nav className="space-y-1 px-2">
-        {items.map((item) => {
-          const isActive = location.pathname === item.url;
-          return (
-            <NavLink
-              key={item.url}
-              to={item.url}
-              className={cn(
-                "group flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 hover:bg-accent/50",
-                isActive
-                  ? "bg-primary/10 text-primary border border-primary/20 shadow-sm"
-                  : "text-sidebar-foreground hover:text-foreground"
-              )}
-            >
-              <div className="flex items-center gap-3">
-                <item.icon className={cn(
-                  "h-4 w-4 transition-colors",
-                  isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
-                )} />
-                <div className="flex flex-col">
-                  <span className="leading-none">{item.title}</span>
-                  <span className="text-xs text-muted-foreground mt-0.5">
-                    {item.description}
-                  </span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {item.badge && (
-                  <Badge
-                    variant={item.variant === "warning" ? "destructive" : "secondary"}
-                    className={cn(
-                      "text-xs h-5 px-1.5",
-                      item.variant === "warning"
-                        ? "bg-warning/10 text-warning border-warning/20"
-                        : "bg-primary/10 text-primary border-primary/20"
-                    )}
-                  >
-                    {item.badge}
-                  </Badge>
+    <div className="mb-4">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between px-4 py-2 text-sm font-semibold text-muted-foreground uppercase tracking-wider hover:bg-accent/30 rounded-md transition-colors"
+      >
+        <span>{title}</span>
+        <ChevronDown
+          className={cn(
+            "h-4 w-4 transition-transform duration-200",
+            isOpen ? "rotate-0" : "-rotate-90"
+          )}
+        />
+      </button>
+
+      {isOpen && (
+        <nav className="space-y-1 px-2 mt-2">
+          {items.map((item) => {
+            const isActive = location.pathname === item.url;
+            return (
+              <NavLink
+                key={item.url}
+                to={item.url}
+                className={cn(
+                  "group flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 hover:bg-accent/50",
+                  isActive
+                    ? "bg-primary/10 text-primary border border-primary/20 shadow-sm"
+                    : "text-sidebar-foreground hover:text-foreground"
                 )}
+              >
+                <div className="flex items-center gap-3">
+                  <item.icon className={cn(
+                    "h-4 w-4 transition-colors",
+                    isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+                  )} />
+                  <div className="flex flex-col">
+                    <span className="leading-none">{item.title}</span>
+                    <span className="text-xs text-muted-foreground mt-0.5">
+                      {item.description}
+                    </span>
+                  </div>
+                </div>
                 {isActive && (
                   <ChevronRight className="h-3 w-3 text-primary" />
                 )}
-              </div>
-            </NavLink>
-          );
-        })}
-      </nav>
+              </NavLink>
+            );
+          })}
+        </nav>
+      )}
     </div>
   );
 }
@@ -238,12 +236,12 @@ export function Sidebar() {
 
       {/* Navigation */}
       <div className="flex-1 overflow-y-auto py-4">
-        <NavSection title="Principal" items={mainNavItems} />
-        <NavSection title="EM Module" items={emModuleItems} />
-        <NavSection title="Comparativos" items={comparativoNavItems} />
-        <NavSection title="Produção" items={productionNavItems} />
-        <NavSection title="Análise & Gestão" items={analysisNavItems} />
-        <NavSection title="Administração" items={adminNavItems} />
+        <CollapsibleNavSection title="Principal" items={mainNavItems} />
+        <CollapsibleNavSection title="Treyno" items={treynoItems} />
+        <CollapsibleNavSection title="EM" items={emModuleItems} />
+        <CollapsibleNavSection title="Delta Global Bank" items={deltaGlobalBankItems} />
+        <CollapsibleNavSection title="FGTS" items={fgtsItems} />
+        <CollapsibleNavSection title="Administração" items={productionNavItems} />
       </div>
 
 

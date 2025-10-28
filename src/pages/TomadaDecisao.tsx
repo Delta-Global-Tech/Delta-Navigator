@@ -652,7 +652,7 @@ const TomadaDecisao: React.FC = () => {
                 </CardContent>
               </Card>
             ))}
-          </div>
+          </StaggeredContainer>
         </div>
       )}
 
@@ -765,7 +765,7 @@ const TomadaDecisao: React.FC = () => {
                 <CardContent className="space-y-2">
                   <div className={`font-semibold text-sm ${bcgStyle.text}`}>
                     {produto.produto}
-                  </StaggeredContainer>
+                  </div>
                   <StaggeredContainer stagger={0.1} delay={0.1} className="grid grid-cols-2 gap-2 text-xs">
                     <div className={bcgStyle.text}>
                       <div>Crescimento</div>
@@ -898,7 +898,7 @@ const TomadaDecisao: React.FC = () => {
                     </div>
                   </div>
                 ))}
-              </div>
+              </StaggeredContainer>
             </CardContent>
           </Card>
         </div>
@@ -1054,7 +1054,7 @@ const TomadaDecisao: React.FC = () => {
               </CardContent>
             </Card>
           ))}
-        </div>
+        </StaggeredContainer>
       </div>
 
       {/* Oportunidades de Crescimento */}
@@ -1094,7 +1094,7 @@ const TomadaDecisao: React.FC = () => {
                 </CardContent>
               </Card>
             ))}
-          </div>
+          </StaggeredContainer>
         </div>
       )}
 
@@ -1123,7 +1123,7 @@ const TomadaDecisao: React.FC = () => {
                 <div className="text-5xl font-bold text-white">
                   {data.analise_comportamental.score_fidelidade.toFixed(0)}
                   <span className="text-lg text-blue-200">/100</span>
-                </StaggeredContainer>
+                </div>
                 <div className="w-full bg-blue-800 rounded-full h-3">
                   <div 
                     className="h-3 rounded-full bg-gradient-to-r from-blue-400 to-blue-200 transition-all duration-1000"
@@ -1224,7 +1224,7 @@ const TomadaDecisao: React.FC = () => {
             <CardContent className="space-y-4">
               <div className="text-4xl font-bold text-white text-center">
                 {data.concentracao_risco.por_cliente.percentual_top_10.toFixed(1)}%
-              </StaggeredContainer>
+              </div>
               <p className="text-pink-200 text-center">concentrados nos TOP 10 clientes</p>
               <div className="space-y-3">
                 <div className="flex justify-between items-center p-2 bg-pink-900/30 rounded">
@@ -1313,7 +1313,7 @@ const TomadaDecisao: React.FC = () => {
                   <Badge className="bg-sky-800/80 text-sky-100 border-sky-600 text-lg px-3 py-1">
                     #{index + 1}
                   </Badge>
-                </StaggeredContainer>
+                </div>
                 
                 <CardContent className="space-y-4 pt-2">
                   {/* Indicador de potencial */}
@@ -1357,7 +1357,7 @@ const TomadaDecisao: React.FC = () => {
                 </CardContent>
               </Card>
             ))}
-          </div>
+          </StaggeredContainer>
         </div>
       )}
 
@@ -1380,7 +1380,7 @@ const TomadaDecisao: React.FC = () => {
             <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-600">
               <div className="text-2xl font-bold text-green-400">
                 {data.previsoes_inteligentes.score_saude_portfolio.toFixed(0)}/100
-              </StaggeredContainer>
+              </div>
               <div className="text-gray-300 text-sm">Saúde do Portfólio</div>
             </div>
             <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-600">
@@ -1395,7 +1395,7 @@ const TomadaDecisao: React.FC = () => {
               </div>
               <div className="text-gray-300 text-sm">Insights Críticos</div>
             </div>
-          </div>
+          </StaggeredContainer>
           
           <div className="bg-gray-800/30 p-6 rounded-lg border border-gray-700">
             <h3 className="text-xl font-bold text-yellow-400 mb-4 text-center">
@@ -1457,7 +1457,7 @@ const TomadaDecisao: React.FC = () => {
                 </CardContent>
               </Card>
             ))}
-          </div>
+          </StaggeredContainer>
         </div>
       )}
 

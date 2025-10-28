@@ -24,9 +24,10 @@ import ADesembolsar from "./pages/ADesembolsar";
 import Desembolso from "./pages/Desembolso";
 import Licitacoes from "./pages/Licitacoes";
 import ComparativoDesembolso from "./pages/ComparativoDesembolso";
-import ComparativoPosicaoContratos from "./pages/ComparativoPosicaoContratos";
+import ComparativoPorContrato from "./pages/ComparativoPorContrato";
 import Cadastral from "./pages/Cadastral";
 import BackofficeDeltatype from "./pages/BackofficeDeltatype";
+import PosicaoContratosCompleta from "./pages/PosicaoContratosCompleta";
 
 const queryClient = new QueryClient();
 
@@ -52,7 +53,8 @@ function AppContent() {
             <Route path="/desembolso" element={<Desembolso />} />
             <Route path="/licitacoes" element={<Licitacoes />} />
             <Route path="/comparativo-desembolso" element={<ComparativoDesembolso />} />
-            <Route path="/posicao-contratos" element={<ComparativoPosicaoContratos />} />
+            <Route path="/comparativo-contrato" element={<ComparativoPorContrato />} />
+            <Route path="/posicao-contratos" element={<PosicaoContratosCompleta />} />
             <Route path="/cadastral" element={<Cadastral />} />
             <Route path="/backoffice" element={<BackofficeDeltatype />} />
             <Route path="/network-test" element={<NetworkTest />} />

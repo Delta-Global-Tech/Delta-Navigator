@@ -81,7 +81,7 @@ const PosicaoContratosCompleta: React.FC = () => {
     setError(null);
     
     try {
-      const endpoint = getApiEndpoint('CONTRATOS', '/api/contratos/posicao-completa');
+      const endpoint = getApiEndpoint('POSTGRES', '/api/contratos/posicao-completa');
       logApiCall(endpoint, 'REQUEST');
       
       const response = await fetch(endpoint);
@@ -324,8 +324,7 @@ const PosicaoContratosCompleta: React.FC = () => {
     return top;
   }, [dadosFiltrados]);
 
-  // import { StaggeredContainer } from "@/components/motion/StaggeredContainer"
-export Top5 CSV
+  // Exportar top 5 produtos para CSV
   const exportTop5CSV = () => {
     if (!produtosTop5 || produtosTop5.length === 0) return;
     const total = produtosTop5.reduce((s, p) => s + p.valor, 0);
@@ -463,7 +462,7 @@ export Top5 CSV
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <StaggeredContainer stagger={0.1} delay={0.1} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+            <div>
               {/* Filtro de Data */}
               <div className="space-y-2">
                 <label className="text-sm text-slate-300" style={{ color: '#C0863A' }}>Data Início</label>
@@ -473,7 +472,7 @@ export Top5 CSV
                   onChange={(e) => setFiltros({...filtros, dataInicio: e.target.value})}
                   className="bg-slate-800 border-slate-600 text-slate-100 focus:border-yellow-500"
                 />
-              </StaggeredContainer>
+              </div>
               <div className="space-y-2">
                 <label className="text-sm text-slate-300" style={{ color: '#C0863A' }}>Data Fim</label>
                 <Input
@@ -638,7 +637,7 @@ export Top5 CSV
         {/* Estatísticas Principais */}
         {!loading && dadosFiltrados && (
           <>
-            <StaggeredContainer stagger={0.1} delay={0.1} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
+            <div>
               {/* Total de Contratos */}
               <Card 
                 className="relative border-0 shadow-2xl overflow-hidden group transition-all duration-500 hover:scale-105"
@@ -655,7 +654,7 @@ export Top5 CSV
                   <Users className="h-6 w-6" style={{ color: '#C48A3F' }} />
                 </CardHeader>
                 <CardContent className="px-8 pb-8">
-                  <div className="text-3xl font-bold text-white mb-3">{formatNumber(dadosFiltrados.estatisticas.totalContratos)}</StaggeredContainer>
+                  <div className="text-3xl font-bold text-white mb-3">{formatNumber(dadosFiltrados.estatisticas.totalContratos)}</div>
                   <p className="text-sm text-gray-300">contratos ativos</p>
                 </CardContent>
               </Card>
@@ -738,7 +737,7 @@ export Top5 CSV
             </div>
 
             {/* Cards Adicionais - Linha 1 */}
-            <StaggeredContainer stagger={0.1} delay={0.1} className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4 mb-8">
+            <div>
               {/* Ticket Médio */}
               <Card 
                 className="relative border-0 shadow-2xl overflow-hidden transition-all duration-500 hover:scale-105"
@@ -755,7 +754,7 @@ export Top5 CSV
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="px-8 pb-8">
-                  <div className="text-3xl font-bold text-white mb-3">{formatCurrency(dadosFiltrados.estatisticas.ticketMedio)}</StaggeredContainer>
+                  <div className="text-3xl font-bold text-white mb-3">{formatCurrency(dadosFiltrados.estatisticas.ticketMedio)}</div>
                   <p className="text-sm text-gray-300">valor médio por contrato</p>
                 </CardContent>
               </Card>
@@ -804,7 +803,7 @@ export Top5 CSV
             </div>
 
             {/* Cards Adicionais - Linha 2 - Novos KPIs */}
-            <StaggeredContainer stagger={0.1} delay={0.1} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div>
               {/* CET Média Ponderada */}
               <Card 
                 className="relative border-0 shadow-2xl overflow-hidden transition-all duration-500 hover:scale-105"
@@ -823,7 +822,7 @@ export Top5 CSV
                 <CardContent className="px-6 pb-6">
                   <div className="text-2xl font-bold mb-2" style={{ color: '#C48A3F' }}>
                     {(taxaCetMediaPonderada * 100).toFixed(2)}%
-                  </StaggeredContainer>
+                  </div>
                   <p className="text-xs text-gray-300">ponderada pelo saldo devedor</p>
                 </CardContent>
               </Card>
@@ -902,7 +901,7 @@ export Top5 CSV
             </div>
 
             {/* Segunda linha de KPIs - Novos KPIs Financeiros */}
-            <StaggeredContainer stagger={0.1} delay={0.1} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div>
               {/* Valor Total Financiado */}
               <Card 
                 className="relative border-0 shadow-2xl overflow-hidden transition-all duration-500 hover:scale-105"
@@ -921,7 +920,7 @@ export Top5 CSV
                 <CardContent className="px-6 pb-6">
                   <div className="text-2xl font-bold text-green-400 mb-2">
                     {formatCurrency(dadosFiltrados.contratos.reduce((sum, c) => sum + c.valorFinanciado, 0))}
-                  </StaggeredContainer>
+                  </div>
                   <p className="text-xs text-gray-300">capital principal</p>
                 </CardContent>
               </Card>
@@ -980,7 +979,7 @@ export Top5 CSV
             </div>
 
             {/* Terceira linha - Duration Conceito */}
-            <StaggeredContainer stagger={0.1} delay={0.1} className="grid grid-cols-1 gap-6 mt-6">
+            <div>
               <Card 
                 className="relative border-0 shadow-2xl overflow-hidden transition-all duration-500"
                 style={{ 
@@ -1001,7 +1000,7 @@ export Top5 CSV
                       <div className="text-3xl font-bold text-blue-400 mb-1">
                         {(dadosFiltrados.contratos.reduce((sum, c) => sum + (c.duracaoMeses * c.valorTotalDevedor), 0) / 
                           dadosFiltrados.contratos.reduce((sum, c) => sum + c.valorTotalDevedor, 0)).toFixed(1)} meses
-                      </StaggeredContainer>
+                      </div>
                       <p className="text-xs text-slate-400">Duration média ponderada</p>
                     </div>
                     <div className="flex-1 text-sm text-slate-300 leading-relaxed">
@@ -1017,7 +1016,7 @@ export Top5 CSV
 
 
             {/* Gráficos */}
-            <StaggeredContainer stagger={0.1} delay={0.1} className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
+            <div>
               {/* Gráfico de Linha - Evolução Mensal */}
               <Card 
                 className="relative border-0 shadow-2xl overflow-hidden transition-all duration-500"
@@ -1118,7 +1117,7 @@ export Top5 CSV
                           <Tooltip formatter={(value: any) => [formatCurrency(value), 'Saldo']} />
                         </RePieChart>
                       </ResponsiveContainer>
-                    </StaggeredContainer>
+                    </div>
                     <div style={{ width: 220 }} className="text-sm">
                       <div className="flex items-center justify-between mb-2">
                         <strong className="text-slate-100">Top 5 Produtos</strong>

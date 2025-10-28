@@ -99,8 +99,8 @@ const ComparativoDesembolso: React.FC = () => {
     try {
       // Buscar dados principais
       const endpoint = type === 'monthly' 
-        ? getApiEndpoint('CONTRATOS', '/api/contratos/desembolso-comparativo-mensal')
-        : getApiEndpoint('CONTRATOS', '/api/contratos/desembolso-comparativo-diario');
+        ? getApiEndpoint('POSTGRES', '/api/contratos/desembolso-comparativo-mensal')
+        : getApiEndpoint('POSTGRES', '/api/contratos/desembolso-comparativo-diario');
       
       logApiCall(endpoint, 'REQUEST');
       const response = await fetch(endpoint);
@@ -114,8 +114,8 @@ const ComparativoDesembolso: React.FC = () => {
 
       // Buscar dados de produtos para ambos os tipos de comparação
       const productEndpoint = type === 'monthly' 
-        ? getApiEndpoint('CONTRATOS', '/api/contratos/desembolso-comparativo-mensal-produtos')
-        : getApiEndpoint('CONTRATOS', '/api/contratos/desembolso-comparativo-diario-produtos');
+        ? getApiEndpoint('POSTGRES', '/api/contratos/desembolso-comparativo-mensal-produtos')
+        : getApiEndpoint('POSTGRES', '/api/contratos/desembolso-comparativo-diario-produtos');
       
       logApiCall(productEndpoint, 'REQUEST');
       const productResponse = await fetch(productEndpoint);
@@ -156,7 +156,7 @@ const ComparativoDesembolso: React.FC = () => {
       console.log('[COMPARATIVO DESEMBOLSO] fetchDesembolsoPorProduto iniciada para:', produto, 'período:', period);
       
       // fetch full desembolso and filter by product name (tolerant match)
-      const endpoint = getApiEndpoint('CONTRATOS', '/api/contratos/desembolso');
+      const endpoint = getApiEndpoint('POSTGRES', '/api/contratos/desembolso');
       logApiCall(endpoint, 'REQUEST');
       const res = await fetch(endpoint);
       if (!res.ok) throw new Error(`Erro na API desembolso: ${res.status}`);
