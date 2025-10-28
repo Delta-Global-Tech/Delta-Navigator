@@ -878,7 +878,7 @@ const ComparativoDesembolso: React.FC = () => {
                   <div className="p-3 bg-gradient-to-br from-slate-800 to-slate-900 rounded-md border" style={{ borderColor: 'rgba(196, 138, 63, 0.3)' }}>
                     <div className="text-xs text-slate-300">
                       {productDesembolso.isAggregated ? 'Registros' : 'Desembolsos'}
-                    </StaggeredContainer>
+                    </div>
                     <div className="text-lg font-bold text-white">{productDesembolso.estatisticas.totalRegistros}</div>
                   </div>
                   <div className="p-3 bg-gradient-to-br from-slate-800 to-slate-900 rounded-md border" style={{ borderColor: 'rgba(196, 138, 63, 0.3)' }}>

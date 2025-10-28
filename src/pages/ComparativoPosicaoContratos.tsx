@@ -278,7 +278,7 @@ const ComparativoPosicaoContratos: React.FC = () => {
                                           <pre className="whitespace-pre-wrap">{JSON.stringify(c, null, 2)}</pre>
                                         </div>
                                       </div>
-                                    </div>
+                                    </StaggeredContainer>
                                   ) : (
                                     <div className="text-sm text-slate-400">Clique em "Ver detalhes" para expandir todas as informações do contrato.</div>
                                   )}

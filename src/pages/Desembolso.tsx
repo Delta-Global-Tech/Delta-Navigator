@@ -1217,7 +1217,7 @@ const Desembolso = () => {
                         </>
                       );
                     })()}
-                  </div>
+                  </StaggeredContainer>
 
                   {/* Compact table with rows */}
                   <div className="overflow-x-auto rounded-md" style={{ border: '1px solid rgba(255,255,255,0.03)' }}>
