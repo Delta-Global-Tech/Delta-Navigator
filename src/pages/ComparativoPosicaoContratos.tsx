@@ -1348,7 +1348,7 @@ const ComparativoPosicaoContratos: React.FC = () => {
                         )}
                       </div>
                     ))}
-                  </div>
+                  </StaggeredContainer>
                 </CardContent>
               </Card>
             )}

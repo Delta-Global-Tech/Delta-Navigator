@@ -1396,7 +1396,7 @@ const ComparativoDesembolso: React.FC = () => {
                           }}
                         >
                           {comparativeType === 'monthly' ? formatMonthLabel(dayData.period || dayData.display || '') : formatDayLabel(dayData.period || dayData.display || '')}
-                        </StaggeredContainer>
+                        </div>
                         {dayData.produtos && dayData.produtos.length > 0 ? (
                           <div className="space-y-3">
                             {dayData.produtos.map((produto: any, pIndex: number) => (

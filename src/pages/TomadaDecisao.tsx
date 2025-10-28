@@ -1403,7 +1403,7 @@ const TomadaDecisao: React.FC = () => {
             </h3>
             <StaggeredContainer stagger={0.1} delay={0.1} className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div className="space-y-2">
-                <div className="text-gray-300">• Focar em produtos SÓLIDOS da Matriz BCG</StaggeredContainer>
+                <div className="text-gray-300">• Focar em produtos SÓLIDOS da Matriz BCG</div>
                 <div className="text-gray-300">• Implementar cross-sell nos {data.oportunidades_crosssell.length} produtos identificados</div>
                 <div className="text-gray-300">• Monitorar concentração de risco em clientes TOP 10</div>
               </div>
@@ -1412,7 +1412,7 @@ const TomadaDecisao: React.FC = () => {
                 <div className="text-gray-300">• Diversificar base de clientes para reduzir concentração</div>
                 <div className="text-gray-300">• Aproveitar padrões sazonais para maximizar receita</div>
               </div>
-            </div>
+            </StaggeredContainer>
           </div>
         </CardContent>
       </Card>
@@ -1442,7 +1442,7 @@ const TomadaDecisao: React.FC = () => {
                 <CardContent className="space-y-2">
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div>
-                      <div className="text-gray-400">Operações</StaggeredContainer>
+                      <div className="text-gray-400">Operações</div>
                       <div className="text-white font-semibold">{formatNumber(regiao.operacoes)}</div>
                     </div>
                     <div>
