@@ -515,11 +515,11 @@ const TomadaDecisao: React.FC = () => {
                     <p className="font-semibold text-sm" style={{ color: themeColors.secondary }}>
                       🎯 Ação Recomendada: {alerta.acao}
                     </p>
-                  </StaggeredContainer>
+                  </div>
                 </CardContent>
               </Card>
             ))}
-          </div>
+          </StaggeredContainer>
         </div>
       )}
 

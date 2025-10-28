@@ -786,7 +786,7 @@ const ComparativoDesembolso: React.FC = () => {
                   </div>
                 );
               })}
-            </div>
+            </StaggeredContainer>
           </div>
         </CardContent>
       </Card>

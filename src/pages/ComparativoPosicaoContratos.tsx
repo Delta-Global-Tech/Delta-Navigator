@@ -251,7 +251,7 @@ const ComparativoPosicaoContratos: React.FC = () => {
                                     <StaggeredContainer stagger={0.1} delay={0.1} className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-slate-200">
                                       {/* Render common fields in two columns */}
                                       <div>
-                                        <div><strong>Nome do Cliente:</strong> {c.nomeCliente || c.nome_do_cliente || '-'}</StaggeredContainer>
+                                        <div><strong>Nome do Cliente:</strong> {c.nomeCliente || c.nome_do_cliente || '-'}</div>
                                         <div><strong>Produto:</strong> {c.descricao_do_produto || c.descricaoDoProduto || '-'}</div>
                                         <div><strong>Nº Contrato:</strong> {contractId}</div>
                                         <div><strong>Valor Financiado:</strong> {formatCurrency(c.valorFinanciado || c.valor_financiado || 0)}</div>

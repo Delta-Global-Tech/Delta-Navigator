@@ -1187,7 +1187,7 @@ const Desembolso = () => {
                       return (
                         <>
                           <div className="p-4 bg-gradient-to-br from-slate-800 to-slate-900 rounded-md">
-                            <div className="text-sm text-slate-300">Valor Financiado</StaggeredContainer>
+                            <div className="text-sm text-slate-300">Valor Financiado</div>
                             <div className="text-2xl font-bold" title={formatCurrency(valorFin)}>{formatCurrencyCompact(valorFin)}</div>
                           </div>
                           <div className="p-4 bg-gradient-to-br from-slate-800 to-slate-900 rounded-md">
