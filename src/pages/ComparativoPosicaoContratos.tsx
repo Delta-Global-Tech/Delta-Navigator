@@ -822,7 +822,7 @@ const ComparativoPosicaoContratos: React.FC = () => {
                               Filtrado
                             </Badge>
                           )}
-                        </StaggeredContainer>
+                        </div>
                         <div className="text-xs text-gray-400 mb-2">
                           {period.label}
                         </div>

@@ -673,7 +673,7 @@ const TomadaDecisao: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-sm" style={{ color: themeColors.primary }}>Alto crescimento + Alta participação</StaggeredContainer>
+              <div className="text-sm" style={{ color: themeColors.primary }}>Alto crescimento + Alta participação</div>
               <div className="text-xs mt-1" style={{ color: themeColors.primary + 'CC' }}>→ EXPANDIR AGRESSIVAMENTE</div>
             </CardContent>
           </Card>
@@ -768,7 +768,7 @@ const TomadaDecisao: React.FC = () => {
                   </StaggeredContainer>
                   <StaggeredContainer stagger={0.1} delay={0.1} className="grid grid-cols-2 gap-2 text-xs">
                     <div className={bcgStyle.text}>
-                      <div>Crescimento</StaggeredContainer>
+                      <div>Crescimento</div>
                       <div className="font-bold">{produto.crescimento.toFixed(1)}%</div>
                     </div>
                     <div className={bcgStyle.text}>
@@ -886,7 +886,7 @@ const TomadaDecisao: React.FC = () => {
                       ? 'linear-gradient(135deg, #0F5132 0%, #198754 100%)'
                       : 'linear-gradient(135deg, #7C2D12 0%, #DC2626 100%)'
                   }}>
-                    <div className="text-xs text-gray-300">{periodo.periodo}</StaggeredContainer>
+                    <div className="text-xs text-gray-300">{periodo.periodo}</div>
                     <div className="text-lg font-bold text-white">
                       {formatCurrency(periodo.volume)}
                     </div>
@@ -1005,7 +1005,7 @@ const TomadaDecisao: React.FC = () => {
               <CardContent className="space-y-3">
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <div className="text-gray-400">Operações</StaggeredContainer>
+                    <div className="text-gray-400">Operações</div>
                     <div className="text-white font-semibold">{formatNumber(produto.operacoes)}</div>
                   </div>
                   <div>
@@ -1082,7 +1082,7 @@ const TomadaDecisao: React.FC = () => {
                 </CardHeader>
                 <CardContent className="space-y-2">
                   {oportunidade.regiao && (
-                    <div className="text-white font-semibold">{oportunidade.regiao}</StaggeredContainer>
+                    <div className="text-white font-semibold">{oportunidade.regiao}</div>
                   )}
                   {oportunidade.atual && (
                     <div className="text-orange-200 text-sm">Atual: {oportunidade.atual}</div>

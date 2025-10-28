@@ -897,7 +897,7 @@ const ComparativoDesembolso: React.FC = () => {
                     <div className="text-xs text-slate-300">Total IOF</div>
                     <div className="text-lg font-bold text-white">{formatCurrencyForModal(productDesembolso.estatisticas.totalIof || 0)}</div>
                   </div>
-                </div>
+                </StaggeredContainer>
 
                 {/* Tabela de Desembolsos */}
                 {!productDesembolso.isAggregated && productDesembolso.desembolsos && productDesembolso.desembolsos.length > 0 && (
