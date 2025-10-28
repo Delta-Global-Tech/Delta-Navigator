@@ -866,7 +866,7 @@ const ComparativoPosicaoContratos: React.FC = () => {
                   </div>
                 );
               })}
-            </div>
+            </StaggeredContainer>
           </div>
         </CardContent>
       </Card>
@@ -1240,7 +1240,7 @@ const ComparativoPosicaoContratos: React.FC = () => {
                           }}
                         >
                           {dayData.display}
-                        </StaggeredContainer>
+                        </div>
                         {dayData.produtos && dayData.produtos.length > 0 ? (
                           <div className="space-y-3">
                             {dayData.produtos.map((produto: any, pIndex: number) => (

@@ -971,7 +971,7 @@ const ComparativoDesembolso: React.FC = () => {
                                   <td colSpan={9} className="p-4">
                                     <StaggeredContainer stagger={0.1} delay={0.1} className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                                       <div>
-                                        <div className="mb-2"><strong style={{ color: '#C48A3F' }}>Solicitado:</strong> {formatCurrencyForModal(detalhe.valor_solic || 0)}</StaggeredContainer>
+                                        <div className="mb-2"><strong style={{ color: '#C48A3F' }}>Solicitado:</strong> {formatCurrencyForModal(detalhe.valor_solic || 0)}</div>
                                         <div className="mb-2"><strong style={{ color: '#C48A3F' }}>Financiado:</strong> {formatCurrencyForModal(detalhe.vl_financ || 0)}</div>
                                         <div className="mb-2"><strong style={{ color: '#C48A3F' }}>Liberado:</strong> {formatCurrencyForModal(detalhe.vlr_liberado || 0)}</div>
                                         <div className="mb-2"><strong style={{ color: '#C48A3F' }}>TAC:</strong> {formatCurrencyForModal(detalhe.vlr_tac || 0)}</div>
@@ -982,7 +982,7 @@ const ComparativoDesembolso: React.FC = () => {
                                         <div className="mb-2"><strong style={{ color: '#C48A3F' }}>Taxa CET (%):</strong> {(detalhe.taxa_cet || 0).toFixed(2)}%</div>
                                         <div className="mb-2"><strong style={{ color: '#C48A3F' }}>Instituição:</strong> {detalhe.nome_inst || '-'}</div>
                                       </div>
-                                    </div>
+                                    </StaggeredContainer>
                                     <div className="mt-3 grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
                                       <div>
                                         <span style={{ color: 'rgba(255,255,255,0.6)' }}>Status:</span>

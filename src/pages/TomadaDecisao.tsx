@@ -474,7 +474,7 @@ const TomadaDecisao: React.FC = () => {
             <p className="text-xs" style={{ color: themeColors.primary + 'CC' }}>Parceiras ativas</p>
           </CardContent>
         </Card>
-      </div>
+      </StaggeredContainer>
 
       {/* Alertas Críticos */}
       {data.alertas_criticos && data.alertas_criticos.length > 0 && (
@@ -594,7 +594,7 @@ const TomadaDecisao: React.FC = () => {
                         <strong>Mês Crítico:</strong> {insight.mes_critico} 
                         <span className="ml-2" style={{ color: themeColors.textMuted }}>({insight.concentracao} do volume)</span>
                       </p>
-                    </StaggeredContainer>
+                    </div>
                   )}
                   
                   {insight.quantidade && (
