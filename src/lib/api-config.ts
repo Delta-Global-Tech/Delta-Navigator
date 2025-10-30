@@ -42,6 +42,7 @@ export const API_URLS = {
   POSTGRES: getApiUrl(3002, 'VITE_API_POSTGRES_URL'), 
   EXTRATO: getApiUrl(3003, 'VITE_EXTRATO_API_URL'),
   CONTRATOS: getApiUrl(3004, 'VITE_API_CONTRATOS_URL'),
+  IUGU: getApiUrl(3005, 'VITE_API_IUGU_URL'),
 } as const;
 
 // Log das URLs geradas para debug

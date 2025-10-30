@@ -169,7 +169,6 @@ app.get('/api/statement/ranking', async (req, res) => {
     res.status(500).json({ error: 'Erro ao buscar ranking', details: error.message });
   }
 });
-app.use(express.json());
 
 // Rota de teste
 app.get('/api/test', async (req, res) => {
@@ -673,8 +672,215 @@ app.get('/api/propostas-abertura', async (req, res) => {
   }
 });
 
+// ============================================
+// ENDPOINTS CADASTRAIS - NOVA TELA CADASTRAL V2
+// ============================================
+
+// GET /api/cadastral/clientes - Lista clientes cadastrados
+app.get('/api/cadastral/clientes', async (req, res) => {
+  try {
+    const { search, limite = 500 } = req.query;
+    
+    const cacheKey = getCacheKey('cadastral-clientes', { search, limite });
+    const cachedResult = getFromCache(cacheKey);
+    
+    if (cachedResult) {
+      return res.json(cachedResult);
+    }
+
+    let query = `
+      SELECT DISTINCT
+        da.account_id,
+        da.personal_name as nome,
+        da.personal_document as cpf_cnpj,
+        da.email,
+        da.status_description as status_conta
+      FROM dim_account da
+      WHERE da.personal_name IS NOT NULL
+    `;
+
+    const params = [];
+    let paramIndex = 1;
+
+    // Filtro de busca
+    if (search) {
+      query += ` AND (
+        LOWER(da.personal_name) LIKE LOWER($${paramIndex}) OR
+        LOWER(da.personal_document) LIKE LOWER($${paramIndex}) OR
+        LOWER(da.email) LIKE LOWER($${paramIndex})
+      )`;
+      params.push(`%${search}%`);
+      paramIndex++;
+    }
+
+    query += ` ORDER BY da.personal_name ASC LIMIT ${limite}`;
+
+    const result = await pool.query(query, params);
+    
+    const responseData = {
+      clientes: result.rows,
+      total: result.rows.length
+    };
+
+    setCache(cacheKey, responseData);
+    res.json(responseData);
+
+  } catch (error) {
+    console.error('Erro ao buscar clientes cadastrais:', error);
+    res.status(500).json({ 
+      error: 'Erro ao buscar clientes', 
+      details: error.message 
+    });
+  }
+});
+
+// GET /api/cadastral/stats - Estatísticas cadastrais
+app.get('/api/cadastral/stats', async (req, res) => {
+  try {
+    const cacheKey = getCacheKey('cadastral-stats', {});
+    const cachedResult = getFromCache(cacheKey);
+    
+    if (cachedResult) {
+      return res.json(cachedResult);
+    }
+
+    let whereClause = 'WHERE da.personal_name IS NOT NULL';
+
+    // Total de clientes
+    const totalQuery = `
+      SELECT COUNT(DISTINCT da.account_id) as total_clientes
+      FROM dim_account da
+      ${whereClause}
+    `;
+    
+    // Clientes ativos
+    const ativosQuery = `
+      SELECT COUNT(DISTINCT da.account_id) as clientes_ativos
+      FROM dim_account da
+      ${whereClause}
+      AND LOWER(da.status_description) LIKE '%bloqueado%'
+    `;
+
+    // Clientes inativos
+    const inativosQuery = `
+      SELECT COUNT(DISTINCT da.account_id) as clientes_inativos
+      FROM dim_account da
+      ${whereClause}
+      AND (LOWER(da.status_description) NOT LIKE '%bloqueado%')
+    `;
+
+    const [totalResult, ativosResult, inativosResult] = await Promise.all([
+      pool.query(totalQuery, []),
+      pool.query(ativosQuery, []),
+      pool.query(inativosQuery, [])
+    ]);
+
+    const responseData = {
+      total_clientes: parseInt(totalResult.rows[0]?.total_clientes) || 0,
+      clientes_ativos: parseInt(ativosResult.rows[0]?.clientes_ativos) || 0,
+      clientes_inativos: parseInt(inativosResult.rows[0]?.clientes_inativos) || 0,
+      total_credito_liberado: 0,
+      credito_medio: 0,
+      total_estados: 0,
+      total_cidades: 0
+    };
+
+    setCache(cacheKey, responseData);
+    res.json(responseData);
+
+  } catch (error) {
+    console.error('Erro ao buscar estatísticas cadastrais:', error);
+    res.status(500).json({ 
+      error: 'Erro ao buscar estatísticas', 
+      details: error.message 
+    });
+  }
+});
+
+// GET /api/cadastral/mapa-cidades - Mapa de cidades por estado
+app.get('/api/cadastral/mapa-cidades', async (req, res) => {
+  try {
+    const cacheKey = getCacheKey('cadastral-mapa-cidades', {});
+    const cachedResult = getFromCache(cacheKey);
+    
+    if (cachedResult) {
+      return res.json(cachedResult);
+    }
+
+    const query = `
+      SELECT
+        'Brasil' as estado,
+        COUNT(DISTINCT da.account_id) as quantidade_clientes
+      FROM dim_account da
+      WHERE da.personal_name IS NOT NULL
+    `;
+
+    const result = await pool.query(query, []);
+    
+    const responseData = {
+      dados: result.rows
+    };
+
+    setCache(cacheKey, responseData);
+    res.json(responseData);
+
+  } catch (error) {
+    console.error('Erro ao buscar mapa de cidades:', error);
+    res.status(500).json({ 
+      error: 'Erro ao buscar mapa', 
+      details: error.message 
+    });
+  }
+});
+
+// GET /api/cadastral/evolucao-mensal - Evolução mensal de cadastros
+app.get('/api/cadastral/evolucao-mensal', async (req, res) => {
+  try {
+    const cacheKey = getCacheKey('cadastral-evolucao-mensal', {});
+    const cachedResult = getFromCache(cacheKey);
+    
+    if (cachedResult) {
+      return res.json(cachedResult);
+    }
+
+    const query = `
+      SELECT 
+        DATE_TRUNC('month', NOW()) as mes,
+        COUNT(DISTINCT da.account_id) as total_cadastros
+      FROM dim_account da
+      WHERE da.personal_name IS NOT NULL
+      GROUP BY DATE_TRUNC('month', NOW())
+      ORDER BY mes ASC
+    `;
+
+    const result = await pool.query(query, []);
+    
+    const dados = result.rows.map(row => ({
+      mes: row.mes,
+      mes_nome: 'Atual',
+      total_cadastros: parseInt(row.total_cadastros) || 0,
+      total_credito_liberado: 0,
+      credito_medio_mes: 0
+    }));
+
+    const responseData = {
+      dados
+    };
+
+    setCache(cacheKey, responseData);
+    res.json(responseData);
+
+  } catch (error) {
+    console.error('Erro ao buscar evolução mensal:', error);
+    res.status(500).json({ 
+      error: 'Erro ao buscar evolução', 
+      details: error.message 
+    });
+  }
+});
+
 // Iniciar servidor
-  app.listen(port, '0.0.0.0', () => {
+app.listen(port, '0.0.0.0', () => {
 });
 
 // Teste de conexão na inicialização

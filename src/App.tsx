@@ -8,6 +8,7 @@ import { SyncProvider, useSync } from "@/providers/sync-provider";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { Layout } from "@/components/layout/Layout";
+import { SidebarProvider } from "@/contexts/SidebarContext";
 import Dashboard from "./pages/Dashboard";
 import ProducaoAnalyticsSimple from "./pages/ProducaoAnalyticsSimple";
 import ProducaoNovo from "./pages/ProducaoNovo";
@@ -23,9 +24,11 @@ import NetworkTest from "./pages/NetworkTest";
 import ADesembolsar from "./pages/ADesembolsar";
 import Desembolso from "./pages/Desembolso";
 import Licitacoes from "./pages/Licitacoes";
+import LicitacoesV2 from "./pages/LicitacoesV2";
 import ComparativoDesembolso from "./pages/ComparativoDesembolso";
 import ComparativoPorContrato from "./pages/ComparativoPorContrato";
 import Cadastral from "./pages/Cadastral";
+import CadastralV2 from "./pages/CadastralV2";
 import BackofficeDeltatype from "./pages/BackofficeDeltatype";
 import PosicaoContratosCompleta from "./pages/PosicaoContratosCompleta";
 
@@ -52,10 +55,12 @@ function AppContent() {
             <Route path="/a-desembolsar" element={<ADesembolsar />} />
             <Route path="/desembolso" element={<Desembolso />} />
             <Route path="/licitacoes" element={<Licitacoes />} />
+            <Route path="/licitacoes-v2" element={<LicitacoesV2 />} />
             <Route path="/comparativo-desembolso" element={<ComparativoDesembolso />} />
             <Route path="/comparativo-contrato" element={<ComparativoPorContrato />} />
             <Route path="/posicao-contratos" element={<PosicaoContratosCompleta />} />
             <Route path="/cadastral" element={<Cadastral />} />
+            <Route path="/cadastral-v2" element={<CadastralV2 />} />
             <Route path="/backoffice" element={<BackofficeDeltatype />} />
             <Route path="/network-test" element={<NetworkTest />} />
             <Route path="*" element={<NotFound />} />
@@ -70,13 +75,15 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <SyncProvider>
-        <ThemeProvider defaultTheme="dark" storageKey="delta-theme">
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <AppContent />
-          </TooltipProvider>
-        </ThemeProvider>
+        <SidebarProvider>
+          <ThemeProvider defaultTheme="dark" storageKey="delta-theme">
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <AppContent />
+            </TooltipProvider>
+          </ThemeProvider>
+        </SidebarProvider>
       </SyncProvider>
     </AuthProvider>
   </QueryClientProvider>

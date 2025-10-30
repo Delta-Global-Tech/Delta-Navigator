@@ -6,7 +6,6 @@ import { FileText, DollarSign, TrendingUp, Users, AlertCircle, CheckCircle, XCir
 import { getApiEndpoint, logApiCall } from '@/lib/api-config';
 import * as XLSX from 'xlsx';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { StaggeredContainer } from '@/components/motion/StaggeredContainer';
 
 // Adicionando estilos personalizados dinamicamente
 if (typeof document !== 'undefined') {
@@ -775,7 +774,7 @@ const Desembolso = () => {
       </div>
 
       {/* KPIs Principais (estilo alinhado com Posição Contratos) */}
-      <StaggeredContainer stagger={0.1} delay={0.1} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8 relative z-10">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8 relative z-10">
         <KPICard
           title="Total Contratos"
           value={stats.total_contratos.toLocaleString()}
@@ -800,10 +799,10 @@ const Desembolso = () => {
           subtitle="Valor médio por contrato"
           icon={TrendingUp}
         />
-      </StaggeredContainer>
+      </div>
 
       {/* KPIs de Taxas e Status */}
-      <StaggeredContainer stagger={0.1} delay={0.1} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 relative z-10">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 relative z-10">
         <KPICard
           title="Taxa Média"
           value={formatPercent(stats.taxa_media || 0)}
@@ -834,7 +833,7 @@ const Desembolso = () => {
           subtitle="Imposto sobre operações financeiras"
           icon={AlertCircle}
         />
-      </StaggeredContainer>
+      </div>
 
       {/* Ranking de Produtos por Categoria */}
       {rankingData && (
@@ -1007,7 +1006,7 @@ const Desembolso = () => {
                 border: '1px solid rgba(192, 134, 58, 0.2)'
               }}
             >
-              <StaggeredContainer stagger={0.1} delay={0.1} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Filtros de Data */}
                 <div>
                   <label className="block text-sm font-medium mb-1" style={{ color: '#C0863A' }}>
@@ -1122,7 +1121,7 @@ const Desembolso = () => {
                     ))}
                   </select>
                 </div>
-              </StaggeredContainer>
+              </div>
 
               <div className="flex justify-end gap-2 mt-4">
                 <Button
@@ -1172,7 +1171,7 @@ const Desembolso = () => {
               {!loadingPosicao && contratoPosicao && !contratoPosicao.error && (
                 <div className="space-y-4 text-white">
                   {/* KPIs linha */}
-                  <StaggeredContainer stagger={0.1} delay={0.1} className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-6 mb-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-6 mb-4">
                     {(() => {
                       const first = contratoPosicao.contratos?.[0] || {};
                       const valorFin = (first.valor_financiado ?? first.valorFinanciado ?? 0);
@@ -1217,7 +1216,7 @@ const Desembolso = () => {
                         </>
                       );
                     })()}
-                  </StaggeredContainer>
+                  </div>
 
                   {/* Compact table with rows */}
                   <div className="overflow-x-auto rounded-md" style={{ border: '1px solid rgba(255,255,255,0.03)' }}>

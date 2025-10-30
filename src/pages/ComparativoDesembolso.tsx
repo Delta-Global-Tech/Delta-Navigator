@@ -163,7 +163,7 @@ const ComparativoDesembolso: React.FC = () => {
       console.log('[COMPARATIVO DESEMBOLSO] fetchDesembolsoPorProduto iniciada para:', produto, 'período:', period);
       
       // fetch full desembolso and filter by product name (tolerant match)
-      const endpoint = getApiEndpoint('POSTGRES', '/api/contratos/desembolso');
+      const endpoint = getApiEndpoint('CONTRATOS', '/api/contratos/desembolso');
       logApiCall(endpoint, 'REQUEST');
       const res = await fetch(endpoint);
       if (!res.ok) throw new Error(`Erro na API desembolso: ${res.status}`);
@@ -700,7 +700,7 @@ const ComparativoDesembolso: React.FC = () => {
         }}
       >
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 pt-6 px-6">
-          <CardTitle className="text-base font-semibold" style={{ color: '#C48A3F' }}>
+          <CardTitle className="text-lg font-bold" style={{ color: '#C48A3F' }}>
             {title}
           </CardTitle>
           <div style={{ color: '#C48A3F' }}>{icon}</div>
@@ -1082,15 +1082,15 @@ const ComparativoDesembolso: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
+      <div className="max-w-full mx-auto px-4 space-y-8">
         {/* Header */}
         <div className="text-center space-y-4">
           <h1 className="text-4xl font-bold bg-gradient-to-r from-yellow-400 to-orange-600 bg-clip-text text-transparent">
             Comparativo Desembolso
           </h1>
           <p className="text-slate-400 text-lg">
-            Análise comparativa temporal dos dados de desembolso
+            Análise comparativa temporal com KPIs avançados e insights financeiros
           </p>
         </div>
 
@@ -1098,18 +1098,18 @@ const ComparativoDesembolso: React.FC = () => {
         <Card 
           className="relative border-0 shadow-2xl overflow-hidden transition-all duration-500"
           style={{ 
-            background: 'linear-gradient(135deg, #031226 0%, #0a1b33 50%, #031226 100%)',
-            borderColor: 'rgba(192, 134, 58, 0.3)',
-            border: '1px solid rgba(192, 134, 58, 0.3)'
+            background: 'linear-gradient(135deg, #06162B 0%, #0a1b33 50%, #06162B 100%)',
+            border: '2px solid rgba(196, 138, 63, 0.4)',
+            boxShadow: '0 15px 40px rgba(0, 0, 0, 0.6)'
           }}
         >
           <CardHeader>
             <CardTitle 
-              className="flex items-center gap-2 font-bold"
-              style={{ color: '#C0863A' }}
+              className="flex items-center gap-2 font-bold text-xl"
+              style={{ color: '#C48A3F' }}
             >
-              <Calendar className="h-5 w-5" />
-              Controles de Comparação
+              <Calendar className="h-6 w-6" />
+              Controles de Comparação Avançada
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -1272,13 +1272,13 @@ const ComparativoDesembolso: React.FC = () => {
         {!loading && getFilteredMainData.length > 0 && (
           <>
             {/* Primeira Linha - KPIs Principais */}
-            <div>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
               {renderAdvancedMetricCard(
                 'Quantidade de Registros',
                 (data) => data.qtdRegistros,
                 formatNumber,
                 'registros totais',
-                <TrendingUp className="h-5 w-5" />
+                <TrendingUp className="h-6 w-6" style={{ color: '#C48A3F' }} />
               )}
 
               {renderAdvancedMetricCard(
@@ -1286,7 +1286,7 @@ const ComparativoDesembolso: React.FC = () => {
                 (data) => data.totalDesembolsado,
                 formatCurrency,
                 'total desembolsado',
-                <DollarSign className="h-5 w-5" />
+                <DollarSign className="h-6 w-6" style={{ color: '#C48A3F' }} />
               )}
 
               {renderAdvancedMetricCard(
@@ -1294,7 +1294,7 @@ const ComparativoDesembolso: React.FC = () => {
                 (data) => data.valorSolicitado,
                 formatCurrency,
                 'valor solicitado',
-                <TrendingUp className="h-5 w-5" />
+                <TrendingUp className="h-6 w-6" style={{ color: '#C48A3F' }} />
               )}
 
               {renderAdvancedMetricCard(
@@ -1302,26 +1302,26 @@ const ComparativoDesembolso: React.FC = () => {
                 (data) => data.ticketMedio,
                 formatCurrency,
                 'valor médio por registro',
-                <TrendingUp className="h-5 w-5" />
+                <BarChart3 className="h-6 w-6" style={{ color: '#C48A3F' }} />
               )}
             </div>
 
             {/* Segunda Linha - KPIs Financeiros */}
-            <div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
               {renderAdvancedMetricCard(
                 'Valor Financiado',
                 (data) => data.valorFinanciado,
                 formatCurrency,
-                'valor financiado',
-                <DollarSign className="h-5 w-5" />
+                'capital principal',
+                <TrendingUp className="h-6 w-6" style={{ color: '#C48A3F' }} />
               )}
 
               {renderAdvancedMetricCard(
                 'Valor Liberado',
                 (data) => data.valorLiberado,
                 formatCurrency,
-                'valor liberado',
-                <TrendingUp className="h-5 w-5" />
+                'valor efetivamente liberado',
+                <TrendingUp className="h-6 w-6" style={{ color: '#22c55e' }} />
               )}
 
               {renderAdvancedMetricCard(
@@ -1329,34 +1329,42 @@ const ComparativoDesembolso: React.FC = () => {
                 (data) => data.taxaMedia,
                 formatPercentage,
                 'taxa média ponderada',
-                <TrendingUp className="h-5 w-5" />
+                <TrendingUp className="h-6 w-6" style={{ color: '#C48A3F' }} />
               )}
             </div>
 
             {/* Terceira Linha - KPIs Operacionais */}
-            <div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               {renderAdvancedMetricCard(
                 'Valor TAC',
                 (data) => data.valorTac,
                 formatCurrency,
                 'custos operacionais',
-                <TrendingDown className="h-5 w-5" />
+                <TrendingDown className="h-5 w-5" style={{ color: '#C48A3F' }} />
               )}
 
               {renderAdvancedMetricCard(
                 'Valor IOF',
                 (data) => data.valorIof,
                 formatCurrency,
-                'imposto IOF',
-                <TrendingDown className="h-5 w-5" />
+                'imposto sobre operações',
+                <TrendingDown className="h-5 w-5" style={{ color: '#C48A3F' }} />
               )}
 
               {renderAdvancedMetricCard(
                 'Outros Valores',
                 (data) => data.outrosValores,
                 formatCurrency,
-                'valores diversos',
-                <TrendingDown className="h-5 w-5" />
+                'valores adicionais',
+                <TrendingDown className="h-5 w-5" style={{ color: '#C48A3F' }} />
+              )}
+
+              {renderAdvancedMetricCard(
+                'Taxa de Desembolso',
+                (data) => data.valorFinanciado > 0 ? (data.totalDesembolsado / data.valorFinanciado) * 100 : 0,
+                (value) => `${value.toFixed(1)}%`,
+                '% média de desembolso',
+                <ArrowUp className="h-5 w-5" style={{ color: '#C48A3F' }} />
               )}
             </div>
 
@@ -1391,7 +1399,7 @@ const ComparativoDesembolso: React.FC = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div>
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {filteredProductData.map((dayData, index) => (
                       <div key={dayData.period} className="space-y-4">
                         <div 
@@ -1419,14 +1427,14 @@ const ComparativoDesembolso: React.FC = () => {
                                 {/* Produto Header */}
                                 <div className="flex justify-between items-start mb-3">
                                   <h5 
-                                    className="font-bold text-sm leading-tight max-w-[60%]" 
+                                    className="font-bold text-sm leading-tight max-w-full break-words" 
                                     style={{ 
                                       color: '#FFFFFF',
                                       textShadow: '0 0 8px rgba(196, 138, 63, 0.4)'
                                     }}
                                     title={produto.produto}
                                   >
-                                    {produto.produto.length > 25 ? `${produto.produto.substring(0, 25)}...` : produto.produto}
+                                    {produto.produto}
                                   </h5>
                                   <Badge 
                                     variant="outline" 

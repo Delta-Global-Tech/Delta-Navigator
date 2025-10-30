@@ -4,7 +4,7 @@ import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Input } from '../components/ui/input';
-import { RefreshCw, DollarSign, TrendingUp, Calendar, Clock, BarChart3, PieChart, Users, FileText, Filter, Download, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
+import { RefreshCw, DollarSign, TrendingUp, Calendar, Clock, BarChart3, PieChart, Users, FileText, Filter, Download, ChevronUp, ChevronDown, ChevronsUpDown, CheckCircle2 } from 'lucide-react';
 import { getApiEndpoint, logApiCall } from '@/lib/api-config';
 import * as XLSX from 'xlsx';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart as RePieChart, Pie, Cell } from 'recharts';
@@ -67,6 +67,9 @@ const PosicaoContratosCompleta: React.FC = () => {
     taxaMaxima: ''
   });
 
+  // Estado para controlar visibilidade dos filtros
+  const [mostrarFiltros, setMostrarFiltros] = useState(false);
+
   // Estados para ordenação
   const [ordenacao, setOrdenacao] = useState<{
     campo: string | null;
@@ -81,7 +84,7 @@ const PosicaoContratosCompleta: React.FC = () => {
     setError(null);
     
     try {
-      const endpoint = getApiEndpoint('POSTGRES', '/api/contratos/posicao-completa');
+      const endpoint = getApiEndpoint('CONTRATOS', '/api/contratos/posicao-completa');
       logApiCall(endpoint, 'REQUEST');
       
       const response = await fetch(endpoint);
@@ -452,16 +455,37 @@ const PosicaoContratosCompleta: React.FC = () => {
             border: '1px solid rgba(192, 134, 58, 0.3)'
           }}
         >
-          <CardHeader>
-            <CardTitle 
-              className="flex items-center gap-2 font-bold"
-              style={{ color: '#C0863A' }}
-            >
-              <Filter className="h-5 w-5" />
-              Filtros e Controles
-            </CardTitle>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle 
+                className="flex items-center gap-2 font-bold"
+                style={{ color: '#C0863A' }}
+              >
+                <Filter className="h-5 w-5" />
+                Filtros e Controles
+              </CardTitle>
+              <Button
+                onClick={() => setMostrarFiltros(!mostrarFiltros)}
+                variant="outline"
+                size="sm"
+                className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-slate-100"
+              >
+                {mostrarFiltros ? (
+                  <>
+                    <ChevronUp className="h-4 w-4 mr-1" />
+                    Esconder
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="h-4 w-4 mr-1" />
+                    Mostrar
+                  </>
+                )}
+              </Button>
+            </div>
           </CardHeader>
-          <CardContent>
+          {mostrarFiltros && (
+            <CardContent className="pt-0">
             <div>
               {/* Filtro de Data */}
               <div className="space-y-2">
@@ -621,7 +645,8 @@ const PosicaoContratosCompleta: React.FC = () => {
                 {dadosFiltrados ? `${dadosFiltrados.contratos.length} de ${dados?.contratos.length || 0} contratos` : ''}
               </div>
             </div>
-          </CardContent>
+            </CardContent>
+          )}
         </Card>
 
         {/* Loading State */}
@@ -637,7 +662,8 @@ const PosicaoContratosCompleta: React.FC = () => {
         {/* Estatísticas Principais */}
         {!loading && dadosFiltrados && (
           <>
-            <div>
+            {/* KPIs Principais em Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               {/* Total de Contratos */}
               <Card 
                 className="relative border-0 shadow-2xl overflow-hidden group transition-all duration-500 hover:scale-105"
@@ -736,8 +762,8 @@ const PosicaoContratosCompleta: React.FC = () => {
               </Card>
             </div>
 
-            {/* Cards Adicionais - Linha 1 */}
-            <div>
+            {/* KPIs Adicionais em Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               {/* Ticket Médio */}
               <Card 
                 className="relative border-0 shadow-2xl overflow-hidden transition-all duration-500 hover:scale-105"
@@ -800,11 +826,8 @@ const PosicaoContratosCompleta: React.FC = () => {
                   <p className="text-sm text-gray-300">% médio recuperado da carteira</p>
                 </CardContent>
               </Card>
-            </div>
 
-            {/* Cards Adicionais - Linha 2 - Novos KPIs */}
-            <div>
-              {/* CET Média Ponderada */}
+              {/* CET Média Ponderada - 4º KPI da linha 2 */}
               <Card 
                 className="relative border-0 shadow-2xl overflow-hidden transition-all duration-500 hover:scale-105"
                 style={{ 
@@ -813,20 +836,23 @@ const PosicaoContratosCompleta: React.FC = () => {
                   boxShadow: '0 15px 40px rgba(0, 0, 0, 0.6)'
                 }}
               >
-                <CardHeader className="pt-6 px-6 pb-3">
-                  <CardTitle className="flex items-center gap-2 text-base font-semibold" style={{ color: '#C48A3F' }}>
-                    <BarChart3 className="h-5 w-5" />
+                <CardHeader className="pt-8 px-8 pb-4">
+                  <CardTitle className="flex items-center gap-2 text-lg font-semibold" style={{ color: '#C48A3F' }}>
+                    <BarChart3 className="h-6 w-6" />
                     CET Média Ponderada
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="px-6 pb-6">
-                  <div className="text-2xl font-bold mb-2" style={{ color: '#C48A3F' }}>
+                <CardContent className="px-8 pb-8">
+                  <div className="text-3xl font-bold text-yellow-400 mb-3">
                     {(taxaCetMediaPonderada * 100).toFixed(2)}%
                   </div>
-                  <p className="text-xs text-gray-300">ponderada pelo saldo devedor</p>
+                  <p className="text-sm text-gray-300">ponderada pelo saldo devedor</p>
                 </CardContent>
               </Card>
+            </div>
 
+            {/* KPIs Terciários em Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               {/* Prazo Médio Ponderado */}
               <Card 
                 className="relative border-0 shadow-2xl overflow-hidden transition-all duration-500 hover:scale-105"
@@ -836,17 +862,17 @@ const PosicaoContratosCompleta: React.FC = () => {
                   boxShadow: '0 15px 40px rgba(0, 0, 0, 0.6)'
                 }}
               >
-                <CardHeader className="pt-6 px-6 pb-3">
-                  <CardTitle className="flex items-center gap-2 text-base font-semibold" style={{ color: '#C48A3F' }}>
-                    <Clock className="h-5 w-5" />
+                <CardHeader className="pt-8 px-8 pb-4">
+                  <CardTitle className="flex items-center gap-2 text-lg font-semibold" style={{ color: '#C48A3F' }}>
+                    <Clock className="h-6 w-6" />
                     Prazo Médio Ponderado
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="px-6 pb-6">
-                  <div className="text-2xl font-bold text-blue-400 mb-2">
+                <CardContent className="px-8 pb-8">
+                  <div className="text-3xl font-bold text-blue-400 mb-3">
                     {prazoMedioPonderado.toFixed(1)} meses
                   </div>
-                  <p className="text-xs text-gray-300">ponderado pelo saldo devedor</p>
+                  <p className="text-sm text-gray-300">ponderado pelo saldo devedor</p>
                 </CardContent>
               </Card>
 
@@ -859,17 +885,17 @@ const PosicaoContratosCompleta: React.FC = () => {
                   boxShadow: '0 15px 40px rgba(0, 0, 0, 0.6)'
                 }}
               >
-                <CardHeader className="pt-6 px-6 pb-3">
-                  <CardTitle className="flex items-center gap-2 text-base font-semibold" style={{ color: '#C48A3F' }}>
-                    <TrendingUp className="h-5 w-5" />
+                <CardHeader className="pt-8 px-8 pb-4">
+                  <CardTitle className="flex items-center gap-2 text-lg font-semibold" style={{ color: '#C48A3F' }}>
+                    <TrendingUp className="h-6 w-6" />
                     Prestações Pagas
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="px-6 pb-6">
-                  <div className="text-2xl font-bold text-green-400 mb-2">
+                <CardContent className="px-8 pb-8">
+                  <div className="text-3xl font-bold text-green-400 mb-3">
                     {formatNumber(dadosFiltrados.contratos.reduce((sum, c) => sum + c.prestacoesPagasTotal, 0))}
                   </div>
-                  <p className="text-xs text-gray-300">total de parcelas quitadas</p>
+                  <p className="text-sm text-gray-300">total de parcelas quitadas</p>
                 </CardContent>
               </Card>
 
@@ -882,26 +908,49 @@ const PosicaoContratosCompleta: React.FC = () => {
                   boxShadow: '0 15px 40px rgba(0, 0, 0, 0.6)'
                 }}
               >
-                <CardHeader className="pt-6 px-6 pb-3">
-                  <CardTitle className="flex items-center gap-2 text-base font-semibold" style={{ color: '#C48A3F' }}>
-                    <Users className="h-5 w-5" />
+                <CardHeader className="pt-8 px-8 pb-4">
+                  <CardTitle className="flex items-center gap-2 text-lg font-semibold" style={{ color: '#C48A3F' }}>
+                    <Users className="h-6 w-6" />
                     Eficiência Cobrança
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="px-6 pb-6">
-                  <div className="text-2xl font-bold text-purple-400 mb-2">
+                <CardContent className="px-8 pb-8">
+                  <div className="text-3xl font-bold text-purple-400 mb-3">
                     {formatPercentage(
                       (dadosFiltrados.contratos.reduce((sum, c) => sum + c.prestacoesPagasTotal, 0) / 
                        dadosFiltrados.contratos.reduce((sum, c) => sum + c.quantidadeDeParcelas, 0)) * 100
                     )}
                   </div>
-                  <p className="text-xs text-gray-300">% de parcelas pagas vs. total</p>
+                  <p className="text-sm text-gray-300">% de parcelas pagas vs. total</p>
+                </CardContent>
+              </Card>
+
+              {/* Contratos com Saldo Ativo */}
+              <Card 
+                className="relative border-0 shadow-2xl overflow-hidden transition-all duration-500 hover:scale-105"
+                style={{ 
+                  background: 'linear-gradient(135deg, #06162B 0%, #0a1b33 50%, #06162B 100%)',
+                  border: '2px solid rgba(196, 138, 63, 0.4)',
+                  boxShadow: '0 15px 40px rgba(0, 0, 0, 0.6)'
+                }}
+              >
+                <CardHeader className="pt-8 px-8 pb-4">
+                  <CardTitle className="flex items-center gap-2 text-lg font-semibold" style={{ color: '#C48A3F' }}>
+                    <CheckCircle2 className="h-6 w-6" />
+                    Contratos Ativos
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-8 pb-8">
+                  <div className="text-3xl font-bold text-orange-400 mb-3">
+                    {formatNumber(dadosFiltrados.contratos.filter(c => c.saldoDevedorAtual > 0).length)}
+                  </div>
+                  <p className="text-sm text-gray-300">contratos com saldo devedor</p>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Segunda linha de KPIs - Novos KPIs Financeiros */}
-            <div>
+            {/* KPI Grid - 4ª linha: Financiamento, Juros, Taxa e Duration */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               {/* Valor Total Financiado */}
               <Card 
                 className="relative border-0 shadow-2xl overflow-hidden transition-all duration-500 hover:scale-105"
@@ -911,75 +960,94 @@ const PosicaoContratosCompleta: React.FC = () => {
                   boxShadow: '0 15px 40px rgba(0, 0, 0, 0.6)'
                 }}
               >
-                <CardHeader className="pt-6 px-6 pb-3">
-                  <CardTitle className="flex items-center gap-2 text-base font-semibold" style={{ color: '#C48A3F' }}>
-                    <DollarSign className="h-5 w-5" />
+                <CardHeader className="pt-8 px-8 pb-4">
+                  <CardTitle className="flex items-center gap-2 text-lg font-semibold" style={{ color: '#C48A3F' }}>
+                    <DollarSign className="h-6 w-6" />
                     Total Financiado
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="px-6 pb-6">
-                  <div className="text-2xl font-bold text-green-400 mb-2">
+                <CardContent className="px-8 pb-8">
+                  <div className="text-3xl font-bold text-green-400 mb-3">
                     {formatCurrency(dadosFiltrados.contratos.reduce((sum, c) => sum + c.valorFinanciado, 0))}
                   </div>
-                  <p className="text-xs text-gray-300">capital principal</p>
+                  <p className="text-sm text-gray-300">capital principal</p>
                 </CardContent>
               </Card>
 
-              {/* valor total pago (duplicado removido) */}
-
               {/* Juros Brutos */}
               <Card 
-                className="relative border-0 shadow-2xl overflow-hidden transition-all duration-500"
+                className="relative border-0 shadow-2xl overflow-hidden transition-all duration-500 hover:scale-105"
                 style={{ 
-                  background: 'linear-gradient(135deg, #031226 0%, #0a1b33 50%, #031226 100%)',
-                  borderColor: 'rgba(192, 134, 58, 0.3)',
-                  border: '1px solid rgba(192, 134, 58, 0.3)'
+                  background: 'linear-gradient(135deg, #06162B 0%, #0a1b33 50%, #06162B 100%)',
+                  border: '2px solid rgba(196, 138, 63, 0.4)',
+                  boxShadow: '0 15px 40px rgba(0, 0, 0, 0.6)'
                 }}
               >
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2 text-sm" style={{ color: '#C0863A' }}>
-                    <TrendingUp className="h-4 w-4" />
+                <CardHeader className="pt-8 px-8 pb-4">
+                  <CardTitle className="flex items-center gap-2 text-lg font-semibold" style={{ color: '#C48A3F' }}>
+                    <TrendingUp className="h-6 w-6" />
                     Juros Brutos
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-red-400 mb-1">
+                <CardContent className="px-8 pb-8">
+                  <div className="text-3xl font-bold text-red-400 mb-3">
                     {formatCurrency(Math.max(0, dadosFiltrados.estatisticas.saldoDevedorTotal - totalFinanciado))}
                   </div>
-                  <div className="text-sm text-slate-300 mb-1">
-                    Total Devedor: {formatCurrency(dadosFiltrados.estatisticas.saldoDevedorTotal)}
-                  </div>
-                  <div className="text-xs text-slate-400">Juros brutos (Total Devedor - Total Financiado) • {((dadosFiltrados.estatisticas.saldoDevedorTotal > 0) ? (((dadosFiltrados.estatisticas.saldoDevedorTotal - totalFinanciado) / dadosFiltrados.estatisticas.saldoDevedorTotal) * 100).toFixed(2) : '0.00')}% da carteira</div>
+                  <p className="text-sm text-gray-300">juros acumulados</p>
                 </CardContent>
               </Card>
 
               {/* Taxa Média Ponderada */}
               <Card 
-                className="relative border-0 shadow-2xl overflow-hidden transition-all duration-500"
+                className="relative border-0 shadow-2xl overflow-hidden transition-all duration-500 hover:scale-105"
                 style={{ 
-                  background: 'linear-gradient(135deg, #031226 0%, #0a1b33 50%, #031226 100%)',
-                  borderColor: 'rgba(192, 134, 58, 0.3)',
-                  border: '1px solid rgba(192, 134, 58, 0.3)'
+                  background: 'linear-gradient(135deg, #06162B 0%, #0a1b33 50%, #06162B 100%)',
+                  border: '2px solid rgba(196, 138, 63, 0.4)',
+                  boxShadow: '0 15px 40px rgba(0, 0, 0, 0.6)'
                 }}
               >
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2 text-sm" style={{ color: '#C0863A' }}>
-                    <BarChart3 className="h-4 w-4" />
+                <CardHeader className="pt-8 px-8 pb-4">
+                  <CardTitle className="flex items-center gap-2 text-lg font-semibold" style={{ color: '#C48A3F' }}>
+                    <BarChart3 className="h-6 w-6" />
                     Taxa Média
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-blue-400 mb-1">
+                <CardContent className="px-8 pb-8">
+                  <div className="text-3xl font-bold text-blue-400 mb-3">
                     {((dadosFiltrados.contratos.reduce((sum, c) => sum + (c.taxa * c.valorTotalDevedor), 0) / 
                        dadosFiltrados.contratos.reduce((sum, c) => sum + c.valorTotalDevedor, 0)) || 0).toFixed(2)}%
                   </div>
-                  <p className="text-xs text-slate-400">ponderada por valor</p>
+                  <p className="text-sm text-gray-300">ponderada por valor</p>
+                </CardContent>
+              </Card>
+
+              {/* Duration Média - Renda Fixa */}
+              <Card 
+                className="relative border-0 shadow-2xl overflow-hidden transition-all duration-500 hover:scale-105"
+                style={{ 
+                  background: 'linear-gradient(135deg, #06162B 0%, #0a1b33 50%, #06162B 100%)',
+                  border: '2px solid rgba(196, 138, 63, 0.4)',
+                  boxShadow: '0 15px 40px rgba(0, 0, 0, 0.6)'
+                }}
+              >
+                <CardHeader className="pt-8 px-8 pb-4">
+                  <CardTitle className="flex items-center gap-2 text-lg font-semibold" style={{ color: '#C48A3F' }}>
+                    <Clock className="h-6 w-6" />
+                    Duration (Renda Fixa)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-8 pb-8">
+                  <div className="text-3xl font-bold text-purple-400 mb-3">
+                    {(dadosFiltrados.contratos.reduce((sum, c) => sum + (c.duracaoMeses * c.valorTotalDevedor), 0) / 
+                      dadosFiltrados.contratos.reduce((sum, c) => sum + c.valorTotalDevedor, 0)).toFixed(1)} meses
+                  </div>
+                  <p className="text-sm text-gray-300">tempo médio ponderado</p>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Terceira linha - Duration Conceito */}
-            <div>
+            {/* Explicação conceitual - Duration (fora do grid 4 colunas) */}
+            <div className="mb-8">
               <Card 
                 className="relative border-0 shadow-2xl overflow-hidden transition-all duration-500"
                 style={{ 
@@ -995,19 +1063,10 @@ const PosicaoContratosCompleta: React.FC = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-start gap-6">
-                    <div className="min-w-0">
-                      <div className="text-3xl font-bold text-blue-400 mb-1">
-                        {(dadosFiltrados.contratos.reduce((sum, c) => sum + (c.duracaoMeses * c.valorTotalDevedor), 0) / 
-                          dadosFiltrados.contratos.reduce((sum, c) => sum + c.valorTotalDevedor, 0)).toFixed(1)} meses
-                      </div>
-                      <p className="text-xs text-slate-400">Duration média ponderada</p>
-                    </div>
-                    <div className="flex-1 text-sm text-slate-300 leading-relaxed">
-                      <strong style={{ color: '#C0863A' }}>Duration:</strong> Medida que indica o tempo médio que um investidor levará para receber os fluxos de pagamentos (cupons e principal) de um título. 
-                      Representa a sensibilidade do preço do título às variações nas taxas de juros. 
-                      <em style={{ color: '#C0863A' }}>Quanto maior a duration, maior o risco de taxa de juros.</em>
-                    </div>
+                  <div className="text-sm text-slate-300 leading-relaxed">
+                    <strong style={{ color: '#C0863A' }}>Duration:</strong> Medida que indica o tempo médio que um investidor levará para receber os fluxos de pagamentos (cupons e principal) de um título. 
+                    Representa a sensibilidade do preço do título às variações nas taxas de juros. 
+                    <em style={{ color: '#C0863A' }}>Quanto maior a duration, maior o risco de taxa de juros.</em>
                   </div>
                 </CardContent>
               </Card>
@@ -1015,8 +1074,8 @@ const PosicaoContratosCompleta: React.FC = () => {
 
 
 
-            {/* Gráficos */}
-            <div>
+            {/* Gráficos em Grid - 3 lado a lado */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
               {/* Gráfico de Linha - Evolução Mensal */}
               <Card 
                 className="relative border-0 shadow-2xl overflow-hidden transition-all duration-500"
@@ -1026,54 +1085,48 @@ const PosicaoContratosCompleta: React.FC = () => {
                   border: '1px solid rgba(192, 134, 58, 0.3)'
                 }}
               >
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2" style={{ color: '#C0863A' }}>
-                    <TrendingUp className="h-5 w-5" />
-                    Evolução Mensal dos Valores
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-sm" style={{ color: '#C0863A' }}>
+                    <TrendingUp className="h-4 w-4" />
+                    Evolução Mensal
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ResponsiveContainer width="100%" height={400}>
-                    <LineChart data={dadosGraficoLinha}>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <LineChart data={dadosGraficoLinha} margin={{ top: 5, right: 15, left: 0, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#06162B" />
-                      <XAxis dataKey="mes" stroke="#C48A3F" />
-                      <YAxis stroke="#C48A3F" />
+                      <XAxis dataKey="mes" stroke="#C48A3F" fontSize={10} />
+                      <YAxis stroke="#C48A3F" fontSize={10} />
                       <Tooltip 
                         contentStyle={{
                           backgroundColor: '#06162B',
                           border: '1px solid #C48A3F',
                           borderRadius: '8px',
-                          color: '#F9FAFB'
+                          color: '#F9FAFB',
+                          fontSize: '12px'
                         }}
                         formatter={(value: any) => [formatCurrency(value), '']}
                       />
-                      <Legend />
                       <Line 
                         type="monotone" 
                         dataKey="valorFinanciado" 
                         stroke="#C48A3F" 
-                        name="Valor Financiado"
-                        strokeWidth={3}
-                        dot={{ fill: '#C48A3F', strokeWidth: 2, r: 4 }}
-                        activeDot={{ r: 6, stroke: '#C48A3F', strokeWidth: 2, fill: '#ffffff' }}
+                        strokeWidth={2}
+                        dot={{ fill: '#C48A3F', r: 2 }}
                       />
                       <Line 
                         type="monotone" 
                         dataKey="valorDevedor" 
                         stroke="#60A5FA" 
-                        name="Valor Devedor"
-                        strokeWidth={3}
-                        dot={{ fill: '#60A5FA', strokeWidth: 2, r: 4 }}
-                        activeDot={{ r: 6, stroke: '#60A5FA', strokeWidth: 2, fill: '#ffffff' }}
+                        strokeWidth={2}
+                        dot={{ fill: '#60A5FA', r: 2 }}
                       />
                       <Line 
                         type="monotone" 
                         dataKey="jurosBrutos" 
                         stroke="#F59E0B" 
-                        name="Juros Brutos"
-                        strokeWidth={3}
-                        dot={{ fill: '#F59E0B', strokeWidth: 2, r: 4 }}
-                        activeDot={{ r: 6, stroke: '#F59E0B', strokeWidth: 2, fill: '#ffffff' }}
+                        strokeWidth={2}
+                        dot={{ fill: '#F59E0B', r: 2 }}
                       />
                     </LineChart>
                   </ResponsiveContainer>
@@ -1089,59 +1142,32 @@ const PosicaoContratosCompleta: React.FC = () => {
                   border: '1px solid rgba(192, 134, 58, 0.3)'
                 }}
               >
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2" style={{ color: '#C0863A' }}>
-                    <PieChart className="h-5 w-5" />
-                    Carteira por Produto (Top5)
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-sm" style={{ color: '#C0863A' }}>
+                    <PieChart className="h-4 w-4" />
+                    Produtos (Top5)
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="flex gap-4 items-start">
-                    <div style={{ flex: 1, minWidth: 260 }}>
-                      <ResponsiveContainer width="100%" height={320}>
-                        <RePieChart>
-                          <Pie
-                            data={produtosTop5}
-                            dataKey="valor"
-                            nameKey="produto"
-                            cx="50%"
-                            cy="50%"
-                            outerRadius={120}
-                            labelLine={false}
-                            label={({ percent, index }) => `${(percent*100).toFixed(0)}%`}
-                          >
-                            {produtosTop5.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={["#C48A3F", "#60A5FA", "#22c55e", "#F59E0B", "#A78BFA", "#64748b"][index % 6]} />
-                            ))}
-                          </Pie>
-                          <Tooltip formatter={(value: any) => [formatCurrency(value), 'Saldo']} />
-                        </RePieChart>
-                      </ResponsiveContainer>
-                    </div>
-                    <div style={{ width: 220 }} className="text-sm">
-                      <div className="flex items-center justify-between mb-2">
-                        <strong className="text-slate-100">Top 5 Produtos</strong>
-                        <Button size="sm" onClick={exportTop5CSV} variant="ghost"><Download className="h-4 w-4 mr-2"/>Exportar</Button>
-                      </div>
-                      <div className="space-y-2">
-                        {produtosTop5.map((p, i) => {
-                          const total = produtosTop5.reduce((s, x) => s + x.valor, 0) || 1;
-                          return (
-                            <div key={p.produto} className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <span style={{ width: 12, height: 12, background: ["#C48A3F", "#60A5FA", "#22c55e", "#F59E0B", "#A78BFA", "#64748b"][i % 6], display: 'inline-block', borderRadius: 3 }} />
-                                <span className="text-slate-100 break-words whitespace-normal">{p.produto}</span>
-                              </div>
-                              <div className="text-right text-slate-300">
-                                <div>{formatCurrency(p.valor)}</div>
-                                <div className="text-xs">{((p.valor / total) * 100).toFixed(2)}%</div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
+                <CardContent className="flex justify-center">
+                  <ResponsiveContainer width="100%" height={250}>
+                    <RePieChart>
+                      <Pie
+                        data={produtosTop5}
+                        dataKey="valor"
+                        nameKey="produto"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={60}
+                        labelLine={false}
+                        label={({ percent }) => `${(percent*100).toFixed(0)}%`}
+                      >
+                        {produtosTop5.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={["#C48A3F", "#60A5FA", "#22c55e", "#F59E0B", "#A78BFA"][index % 5]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value: any) => [formatCurrency(value), 'Saldo']} />
+                    </RePieChart>
+                  </ResponsiveContainer>
                 </CardContent>
               </Card>
 
@@ -1154,55 +1180,43 @@ const PosicaoContratosCompleta: React.FC = () => {
                   border: '1px solid rgba(192, 134, 58, 0.3)'
                 }}
               >
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2" style={{ color: '#C0863A' }}>
-                    <BarChart3 className="h-5 w-5" />
-                    Quantidade de Contratos por Mês
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-sm" style={{ color: '#C0863A' }}>
+                    <BarChart3 className="h-4 w-4" />
+                    Contratos/Mês
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ResponsiveContainer width="100%" height={400}>
-                    <BarChart data={dadosGraficoBarra} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <BarChart data={dadosGraficoBarra} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
                       <defs>
                         <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="0%" stopColor="#C48A3F" stopOpacity={1} />
-                          <stop offset="50%" stopColor="#B8793A" stopOpacity={0.9} />
                           <stop offset="100%" stopColor="#A06832" stopOpacity={0.8} />
                         </linearGradient>
-                        <filter id="shadow" x="0" y="0" width="200%" height="200%">
-                          <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#C48A3F" floodOpacity="0.3"/>
-                        </filter>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="#06162B" opacity={0.7} />
                       <XAxis 
                         dataKey="mes" 
                         stroke="#C48A3F" 
-                        fontSize={12}
-                        tickLine={{ stroke: '#C48A3F' }}
-                        axisLine={{ stroke: '#C48A3F' }}
+                        fontSize={10}
                       />
                       <YAxis 
                         stroke="#C48A3F" 
-                        fontSize={12}
-                        tickLine={{ stroke: '#C48A3F' }}
-                        axisLine={{ stroke: '#C48A3F' }}
+                        fontSize={10}
                       />
                       <Tooltip 
                         contentStyle={{
                           backgroundColor: '#06162B',
-                          border: '2px solid #C48A3F',
-                          borderRadius: '12px',
-                          color: '#F9FAFB',
-                          boxShadow: '0 8px 32px rgba(196, 138, 63, 0.3)'
+                          border: '1px solid #C48A3F',
+                          borderRadius: '8px',
+                          fontSize: '12px'
                         }}
-                        cursor={{ fill: 'rgba(196, 138, 63, 0.1)' }}
                       />
                       <Bar 
                         dataKey="quantidade" 
                         fill="url(#barGradient)"
-                        name="Quantidade de Contratos"
-                        radius={[8, 8, 0, 0]}
-                        filter="url(#shadow)"
+                        radius={[4, 4, 0, 0]}
                       />
                     </BarChart>
                   </ResponsiveContainer>

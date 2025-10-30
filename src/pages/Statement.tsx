@@ -1,24 +1,149 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getStatementData, StatementItem, StatementSummary } from '@/data/statementApi';
-import { TrendingUp, TrendingDown, DollarSign, Activity, Download, Filter, Search, Calendar, FileText, FileSpreadsheet, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Activity, Download, Filter, Search, Calendar, FileText, FileSpreadsheet, ArrowUpDown, ArrowUp, ArrowDown, Eye, EyeOff, Copy, CheckCircle2, AlertCircle, Zap, PieChart, BarChart3, TrendingUpIcon, Wallet } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart as RechartsPie, Pie, Cell } from 'recharts';
 import { useExport } from '@/hooks/useExport';
 import { useSync } from '@/providers/sync-provider';
 import * as XLSX from 'xlsx';
+
+// Componente memoizado para linhas da tabela - Otimiza re-renders
+interface TableRowProps {
+  item: StatementItem;
+  index: number;
+  copiedCell: string | null;
+  onCopy: (text: string, cellId: string) => void;
+}
+
+const StatementTableRow = memo(({ item, index, copiedCell, onCopy }: TableRowProps) => {
+  const isCredit = item.type === 'credit';
+  const amount = parseFloat(item.amount);
+  const saldo = parseFloat(item.saldo_posterior);
+  const cellId = `${item.personal_document}-${index}`;
+  
+  let pagador = item.nome_pagador || '-';
+  let beneficiario = item.beneficiario || '-';
+  
+  if (item.description.toLowerCase().includes('pix')) {
+    if (item.type === 'debit') {
+      pagador = item.personal_name;
+      beneficiario = item.beneficiario || '-';
+    } else if (item.type === 'credit') {
+      pagador = item.nome_pagador || '-';
+      beneficiario = item.personal_name;
+    }
+  }
+  
+  const dateParts = item.transaction_date.split(' ');
+  const date = dateParts[0];
+  const time = dateParts[1] || '--:--:--';
+  
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(amount);
+  };
+
+  return (
+    <TableRow key={cellId} className="border-b transition-colors hover:opacity-80" style={{borderColor: 'rgba(192, 134, 58, 0.1)', background: 'rgba(3, 18, 38, 0.5)'}}>
+      <TableCell style={{color: 'rgba(255, 255, 255, 0.6)', padding: '0.75rem'}} className="text-sm font-medium">{index + 1}</TableCell>
+      <TableCell style={{color: '#FFFFFF', padding: '0.75rem'}} className="text-sm font-medium">{date}</TableCell>
+      <TableCell style={{color: 'rgba(255, 255, 255, 0.7)', padding: '0.75rem'}} className="text-xs">{time}</TableCell>
+      <TableCell style={{color: '#FFFFFF', padding: '0.75rem'}} className="text-sm font-medium">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full" style={{backgroundColor: isCredit ? '#10b981' : '#ef4444'}}></div>
+          <span className="truncate" title={item.personal_name}>{item.personal_name}</span>
+        </div>
+      </TableCell>
+      <TableCell style={{padding: '0.75rem'}} className="text-sm">
+        <Badge style={{background: isCredit ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)', color: isCredit ? '#10b981' : '#ef4444', border: `1px solid ${isCredit ? 'rgba(16, 185, 129, 0.5)' : 'rgba(239, 68, 68, 0.5)'}`, padding: '0.5rem 0.75rem', fontSize: '0.75rem'}}>
+          {isCredit ? '📥 Crédito' : '📤 Débito'}
+        </Badge>
+      </TableCell>
+      <TableCell style={{color: 'rgba(255, 255, 255, 0.85)', padding: '0.75rem'}} className="text-xs max-w-sm">
+        <div className="truncate" title={item.pix_free_description || item.description}>
+          {item.pix_free_description || item.description || '-'}
+        </div>
+      </TableCell>
+      <TableCell style={{color: 'rgba(255, 255, 255, 0.6)', padding: '0.75rem'}} className="text-xs">
+        <div className="space-y-1">
+          <div className="flex items-center gap-1">
+            <span style={{color: 'rgba(192, 134, 58, 0.7)'}}>De:</span>
+            <span className="truncate font-mono max-w-[120px]" title={pagador}>{pagador}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span style={{color: 'rgba(192, 134, 58, 0.7)'}}>Para:</span>
+            <span className="truncate font-mono max-w-[120px]" title={beneficiario}>{beneficiario}</span>
+          </div>
+        </div>
+      </TableCell>
+      <TableCell style={{color: 'rgba(255, 255, 255, 0.7)', padding: '0.75rem'}} className="text-xs max-w-xs">
+        <div className="truncate" title={item.banco_beneficiario || '-'}>
+          {item.banco_beneficiario || '-'}
+        </div>
+      </TableCell>
+      <TableCell style={{padding: '0.75rem'}} className="text-right">
+        <button 
+          onClick={() => onCopy(Math.abs(amount).toFixed(2), cellId + '-valor')}
+          className="relative inline-flex items-center gap-1 group hover:opacity-80 transition"
+          title="Clique para copiar o valor"
+        >
+          <span className={`font-bold text-sm ${isCredit ? 'text-green-400' : 'text-red-400'}`}>
+            {isCredit ? '+' : '-'}{formatCurrency(Math.abs(amount))}
+          </span>
+          {copiedCell === cellId + '-valor' ? (
+            <CheckCircle2 className="h-3 w-3 text-green-400" />
+          ) : (
+            <Copy className="h-3 w-3 opacity-0 group-hover:opacity-100 transition" style={{color: '#C0863A'}} />
+          )}
+        </button>
+      </TableCell>
+      <TableCell style={{padding: '0.75rem'}} className="text-right">
+        <button 
+          onClick={() => onCopy(saldo.toFixed(2), cellId + '-saldo')}
+          className="relative inline-flex items-center gap-1 group hover:opacity-80 transition"
+          title="Clique para copiar o saldo"
+        >
+          <span className="font-bold text-sm" style={{color: '#C0863A'}}>
+            {formatCurrency(saldo)}
+          </span>
+          {copiedCell === cellId + '-saldo' ? (
+            <CheckCircle2 className="h-3 w-3 text-green-400" />
+          ) : (
+            <Copy className="h-3 w-3 opacity-0 group-hover:opacity-100 transition" style={{color: '#C0863A'}} />
+          )}
+        </button>
+      </TableCell>
+      <TableCell style={{padding: '0.75rem'}} className="text-center">
+        <Badge 
+          style={{background: 'rgba(192, 134, 58, 0.2)', color: '#C0863A', border: '1px solid rgba(192, 134, 58, 0.3)', padding: '0.5rem 0.75rem', fontSize: '0.75rem'}}
+          title={item.status_description}
+        >
+          {item.status_description ? item.status_description.substring(0, 3).toUpperCase() : '???'}
+        </Badge>
+      </TableCell>
+    </TableRow>
+  );
+});
+
+StatementTableRow.displayName = 'StatementTableRow';
 
 export default function Statement() {
   const { updateSync, setRefreshing } = useSync();
   
   // Estado para controle da última sincronização (mantido para compatibilidade)
   const [lastSync, setLastSync] = useState<string>('');
+  const [showBalances, setShowBalances] = useState(true);
+  const [copiedCell, setCopiedCell] = useState<string | null>(null);
+  
   // Estados para valores dos inputs (não aplicados ainda)
   const [inputStartDate, setInputStartDate] = useState('');
   const [inputEndDate, setInputEndDate] = useState('');
@@ -35,36 +160,109 @@ export default function Statement() {
   const [selectedChartDate, setSelectedChartDate] = useState<string>(''); // Data selecionada no gráfico
   
   // Estados para ordenação
-  const [sortBy, setSortBy] = useState('saldo_posterior'); // Campo para ordenação
+  const [sortBy, setSortBy] = useState('transaction_date'); // Campo para ordenação
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc'); // Direção da ordenação
+  
+  // Estado para view mode
+  const [viewMode, setViewMode] = useState<'table' | 'detailed'>('table');
 
   // CSS para cursor pointer nas barras do gráfico
-  React.useEffect(() => {
+  useEffect(() => {
+    // Verificar se já foi adicionado
+    if (document.getElementById('statement-styles')) {
+      return;
+    }
+    
     const style = document.createElement('style');
+    style.id = 'statement-styles';
     style.textContent = `
       .recharts-bar-rectangle {
         cursor: pointer !important;
+        transition: all 0.3s ease;
+        filter: drop-shadow(0 2px 4px rgba(192, 134, 58, 0.1));
       }
       .recharts-bar-rectangle:hover {
-        opacity: 0.8;
+        opacity: 0.9 !important;
+        filter: drop-shadow(0 6px 16px rgba(192, 134, 58, 0.3)) !important;
+        transform: translateY(-2px);
+      }
+      .recharts-surface {
+        overflow: visible;
+      }
+      .transaction-row:hover {
+        background-color: rgba(59, 130, 246, 0.05);
+      }
+      .chart-container {
+        animation: none;
       }
     `;
     document.head.appendChild(style);
     
     return () => {
-      document.head.removeChild(style);
+      const existingStyle = document.getElementById('statement-styles');
+      if (existingStyle) {
+        document.head.removeChild(existingStyle);
+      }
     };
   }, []);
 
   // Hook para exportação
   const { exportToPDF, exportToExcel } = useExport();
 
+  // Função para copiar para clipboard
+  const copyToClipboard = useCallback((text: string, cellId: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedCell(cellId);
+    setTimeout(() => setCopiedCell(null), 2000);
+  }, []);
+
+  // Handler para clique nas barras do gráfico
+  const handleBarClick = useCallback((data: any) => {
+    if (data && data.activePayload && data.activePayload[0]) {
+      const clickedDay = data.activePayload[0].payload.day;
+      const [day, month] = clickedDay.split('/');
+      const currentYear = new Date().getFullYear();
+      const selectedDate = `${day}/${month}/${currentYear}`;
+      
+      setSelectedChartDate(prevDate => prevDate === selectedDate ? '' : selectedDate);
+    }
+  }, []);
+
+  // Função para aplicar os filtros quando o botão for clicado
+  const handleApplyFilters = useCallback(() => {
+    setStartDate(inputStartDate);
+    setEndDate(inputEndDate);
+    setPersonalDocument(inputPersonalDocument);
+    setPersonalName(inputPersonalName);
+    setSearchTerm(inputSearchTerm);
+  }, [inputStartDate, inputEndDate, inputPersonalDocument, inputPersonalName, inputSearchTerm]);
+
+  // Função para aplicar filtros ao pressionar Enter
+  const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleApplyFilters();
+    }
+  }, [handleApplyFilters]);
+
+  // Função para alternar ordenação
+  const handleSort = useCallback((field: string) => {
+    setSortBy(prevSortBy => {
+      if (prevSortBy === field) {
+        setSortOrder(prevOrder => prevOrder === 'desc' ? 'asc' : 'desc');
+      } else {
+        setSortBy(field);
+        setSortOrder('desc');
+      }
+      return field === prevSortBy ? prevSortBy : field;
+    });
+  }, []);
+
   // Função para converter data do formato YYYY-MM-DD para DD/MM/YYYY
-  const formatDateForAPI = (dateString: string) => {
+  const formatDateForAPI = useCallback((dateString: string) => {
     if (!dateString) return '';
     const [year, month, day] = dateString.split('-');
     return `${day}/${month}/${year}`;
-  };
+  }, []);
 
   // Query para buscar dados do extrato
   const { data: statementResponse, isLoading, error, refetch, isFetching } = useQuery({
@@ -83,7 +281,7 @@ export default function Statement() {
     },
     refetchInterval: 30000, // Atualiza a cada 30 segundos
     refetchIntervalInBackground: true, // Continua atualizando mesmo quando a aba não está ativa
-    staleTime: 0, // Considera os dados sempre obsoletos para garantir atualizações
+    staleTime: 10000, // Cache de 10 segundos para evitar refetch constante
   });
 
   // Atualizar sync quando dados chegarem
@@ -172,48 +370,6 @@ export default function Statement() {
     // Retornar apenas os últimos 30 dias com dados
     return chartArray.slice(-30);
   }, [statementData]);
-
-  // Handler para clique nas barras do gráfico
-  const handleBarClick = (data: any) => {
-    if (data && data.activePayload && data.activePayload[0]) {
-      const clickedDay = data.activePayload[0].payload.day;
-      // Converter DD/MM para formato de data completo do ano atual
-      const [day, month] = clickedDay.split('/');
-      const currentYear = new Date().getFullYear();
-      const selectedDate = `${day}/${month}/${currentYear}`;
-      
-      // Toggle: se já está filtrado pela mesma data, remove o filtro
-      if (selectedChartDate === selectedDate) {
-        setSelectedChartDate('');
-      } else {
-        setSelectedChartDate(selectedDate);
-      }
-    }
-  };
-
-  // Função para aplicar os filtros quando o botão for clicado
-  const handleApplyFilters = () => {
-    console.log('[STATEMENT] Aplicando filtros:', {
-      inputStartDate,
-      inputEndDate,
-      inputPersonalDocument,
-      formattedStartDate: formatDateForAPI(inputStartDate),
-      formattedEndDate: formatDateForAPI(inputEndDate)
-    });
-    
-    setStartDate(inputStartDate);
-    setEndDate(inputEndDate);
-    setPersonalDocument(inputPersonalDocument);
-    setPersonalName(inputPersonalName);
-    setSearchTerm(inputSearchTerm);
-  };
-
-  // Função para aplicar filtros ao pressionar Enter
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleApplyFilters();
-    }
-  };
 
   // Filtro local por termo de busca e data do gráfico
   const filteredData = statementData.filter(item => {
@@ -316,16 +472,6 @@ export default function Statement() {
     });
   }, [filteredData, sortBy, sortOrder]);
 
-  // Função para alternar ordenação
-  const handleSort = (field: string) => {
-    if (sortBy === field) {
-      setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
-    } else {
-      setSortBy(field);
-      setSortOrder('desc');
-    }
-  };
-
   // Log para debug dos dados filtrados
   React.useEffect(() => {
     console.log('[STATEMENT] Dados após filtro local:', {
@@ -350,22 +496,28 @@ export default function Statement() {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
-          <p className="font-medium text-foreground">{`Dia ${label}`}</p>
-          <div className="space-y-1 mt-2">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-yellow-500 rounded"></div>
-              <span className="text-sm">Entradas: {data.entradas} transações</span>
+        <div className="backdrop-blur-md rounded-xl p-4 shadow-2xl border border-opacity-30" style={{
+          background: 'linear-gradient(135deg, rgba(3, 18, 38, 0.95) 0%, rgba(10, 27, 51, 0.95) 100%)',
+          borderColor: '#C0863A'
+        }}>
+          <p className="font-bold text-base" style={{color: '#C0863A'}}>📅 Dia {label}</p>
+          <div className="space-y-2.5 mt-3">
+            <div className="flex items-start gap-3">
+              <div className="w-4 h-4 rounded-full mt-1 flex-shrink-0" style={{background: 'linear-gradient(135deg, #C0863A 0%, #d4a574 100%)'}}></div>
+              <div>
+                <p className="text-sm font-semibold text-white">💰 Entradas</p>
+                <p className="text-xs text-gray-300 mt-0.5">{data.entradas} transações</p>
+                <p className="text-sm font-bold mt-1" style={{color: '#C0863A'}}>{formatCurrency(data.entradasValor)}</p>
+              </div>
             </div>
-            <div className="text-sm text-muted-foreground ml-5">
-              Valor: {formatCurrency(data.entradasValor)}
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-green-500 rounded"></div>
-              <span className="text-sm">Saídas: {data.saidas} transações</span>
-            </div>
-            <div className="text-sm text-muted-foreground ml-5">
-              Valor: {formatCurrency(data.saidasValor)}
+            <div className="h-px" style={{background: 'rgba(192, 134, 58, 0.2)'}}></div>
+            <div className="flex items-start gap-3">
+              <div className="w-4 h-4 rounded-full mt-1 flex-shrink-0" style={{background: 'linear-gradient(135deg, #031226 0%, #0a1b33 100%)', border: '2px solid #C0863A'}}></div>
+              <div>
+                <p className="text-sm font-semibold text-white">📉 Saídas</p>
+                <p className="text-xs text-gray-300 mt-0.5">{data.saidas} transações</p>
+                <p className="text-sm font-bold mt-1" style={{color: '#ef4444'}}>{formatCurrency(data.saidasValor)}</p>
+              </div>
             </div>
           </div>
         </div>
@@ -467,308 +619,561 @@ export default function Statement() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold flex items-center gap-3">
-          Extrato Executivo
-          {isFetching && (
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-          )}
-        </h1>
-
-      </div>
+    <div className="min-h-screen p-2 md:p-4" style={{ background: 'linear-gradient(135deg, #031226 0%, #0a1b33 50%, #031226 100%)' }}>
+      <div className="w-full mx-auto space-y-6 px-4">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold flex items-center gap-3" style={{ color: '#C0863A' }}>
+              📊 Extrato Executivo
+              {isFetching && (
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2" style={{ borderColor: '#C0863A' }}></div>
+              )}
+            </h1>
+            <p style={{ color: 'rgba(255, 255, 255, 0.7)' }} className="mt-1">Análise completa do seu fluxo de caixa</p>
+          </div>
+          <div className="text-right">
+            <p style={{ color: 'rgba(255, 255, 255, 0.7)' }} className="text-sm">Última atualização</p>
+            <p className="text-lg font-semibold" style={{ color: '#C0863A' }}>{lastSync || '--:--:--'}</p>
+          </div>
+        </div>
       
-      {/* Filtros */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+      {/* Filtros - DESIGN MELHORADO */}
+      <Card className="border-0 shadow-2xl" 
+        style={{ 
+          background: 'linear-gradient(135deg, #031226 0%, #0a1b33 50%, #031226 100%)',
+          border: '1px solid rgba(192, 134, 58, 0.3)',
+          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+        }}>
+        <CardHeader className="border-b" style={{borderColor: 'rgba(192, 134, 58, 0.2)'}}>
+          <CardTitle className="flex items-center gap-2" style={{color: '#C0863A'}}>
             <Filter className="h-5 w-5" />
-            Filtros
+            Filtros Avançados
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="data-inicio">Data Início</Label>
+              <Label htmlFor="data-inicio" className="font-semibold text-sm" style={{color: '#C0863A'}}>📅 Data Início</Label>
               <Input
                 id="data-inicio"
                 type="date"
                 value={inputStartDate}
                 onChange={(e) => setInputStartDate(e.target.value)}
                 onKeyPress={handleKeyPress}
-                className="cursor-pointer [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:brightness-0 [&::-webkit-calendar-picker-indicator]:invert"
-                style={{ colorScheme: 'dark' }}
+                style={{background: '#0a1b33', borderColor: 'rgba(192, 134, 58, 0.3)', color: '#FFFFFF'}}
+                className="placeholder-gray-500 focus:border-yellow-600 text-base"
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="data-fim">Data Fim</Label>
+              <Label htmlFor="data-fim" className="font-semibold text-sm" style={{color: '#C0863A'}}>📅 Data Fim</Label>
               <Input
                 id="data-fim"
                 type="date"
                 value={inputEndDate}
                 onChange={(e) => setInputEndDate(e.target.value)}
                 onKeyPress={handleKeyPress}
-                className="cursor-pointer [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:brightness-0 [&::-webkit-calendar-picker-indicator]:invert"
-                style={{ colorScheme: 'dark' }}
+                style={{background: '#0a1b33', borderColor: 'rgba(192, 134, 58, 0.3)', color: '#FFFFFF'}}
+                className="placeholder-gray-500 focus:border-yellow-600 text-base"
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="nome">Nome</Label>
+              <Label htmlFor="nome" className="font-semibold text-sm" style={{color: '#C0863A'}}>👤 Nome</Label>
               <Input
                 id="nome"
                 placeholder="Digite o nome..."
                 value={inputPersonalName}
                 onChange={(e) => setInputPersonalName(e.target.value)}
                 onKeyPress={handleKeyPress}
+                style={{background: '#0a1b33', borderColor: 'rgba(192, 134, 58, 0.3)', color: '#FFFFFF'}}
+                className="placeholder-gray-500 focus:border-yellow-600 text-base"
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="documento">CPF/CNPJ</Label>
+              <Label htmlFor="documento" className="font-semibold text-sm" style={{color: '#C0863A'}}>🆔 CPF/CNPJ</Label>
               <Input
                 id="documento"
-                placeholder="Digite o documento..."
+                placeholder="Apenas números..."
                 value={inputPersonalDocument}
                 onChange={(e) => setInputPersonalDocument(e.target.value)}
                 onKeyPress={handleKeyPress}
+                style={{background: '#0a1b33', borderColor: 'rgba(192, 134, 58, 0.3)', color: '#FFFFFF'}}
+                className="placeholder-gray-500 focus:border-yellow-600 text-base"
               />
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="font-semibold text-sm" style={{color: '#C0863A'}}>🔍 Ações</Label>
+              <div className="flex gap-2 h-12">
+                <Button
+                  onClick={handleApplyFilters}
+                  style={{background: '#C0863A', color: '#031226'}}
+                  className="flex-1 hover:opacity-90 text-base"
+                >
+                  <Search className="h-5 w-5" />
+                </Button>
+                {(startDate || endDate || personalDocument || personalName || selectedChartDate) && (
+                  <Button
+                    onClick={() => {
+                      setInputStartDate('');
+                      setInputEndDate('');
+                      setInputPersonalDocument('');
+                      setInputPersonalName('');
+                      setInputSearchTerm('');
+                      setStartDate('');
+                      setEndDate('');
+                      setPersonalDocument('');
+                      setPersonalName('');
+                      setSearchTerm('');
+                      setSelectedChartDate('');
+                    }}
+                    variant="outline"
+                    style={{borderColor: 'rgba(192, 134, 58, 0.3)', color: '#C0863A'}}
+                    className="hover:bg-red-950"
+                  >
+                    Limpar
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
           
-          <div className="mt-4 flex justify-end gap-2">
-            <Button
-              onClick={handleApplyFilters}
-              variant="default"
-              className="flex items-center gap-2"
-            >
-              <Search className="h-4 w-4" />
-              Pesquisar
-            </Button>
-            {selectedChartDate && (
+          {selectedChartDate && (
+            <div className="mt-4 p-3 rounded-lg flex items-center justify-between" style={{background: 'rgba(192, 134, 58, 0.15)', border: '1px solid rgba(192, 134, 58, 0.3)'}}>
+              <span className="text-sm" style={{color: '#C0863A'}}>
+                📊 Filtrado por data: <strong>{selectedChartDate}</strong>
+              </span>
               <Button
                 onClick={() => setSelectedChartDate('')}
-                variant="outline"
+                variant="ghost"
                 size="sm"
+                style={{color: '#C0863A'}}
+                className="hover:opacity-70"
               >
-                Limpar Filtro de Data ({selectedChartDate})
+                ✕ Remover
               </Button>
-            )}
-            {(startDate || endDate || personalDocument || personalName || searchTerm || selectedChartDate || sortOrder) && (
-              <Button
-                onClick={() => {
-                  setInputStartDate('');
-                  setInputEndDate('');
-                  setInputPersonalDocument('');
-                  setInputPersonalName('');
-                  setInputSearchTerm('');
-                  setStartDate('');
-                  setEndDate('');
-                  setPersonalDocument('');
-                  setPersonalName('');
-                  setSearchTerm('');
-                  setSelectedChartDate('');
-                  setSortOrder(null);
-                }}
-                variant="outline"
-                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-              >
-                Limpar Filtros
-              </Button>
-            )}
-          </div>
+            </div>
+          )}
         </CardContent>
       </Card>
       
-      {/* Header com gráfico de barras */}
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
+      {/* Header com gráfico de barras - MELHORADO */}
+      <Card className="border-0 shadow-2xl" 
+        style={{ 
+          background: 'linear-gradient(135deg, #031226 0%, #0a1b33 50%, #031226 100%)',
+          border: '1px solid rgba(192, 134, 58, 0.3)',
+          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+        }}>
+        <CardHeader className="border-b" style={{borderColor: 'rgba(192, 134, 58, 0.2)'}}>
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
             <div>
-              <CardTitle>Fluxo de Caixa
+              <CardTitle className="flex items-center gap-2 text-lg lg:text-xl" style={{color: '#C0863A'}}>
+                <BarChart3 className="h-6 w-6" />
+                📊 Fluxo de Caixa - Últimos 30 dias
                 {selectedChartDate && (
-                  <span className="text-sm font-normal text-blue-600 ml-2">
-                    (Filtrado: {selectedChartDate})
-                  </span>
+
+                  <Badge style={{background: 'rgba(192, 134, 58, 0.3)', color: '#C0863A', border: '1px solid rgba(192, 134, 58, 0.5)'}}>
+                    Filtrado: {selectedChartDate}
+                  </Badge>
                 )}
               </CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="text-xs mt-2" style={{color: 'rgba(255, 255, 255, 0.7)'}}>
                 {(statementSummary.period.start && statementSummary.period.end) ? (
-                  <>Período: {formatDate(statementSummary.period.start)} - {formatDate(statementSummary.period.end)}</>
+                  <>Período completo: {formatDate(statementSummary.period.start)} até {formatDate(statementSummary.period.end)}</>
                 ) : (
-                  <>Período: Todos os dados disponíveis</>
+                  <>Todos os dados disponíveis</>
                 )}
                 {!selectedChartDate && (
-                  <span className="text-blue-600 ml-2">• Clique em uma barra para filtrar</span>
-                )}
-                {selectedChartDate && (
-                  <span className="text-blue-600 ml-2">• Clique novamente para remover o filtro</span>
+                  <span className="block mt-1" style={{color: '#C0863A'}}>💡 Clique em uma barra para filtrar por data</span>
                 )}
               </p>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm">
-                <Filter className="h-4 w-4 mr-2" />
-                Filtros
-              </Button>
-              <Button onClick={handleExport} size="sm">
-                <Download className="h-4 w-4 mr-2" />
+              <Button onClick={handleExport} size="sm" style={{background: '#C0863A', color: '#031226'}} className="hover:opacity-90">
+                <Download className="h-4 w-4 mr-1" />
                 Exportar
               </Button>
             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          {/* Gráfico de barras com Recharts */}
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart 
-                data={chartData} 
-                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                onClick={handleBarClick}
-                style={{ cursor: 'pointer' }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis 
-                  dataKey="day" 
-                  stroke="hsl(var(--muted-foreground))" 
-                  fontSize={11}
-                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                />
-                <YAxis 
-                  stroke="hsl(var(--muted-foreground))" 
-                  fontSize={11}
-                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                />
-                <Tooltip 
-                  content={<CustomTooltip />}
-                />
-                <Legend 
-                  wrapperStyle={{ color: 'hsl(var(--muted-foreground))' }}
-                />
-                <Bar 
-                  dataKey="entradas" 
-                  fill="#eab308" 
-                  name="Entradas"
-                  radius={[2, 2, 0, 0]}
-                  style={{ cursor: 'pointer' }}
-                />
-                <Bar 
-                  dataKey="saidas" 
-                  fill="#22c55e" 
-                  name="Saídas"
-                  radius={[2, 2, 0, 0]}
-                  style={{ cursor: 'pointer' }}
-                />
-              </BarChart>
-            </ResponsiveContainer>
+        <CardContent className="pt-6">
+          {/* Card de Insights do Gráfico */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            {/* Insight: Maior dia */}
+            <div className="rounded-lg p-4 border border-opacity-30" style={{
+              background: 'linear-gradient(135deg, rgba(192, 134, 58, 0.1) 0%, rgba(212, 165, 116, 0.05) 100%)',
+              borderColor: '#C0863A'
+            }}>
+              <p className="text-xs font-semibold uppercase tracking-wider" style={{color: 'rgba(192, 134, 58, 0.7)'}}>📈 Melhor dia</p>
+              <p className="text-lg font-bold mt-2" style={{color: '#C0863A'}}>
+                {chartData && chartData.length > 0
+                  ? chartData.reduce((max, curr) => (curr.entradasValor > max.entradasValor) ? curr : max).day
+                  : '--'
+                }
+              </p>
+              <p className="text-xs mt-1" style={{color: 'rgba(255, 255, 255, 0.6)'}}>
+                Maiores entradas
+              </p>
+            </div>
+
+            {/* Insight: Total Entradas */}
+            <div className="rounded-lg p-4 border border-opacity-30" style={{
+              background: 'linear-gradient(135deg, rgba(192, 134, 58, 0.15) 0%, rgba(212, 165, 116, 0.1) 100%)',
+              borderColor: '#C0863A'
+            }}>
+              <p className="text-xs font-semibold uppercase tracking-wider" style={{color: 'rgba(192, 134, 58, 0.7)'}}>💰 Total entradas</p>
+              <p className="text-lg font-bold mt-2" style={{color: '#C0863A'}}>
+                {formatCurrency(chartData?.reduce((sum, d) => sum + d.entradasValor, 0) || 0)}
+              </p>
+              <p className="text-xs mt-1" style={{color: 'rgba(255, 255, 255, 0.6)'}}>
+                Últimos 30 dias
+              </p>
+            </div>
+
+            {/* Insight: Total Saídas */}
+            <div className="rounded-lg p-4 border border-opacity-30" style={{
+              background: 'linear-gradient(135deg, rgba(3, 18, 38, 0.3) 0%, rgba(10, 27, 51, 0.2) 100%)',
+              borderColor: '#0a1b33'
+            }}>
+              <p className="text-xs font-semibold uppercase tracking-wider" style={{color: 'rgba(192, 134, 58, 0.7)'}}>📉 Total saídas</p>
+              <p className="text-lg font-bold mt-2" style={{color: '#ef4444'}}>
+                {formatCurrency(chartData?.reduce((sum, d) => sum + d.saidasValor, 0) || 0)}
+              </p>
+              <p className="text-xs mt-1" style={{color: 'rgba(255, 255, 255, 0.6)'}}>
+                Últimos 30 dias
+              </p>
+            </div>
+          </div>
+
+          {/* 3 Gráficos em uma linha - LAYOUT HORIZONTAL */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Gráfico 1: Entradas */}
+            <div className="h-64 rounded-xl overflow-hidden" style={{
+              background: 'linear-gradient(135deg, rgba(3, 18, 38, 0.3) 0%, rgba(10, 27, 51, 0.3) 100%)',
+              border: '1px solid rgba(192, 134, 58, 0.2)',
+              padding: '1rem'
+            }}>
+              <p className="text-xs font-semibold mb-2" style={{color: 'rgba(192, 134, 58, 0.9)'}}>💰 Entradas</p>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart 
+                  data={chartData} 
+                  margin={{ top: 10, right: 15, left: 15, bottom: 20 }}
+                >
+                  <CartesianGrid 
+                    strokeDasharray="4 4" 
+                    stroke="rgba(192, 134, 58, 0.15)" 
+                    verticalPoints={[]}
+                    verticalFill={['rgba(192, 134, 58, 0.02)', 'transparent']}
+                  />
+                  <XAxis 
+                    dataKey="day" 
+                    stroke="rgba(192, 134, 58, 0.4)"
+                    fontSize={10}
+                    tick={{ fill: '#C0863A', fontWeight: 500 }}
+                    axisLine={{ stroke: 'rgba(192, 134, 58, 0.2)' }}
+                    tickLine={{ stroke: 'rgba(192, 134, 58, 0.2)' }}
+                  />
+                  <YAxis 
+                    stroke="rgba(192, 134, 58, 0.4)"
+                    fontSize={10}
+                    tick={{ fill: '#C0863A', fontWeight: 500 }}
+                    axisLine={{ stroke: 'rgba(192, 134, 58, 0.2)' }}
+                    tickLine={{ stroke: 'rgba(192, 134, 58, 0.2)' }}
+                    tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
+                  />
+                  <Tooltip 
+                    content={<CustomTooltip />}
+                    cursor={{ stroke: 'rgba(192, 134, 58, 0.3)', strokeWidth: 1 }}
+                    wrapperStyle={{ outline: 'none' }}
+                  />
+                  <Line 
+                    type="monotone"
+                    dataKey="entradasValor" 
+                    stroke="#C0863A"
+                    strokeWidth={2}
+                    dot={{ fill: '#C0863A', r: 3 }}
+                    activeDot={{ r: 5, fill: '#d4a574' }}
+                    isAnimationActive={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Gráfico 2: Saídas */}
+            <div className="h-64 rounded-xl overflow-hidden" style={{
+              background: 'linear-gradient(135deg, rgba(3, 18, 38, 0.3) 0%, rgba(10, 27, 51, 0.3) 100%)',
+              border: '1px solid rgba(192, 134, 58, 0.2)',
+              padding: '1rem'
+            }}>
+              <p className="text-xs font-semibold mb-2" style={{color: 'rgba(239, 68, 68, 0.9)'}}>📉 Saídas</p>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart 
+                  data={chartData} 
+                  margin={{ top: 10, right: 15, left: 15, bottom: 20 }}
+                >
+                  <CartesianGrid 
+                    strokeDasharray="4 4" 
+                    stroke="rgba(192, 134, 58, 0.15)" 
+                    verticalPoints={[]}
+                    verticalFill={['rgba(192, 134, 58, 0.02)', 'transparent']}
+                  />
+                  <XAxis 
+                    dataKey="day" 
+                    stroke="rgba(192, 134, 58, 0.4)"
+                    fontSize={10}
+                    tick={{ fill: '#C0863A', fontWeight: 500 }}
+                    axisLine={{ stroke: 'rgba(192, 134, 58, 0.2)' }}
+                    tickLine={{ stroke: 'rgba(192, 134, 58, 0.2)' }}
+                  />
+                  <YAxis 
+                    stroke="rgba(192, 134, 58, 0.4)"
+                    fontSize={10}
+                    tick={{ fill: '#C0863A', fontWeight: 500 }}
+                    axisLine={{ stroke: 'rgba(192, 134, 58, 0.2)' }}
+                    tickLine={{ stroke: 'rgba(192, 134, 58, 0.2)' }}
+                    tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
+                  />
+                  <Tooltip 
+                    content={<CustomTooltip />}
+                    cursor={{ stroke: 'rgba(192, 134, 58, 0.3)', strokeWidth: 1 }}
+                    wrapperStyle={{ outline: 'none' }}
+                  />
+                  <Line 
+                    type="monotone"
+                    dataKey="saidasValor" 
+                    stroke="#ef4444"
+                    strokeWidth={2}
+                    dot={{ fill: '#ef4444', r: 3 }}
+                    activeDot={{ r: 5, fill: '#ff6b6b' }}
+                    isAnimationActive={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Gráfico 3: Saldo Líquido */}
+            <div className="h-64 rounded-xl overflow-hidden" style={{
+              background: 'linear-gradient(135deg, rgba(3, 18, 38, 0.3) 0%, rgba(10, 27, 51, 0.3) 100%)',
+              border: '1px solid rgba(192, 134, 58, 0.2)',
+              padding: '1rem'
+            }}>
+              <p className="text-xs font-semibold mb-2" style={{color: 'rgba(16, 185, 129, 0.9)'}}>💹 Saldo Líquido</p>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart 
+                  data={chartData?.map(d => ({
+                    ...d,
+                    saldoLiquido: d.entradasValor - d.saidasValor
+                  })) || []} 
+                  margin={{ top: 10, right: 15, left: 15, bottom: 20 }}
+                >
+                  <CartesianGrid 
+                    strokeDasharray="4 4" 
+                    stroke="rgba(192, 134, 58, 0.15)" 
+                    verticalPoints={[]}
+                    verticalFill={['rgba(192, 134, 58, 0.02)', 'transparent']}
+                  />
+                  <XAxis 
+                    dataKey="day" 
+                    stroke="rgba(192, 134, 58, 0.4)"
+                    fontSize={10}
+                    tick={{ fill: '#C0863A', fontWeight: 500 }}
+                    axisLine={{ stroke: 'rgba(192, 134, 58, 0.2)' }}
+                    tickLine={{ stroke: 'rgba(192, 134, 58, 0.2)' }}
+                  />
+                  <YAxis 
+                    stroke="rgba(192, 134, 58, 0.4)"
+                    fontSize={10}
+                    tick={{ fill: '#C0863A', fontWeight: 500 }}
+                    axisLine={{ stroke: 'rgba(192, 134, 58, 0.2)' }}
+                    tickLine={{ stroke: 'rgba(192, 134, 58, 0.2)' }}
+                    tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
+                  />
+                  <Tooltip 
+                    content={<CustomTooltip />}
+                    cursor={{ stroke: 'rgba(192, 134, 58, 0.3)', strokeWidth: 1 }}
+                    wrapperStyle={{ outline: 'none' }}
+                  />
+                  <Line 
+                    type="monotone"
+                    dataKey="saldoLiquido" 
+                    stroke="#10b981"
+                    strokeWidth={2}
+                    dot={{ fill: '#10b981', r: 3 }}
+                    activeDot={{ r: 5, fill: '#34d399' }}
+                    isAnimationActive={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Cards de resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
+      {/* Cards de resumo - NOVO DESIGN COM CORES DO DESEMBOLSO */}
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {/* Card Saldo Atual */}
+        <Card className="border-0 shadow-2xl overflow-hidden group transition-all duration-500 hover:scale-105" 
+          style={{ 
+            background: 'linear-gradient(135deg, #031226 0%, #0a1b33 50%, #031226 100%)',
+            border: '1px solid rgba(192, 134, 58, 0.3)',
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+          }}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Saldo Atual
-              {(personalName || searchTerm) && (
-                <span className="ml-1 text-xs text-blue-600">• Filtrado</span>
-              )}
+            <CardTitle className="text-sm font-semibold" style={{ color: 'rgba(192, 134, 58, 0.9)' }}>
+              💰 Saldo Atual
             </CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <button 
+              onClick={() => setShowBalances(!showBalances)}
+              className="p-1 rounded transition" 
+              style={{ background: 'rgba(192, 134, 58, 0.15)' }}
+            >
+              {showBalances ? <Eye className="h-4 w-4" style={{color: '#C0863A'}} /> : <EyeOff className="h-4 w-4" style={{color: '#C0863A'}} />}
+            </button>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {formatCurrency(displaySummary.currentBalance)}
+          <CardContent className="space-y-3">
+            <div className="text-4xl font-bold" style={{ color: '#FFFFFF', textShadow: '0 0 10px rgba(192, 134, 58, 0.3)' }}>
+              {showBalances ? formatCurrency(displaySummary.currentBalance) : '••••••'}
             </div>
-            <p className="text-xs text-muted-foreground">
-              {(personalName || searchTerm) ? 'Baseado nos dados filtrados' : ''}
-            </p>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full" style={{backgroundColor: '#C0863A'}}></div>
+              <p className="text-xs" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Posição consolidada</p>
+            </div>
+            <button 
+              onClick={() => copyToClipboard(displaySummary.currentBalance.toString(), 'saldo-atual')}
+              className="text-xs flex items-center gap-1 transition" 
+              style={{ color: 'rgba(192, 134, 58, 0.9)' }}
+            >
+              {copiedCell === 'saldo-atual' ? <CheckCircle2 className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+              {copiedCell === 'saldo-atual' ? 'Copiado!' : 'Copiar'}
+            </button>
           </CardContent>
         </Card>
 
-        <Card>
+        {/* Card Total Entradas */}
+        <Card className="border-0 shadow-2xl overflow-hidden group transition-all duration-500 hover:scale-105" 
+          style={{ 
+            background: 'linear-gradient(135deg, #031226 0%, #0a1b33 50%, #031226 100%)',
+            border: '1px solid rgba(192, 134, 58, 0.3)',
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+          }}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Entradas
-              {(personalName || searchTerm) && (
-                <span className="ml-1 text-xs text-blue-600">• Filtrado</span>
-              )}
+            <CardTitle className="text-sm font-semibold" style={{ color: 'rgba(192, 134, 58, 0.9)' }}>
+              📈 Total Entradas
             </CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-600" />
+            <TrendingUp className="h-4 w-4" style={{color: '#10b981'}} />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
+          <CardContent className="space-y-3">
+            <div className="text-4xl font-bold" style={{ color: '#10b981' }}>
               {formatCurrency(displaySummary.totalCredits)}
             </div>
-            <p className="text-xs text-muted-foreground">
-              {(personalName || searchTerm) ? 'Baseado nos dados filtrados' : ''}
-            </p>
+            <div className="flex items-center justify-between text-xs" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+              <span>Em {displaySummary.transactionCount} transações</span>
+              <Badge variant="outline" className="text-green-400 border-green-400" style={{background: 'rgba(16, 185, 129, 0.2)'}}>
+                +{(displaySummary.totalCredits).toFixed(0)}
+              </Badge>
+            </div>
+            <div className="w-full rounded-full h-2 overflow-hidden" style={{background: 'rgba(16, 185, 129, 0.2)'}}>
+              <div 
+                className="h-full rounded-full transition-all duration-500"
+                style={{ width: `${Math.min((displaySummary.totalCredits / (displaySummary.totalCredits + displaySummary.totalDebits)) * 100, 100)}%`, background: '#10b981' }}
+              ></div>
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
+        {/* Card Total Saídas */}
+        <Card className="border-0 shadow-2xl overflow-hidden group transition-all duration-500 hover:scale-105" 
+          style={{ 
+            background: 'linear-gradient(135deg, #031226 0%, #0a1b33 50%, #031226 100%)',
+            border: '1px solid rgba(192, 134, 58, 0.3)',
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+          }}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Saídas
-              {(personalName || searchTerm) && (
-                <span className="ml-1 text-xs text-blue-600">• Filtrado</span>
-              )}
+            <CardTitle className="text-sm font-semibold" style={{ color: 'rgba(192, 134, 58, 0.9)' }}>
+              📉 Total Saídas
             </CardTitle>
-            <TrendingDown className="h-4 w-4 text-red-600" />
+            <TrendingDown className="h-4 w-4" style={{color: '#ef4444'}} />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">
+          <CardContent className="space-y-3">
+            <div className="text-4xl font-bold" style={{ color: '#ef4444' }}>
               {formatCurrency(displaySummary.totalDebits)}
             </div>
-            <p className="text-xs text-muted-foreground">
-              {(personalName || searchTerm) ? 'Baseado nos dados filtrados' : ''}
-            </p>
+            <div className="flex items-center justify-between text-xs" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+              <span>Em {displaySummary.transactionCount} transações</span>
+              <Badge variant="outline" className="text-red-400 border-red-400" style={{background: 'rgba(239, 68, 68, 0.2)'}}>
+                -{(displaySummary.totalDebits).toFixed(0)}
+              </Badge>
+            </div>
+            <div className="w-full rounded-full h-2 overflow-hidden" style={{background: 'rgba(239, 68, 68, 0.2)'}}>
+              <div 
+                className="h-full rounded-full transition-all duration-500"
+                style={{ width: `${Math.min((displaySummary.totalDebits / (displaySummary.totalCredits + displaySummary.totalDebits)) * 100, 100)}%`, background: '#ef4444' }}
+              ></div>
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
+        {/* Card Ticket Médio */}
+        <Card className="border-0 shadow-2xl overflow-hidden group transition-all duration-500 hover:scale-105" 
+          style={{ 
+            background: 'linear-gradient(135deg, #031226 0%, #0a1b33 50%, #031226 100%)',
+            border: '1px solid rgba(192, 134, 58, 0.3)',
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+          }}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Ticket Médio
-              {(personalName || searchTerm) && (
-                <span className="ml-1 text-xs text-blue-600">• Filtrado</span>
-              )}
+            <CardTitle className="text-sm font-semibold" style={{ color: 'rgba(192, 134, 58, 0.9)' }}>
+              🎯 Ticket Médio
             </CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
+            <Zap className="h-4 w-4" style={{color: '#C0863A'}} />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
+          <CardContent className="space-y-3">
+            <div className="text-4xl font-bold" style={{ color: '#C0863A' }}>
               {formatCurrency(displaySummary.ticketMedio)}
             </div>
-            <p className="text-xs text-muted-foreground">
-              {(personalName || searchTerm) ? 'Baseado nos dados filtrados' : 'Valor médio por transação'}
-            </p>
+            <div className="flex items-center gap-2 text-xs" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+              <span className="inline-flex items-center gap-1">
+                <span className="inline-block w-2 h-2 rounded-full" style={{background: '#C0863A'}}></span>
+                Valor médio por transação
+              </span>
+            </div>
+            <div className="rounded px-3 py-2 text-sm text-center font-semibold" style={{background: 'rgba(192, 134, 58, 0.2)', color: '#C0863A'}}>
+              {displaySummary.transactionCount} transações
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Tabela de transações */}
-      <Card>
-        <CardHeader>
+      {/* Tabela de transações - NOVO DESIGN */}
+      <Card className="border-0 shadow-2xl" 
+        style={{ 
+          background: 'linear-gradient(135deg, #031226 0%, #0a1b33 50%, #031226 100%)',
+          border: '1px solid rgba(192, 134, 58, 0.3)',
+          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+        }}>
+        <CardHeader className="border-b" style={{borderColor: 'rgba(192, 134, 58, 0.2)'}}>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <CardTitle className="flex items-center gap-2">
-              <Activity className="h-5 w-5" />
-              Transações ({displaySummary.transactionCount})
-              {sortOrder && (
-                <span className="text-sm font-normal text-blue-600">
-                  {sortOrder === 'asc' ? '↑ Mais antigas primeiro' : '↓ Mais recentes primeiro'}
-                </span>
-              )}
-            </CardTitle>
-            <div className="flex items-center gap-2">
+            <div>
+              <CardTitle className="flex items-center gap-2" style={{color: '#C0863A'}}>
+                <Activity className="h-5 w-5" />
+                Transações Detalhadas
+                <Badge style={{background: 'rgba(192, 134, 58, 0.3)', color: '#C0863A', border: '1px solid rgba(192, 134, 58, 0.5)'}}>
+                  {displaySummary.transactionCount} registros
+                </Badge>
+              </CardTitle>
+              <p className="text-xs mt-1" style={{color: 'rgba(255, 255, 255, 0.7)'}}>
+                {sortOrder === 'asc' ? '↑ Mais antigas primeiro' : '↓ Mais recentes primeiro'} • Clique nos cabeçalhos para ordenar
+              </p>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap justify-end">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4" style={{color: '#C0863A'}} />
                 <Input
-                  placeholder="Buscar transações..."
-                  className="pl-10 w-64"
+                  placeholder="Buscar..."
+                  style={{background: '#0a1b33', borderColor: 'rgba(192, 134, 58, 0.3)', color: '#FFFFFF', paddingLeft: '2.5rem'}}
+                  className="w-64 placeholder-gray-500"
                   value={inputSearchTerm}
                   onChange={(e) => setInputSearchTerm(e.target.value)}
                   onKeyPress={handleKeyPress}
@@ -777,119 +1182,106 @@ export default function Statement() {
               <Button
                 onClick={handleApplyFilters}
                 size="sm"
-                className="flex items-center gap-2"
+                style={{background: '#C0863A', color: '#031226'}}
+                className="hover:opacity-90"
               >
                 <Search className="h-4 w-4" />
-                Buscar
               </Button>
               <Button
                 onClick={() => exportToPDF(sortedData, 'extrato-executivo')}
                 size="sm"
                 variant="outline"
-                className="flex items-center gap-2"
+                style={{borderColor: 'rgba(192, 134, 58, 0.3)', color: '#C0863A'}}
+                className="hover:bg-opacity-10"
               >
                 <FileText className="h-4 w-4" />
-                PDF
               </Button>
               <Button
-                onClick={() => exportToExcel(sortedData, 'extrato-executivo')}
+                onClick={handleExport}
                 size="sm"
                 variant="outline"
-                className="flex items-center gap-2"
+                style={{borderColor: 'rgba(192, 134, 58, 0.3)', color: '#C0863A'}}
+                className="hover:bg-opacity-10"
               >
                 <FileSpreadsheet className="h-4 w-4" />
-                Excel
               </Button>
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Tipo Transação</TableHead>
-                  <TableHead>Descrição</TableHead>
-                  <TableHead>Pagador</TableHead>
-                  <TableHead>Beneficiário</TableHead>
-                  <TableHead className="text-right">Valor</TableHead>
-                  <TableHead 
-                    className="cursor-pointer hover:bg-muted/50 select-none"
-                    onClick={() => handleSort('transaction_date')}
-                  >
-                    <div className="flex items-center gap-1">
-                      Data
-                      {sortBy === 'transaction_date' && (
-                        sortOrder === 'desc' ? <ArrowDown className="h-3 w-3" /> : <ArrowUp className="h-3 w-3" />
-                      )}
-                      {sortBy !== 'transaction_date' && <ArrowUpDown className="h-3 w-3 opacity-50" />}
-                    </div>
+              <TableHeader style={{background: 'rgba(10, 27, 51, 0.8)', borderBottom: '2px solid rgba(192, 134, 58, 0.3)'}}>
+                <TableRow className="hover:bg-opacity-80">
+                  <TableHead style={{color: '#C0863A', fontWeight: 'bold', padding: '0.75rem'}}>
+                    <span className="text-sm">#</span>
                   </TableHead>
-                  <TableHead 
-                    className="text-right cursor-pointer hover:bg-muted/50 select-none"
-                    onClick={() => handleSort('saldo_posterior')}
-                  >
-                    <div className="flex items-center justify-end gap-1">
-                      Saldo Posterior
-                      {sortBy === 'saldo_posterior' && (
-                        sortOrder === 'desc' ? <ArrowDown className="h-3 w-3" /> : <ArrowUp className="h-3 w-3" />
-                      )}
-                      {sortBy !== 'saldo_posterior' && <ArrowUpDown className="h-3 w-3 opacity-50" />}
-                    </div>
+                  <TableHead style={{color: '#C0863A', fontWeight: 'bold', padding: '0.75rem'}}>
+                    <span className="text-sm">Data</span>
+                  </TableHead>
+                  <TableHead style={{color: '#C0863A', fontWeight: 'bold', padding: '0.75rem'}}>
+                    <button 
+                      onClick={() => handleSort('transaction_date')}
+                      className="flex items-center gap-1 hover:opacity-80 transition"
+                    >
+                      <span className="text-sm">Data</span>
+                      {sortBy === 'transaction_date' ? (sortOrder === 'desc' ? <ArrowDown className="h-3 w-3" /> : <ArrowUp className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-50" />}
+                    </button>
+                  </TableHead>
+                  <TableHead style={{color: '#C0863A', fontWeight: 'bold', padding: '0.75rem'}}>
+                    <span className="text-sm">Cliente</span>
+                  </TableHead>
+                  <TableHead style={{color: '#C0863A', fontWeight: 'bold', padding: '0.75rem'}}>
+                    <span className="text-sm">Tipo</span>
+                  </TableHead>
+                  <TableHead style={{color: '#C0863A', fontWeight: 'bold', padding: '0.75rem'}}>
+                    <span className="text-sm">Descrição</span>
+                  </TableHead>
+                  <TableHead style={{color: '#C0863A', fontWeight: 'bold', padding: '0.75rem'}}>
+                    <span className="text-sm">De / Para</span>
+                  </TableHead>
+                  <TableHead style={{color: '#C0863A', fontWeight: 'bold', padding: '0.75rem'}}>
+                    <span className="text-sm">Banco</span>
+                  </TableHead>
+                  <TableHead className="text-right" style={{color: '#C0863A', fontWeight: 'bold', padding: '0.75rem'}}>
+                    <span className="text-sm">Valor</span>
+                  </TableHead>
+                  <TableHead className="text-right" style={{color: '#C0863A', fontWeight: 'bold', padding: '0.75rem'}}>
+                    <button 
+                      onClick={() => handleSort('saldo_posterior')}
+                      className="flex items-center justify-end gap-1 hover:opacity-80 transition w-full"
+                    >
+                      <span className="text-sm">Saldo</span>
+                      {sortBy === 'saldo_posterior' ? (sortOrder === 'desc' ? <ArrowDown className="h-3 w-3" /> : <ArrowUp className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-50" />}
+                    </button>
+                  </TableHead>
+                  <TableHead className="text-center" style={{color: '#C0863A', fontWeight: 'bold', padding: '0.75rem'}}>
+                    <span className="text-sm">Status</span>
                   </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sortedData.map((item, index) => {
-                  // Lógica para determinar pagador e beneficiário baseado no tipo PIX
-                  let pagador = item.nome_pagador || '-';
-                  let beneficiario = item.beneficiario || '-';
-                  
-                  if (item.description.toLowerCase().includes('pix')) {
-                    if (item.type === 'debit') {
-                      // Se é pagamento PIX (débito), o nome da conta é o pagador
-                      pagador = item.personal_name;
-                      beneficiario = item.beneficiario || '-';
-                    } else if (item.type === 'credit') {
-                      // Se é recebimento PIX (crédito), o nome da conta é o beneficiário
-                      pagador = item.nome_pagador || '-';
-                      beneficiario = item.personal_name;
-                    }
-                  }
-                  
-                  return (
-                    <TableRow key={`${item.personal_document}-${index}`}>
-                      <TableCell className="text-sm font-medium">{item.personal_name}</TableCell>
-                      <TableCell className="text-sm">
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          item.type === 'credit' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                        }`}>
-                          {item.type === 'credit' ? 'Crédito' : 'Débito'}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-sm max-w-[200px] truncate" title={item.pix_free_description || '-'}>
-                        {item.pix_free_description || '-'}
-                      </TableCell>
-                      <TableCell className="text-sm">{pagador}</TableCell>
-                      <TableCell className="text-sm">{beneficiario}</TableCell>
-                      <TableCell className="text-right font-medium">
-                        {formatCurrency(Math.abs(parseFloat(item.amount)))}
-                      </TableCell>
-                      <TableCell className="text-xs">
-                        {item.transaction_date}
-                      </TableCell>
-                      <TableCell className="text-right font-medium text-green-600">
-                        {formatCurrency(parseFloat(item.saldo_posterior))}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+                {sortedData.map((item, index) => (
+                  <StatementTableRow 
+                    key={`${item.personal_document}-${index}`}
+                    item={item}
+                    index={index}
+                    copiedCell={copiedCell}
+                    onCopy={copyToClipboard}
+                  />
+                ))}
               </TableBody>
             </Table>
           </div>
-          </CardContent>
-        </Card>
+          {sortedData.length === 0 && (
+            <div className="p-8 text-center" style={{borderTop: '1px solid rgba(192, 134, 58, 0.2)'}}>
+              <AlertCircle className="h-12 w-12 mx-auto mb-2" style={{color: 'rgba(192, 134, 58, 0.5)'}} />
+              <p style={{color: 'rgba(255, 255, 255, 0.6)'}}>Nenhuma transação encontrada com os filtros aplicados</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
       </div>
+    </div>
     );
   }

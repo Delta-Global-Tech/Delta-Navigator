@@ -96,6 +96,12 @@ const deltaGlobalBankItems: NavItem[] = [
     description: "Gestão Cadastral"
   },
   {
+    title: "Cadastral V2",
+    url: "/cadastral-v2",
+    icon: Search,
+    description: "Cadastral Nova"
+  },
+  {
     title: "Extrato",
     url: "/extrato",
     icon: Receipt,
@@ -144,6 +150,12 @@ const productionNavItems: NavItem[] = [
     url: "/licitacoes",
     icon: FileText,
     description: "Gestão de Licitações"
+  },
+  {
+    title: "Licitações V2",
+    url: "/licitacoes-v2",
+    icon: FileText,
+    description: "Licitações (IUGU Backend)"
   }
 ];
 
