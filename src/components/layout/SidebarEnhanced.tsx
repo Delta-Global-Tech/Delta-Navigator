@@ -67,6 +67,15 @@ const treynoItems: NavItem[] = [
   }
 ];
 
+const contaCorrenteItems: NavItem[] = [
+  {
+    title: "Contas Correntes",
+    url: "/contas-correntes",
+    icon: CreditCard,
+    description: "Gestão de Contas Correntes"
+  }
+];
+
 const emModuleItems: NavItem[] = [
   {
     title: "Comparativo Desembolso",
@@ -108,16 +117,10 @@ const deltaGlobalBankItems: NavItem[] = [
     description: "Abertura de Contas"
   },
   {
-    title: "Cadastral",
-    url: "/cadastral",
+    title: "Cadastral V3",
+    url: "/cadastral-v3",
     icon: Search,
-    description: "Gestão Cadastral"
-  },
-  {
-    title: "Cadastral V2",
-    url: "/cadastral-v2",
-    icon: Search,
-    description: "Cadastral Nova"
+    description: "Cadastral Completa"
   },
   {
     title: "Extrato",
@@ -136,6 +139,12 @@ const deltaGlobalBankItems: NavItem[] = [
     url: "/faturas",
     icon: CreditCard,
     description: "Faturas Cartão"
+  },
+  {
+    title: "Extrato Cartão Crédito",
+    url: "/extrato-cartao-credito",
+    icon: CreditCard,
+    description: "Transações Cartão Crédito"
   }
 ];
 
@@ -252,6 +261,7 @@ export function SidebarEnhanced() {
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     Principal: true,
     Treyno: false,
+    "Conta Corrente": true,
     EM: false,
     "Delta Global Bank": false,
     FGTS: false,
@@ -369,6 +379,24 @@ export function SidebarEnhanced() {
               title="Principal" 
               items={mainNavItems}
               defaultOpen={expandedSections['Principal']}
+              isMinimized={isMinimized}
+            />
+          </div>
+
+          {/* Conta Corrente Section */}
+          <div
+            onClick={() => toggleSection('Conta Corrente')}
+            className={cn(
+              "mb-4 rounded-lg cursor-pointer transition-all duration-200 group",
+              expandedSections['Conta Corrente'] 
+                ? "bg-gradient-to-r from-cyan-500/15 to-cyan-500/5 shadow-sm" 
+                : "hover:bg-accent/30"
+            )}
+          >
+            <CollapsibleNavSection 
+              title="Conta Corrente" 
+              items={contaCorrenteItems}
+              defaultOpen={expandedSections['Conta Corrente']}
               isMinimized={isMinimized}
             />
           </div>

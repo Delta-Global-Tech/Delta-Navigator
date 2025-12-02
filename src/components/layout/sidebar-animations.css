@@ -1,0 +1,554 @@
+/* ============================================
+   SIDEBAR ANIMATIONS & EFFECTS - PREMIUM
+   ============================================ */
+
+/* GPU Accelerated Layout Transitions */
+.will-change-margin-left {
+  will-change: margin-left;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Smooth scroll customization */
+/* Scrollbar removido para ficar mais limpo */
+
+/* ============================================
+   SECTION HEADER ANIMATIONS
+   ============================================ */
+
+/* Pulse animation for active items */
+@keyframes pulse-soft {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Header hover glow */
+@keyframes header-glow {
+  0% {
+    box-shadow: 0 0 0 rgba(196, 138, 63, 0);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(196, 138, 63, 0.2);
+  }
+  100% {
+    box-shadow: 0 0 0 rgba(196, 138, 63, 0);
+  }
+}
+
+/* ============================================
+   SMOOTH EXPANSIONS
+   ============================================ */
+
+/* Slide in animation for expanded sections */
+@keyframes slide-in-smooth {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in-smooth 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Stagger animation for items */
+@keyframes stagger-in {
+  0% {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-stagger-in {
+  animation: stagger-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* ============================================
+   LOGO & BRANDING ANIMATIONS
+   ============================================ */
+
+/* Glow effect for logo */
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(196, 138, 63, 0.4), inset 0 0 10px rgba(196, 138, 63, 0.08);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(196, 138, 63, 0.6), inset 0 0 15px rgba(196, 138, 63, 0.12);
+  }
+}
+
+.logo-glow {
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+/* Rotating delta symbol */
+@keyframes delta-rotate {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-2deg);
+  }
+  75% {
+    transform: rotate(2deg);
+  }
+}
+
+.delta-wobble {
+  animation: delta-rotate 3s ease-in-out infinite;
+}
+
+/* ============================================
+   INTERACTIVE HOVER EFFECTS
+   ============================================ */
+
+/* Hover effects for nav items */
+@keyframes nav-item-hover {
+  0% {
+    transform: translateX(-3px);
+  }
+  50% {
+    transform: translateX(3px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.nav-item-hover:hover {
+  animation: nav-item-hover 0.4s ease-in-out;
+}
+
+/* Emoji pop on hover */
+@keyframes emoji-pop {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  50% {
+    transform: scale(1.3) rotate(10deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+.emoji-pop:hover {
+  animation: emoji-pop 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* ============================================
+   ACTIVE INDICATOR ANIMATIONS
+   ============================================ */
+
+/* Active indicator animation */
+@keyframes indicator-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.7;
+  }
+}
+
+.indicator-active {
+  animation: indicator-pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Zap spin for active */
+@keyframes zap-spin {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.1);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+.zap-spin {
+  animation: zap-spin 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* ============================================
+   SECTION GLOW EFFECTS
+   ============================================ */
+
+/* Glow effect on section headers */
+@keyframes section-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 rgba(196, 138, 63, 0);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(196, 138, 63, 0.2), inset 0 0 10px rgba(196, 138, 63, 0.08);
+  }
+}
+
+.section-header-glow:hover {
+  animation: section-glow 1s ease-in-out;
+}
+
+/* Rainbow glow for special items */
+@keyframes rainbow-glow {
+  0% {
+    box-shadow: 0 0 10px #C48A3F;
+  }
+  25% {
+    box-shadow: 0 0 10px #06162B;
+  }
+  50% {
+    box-shadow: 0 0 10px #C48A3F;
+  }
+  75% {
+    box-shadow: 0 0 10px #06162B;
+  }
+  100% {
+    box-shadow: 0 0 10px #C48A3F;
+  }
+}
+
+/* ============================================
+   TOOLTIP ANIMATIONS
+   ============================================ */
+
+/* Tooltip animation */
+@keyframes tooltip-fade {
+  from {
+    opacity: 0;
+    transform: translateX(-10px) translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) translateY(0);
+  }
+}
+
+.tooltip-animation {
+  animation: tooltip-fade 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Tooltip bounce */
+@keyframes tooltip-bounce {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(5px);
+  }
+}
+
+/* ============================================
+   BADGE ANIMATIONS
+   ============================================ */
+
+/* Badge pulse for active items count */
+@keyframes badge-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+  }
+  50% {
+    transform: scale(1.15);
+    box-shadow: 0 0 0 8px rgba(34, 197, 94, 0);
+  }
+}
+
+.badge-pulse {
+  animation: badge-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* ============================================
+   COLLAPSE/EXPAND ANIMATIONS
+   ============================================ */
+
+/* Smooth collapse */
+@keyframes collapse-smooth {
+  from {
+    opacity: 1;
+    max-height: 2000px;
+  }
+  to {
+    opacity: 0;
+    max-height: 0;
+  }
+}
+
+.collapse-smooth {
+  animation: collapse-smooth 0.4s ease-in-out forwards;
+}
+
+/* Smooth expand */
+@keyframes expand-smooth {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 2000px;
+  }
+}
+
+.expand-smooth {
+  animation: expand-smooth 0.4s ease-in-out forwards;
+}
+
+/* ============================================
+   ADVANCED EFFECTS
+   ============================================ */
+
+/* Shimmer effect for stats footer */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.shimmer-effect {
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Float animation */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.float-animation {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Enhanced visible state transitions */
+.nav-section-enter {
+  animation: slide-in-smooth 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.nav-section-exit {
+  animation: slide-in-smooth 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) reverse;
+}
+
+/* Smooth hover state for buttons */
+.button-hover-effect {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.button-hover-effect:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.button-hover-effect:active {
+  transform: translateY(-1px);
+}
+
+/* ============================================
+   FLEX ITEM ANIMATIONS
+   ============================================ */
+
+/* Scale up on active */
+@keyframes scale-up {
+  0% {
+    transform: scale(0.95);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.scale-up {
+  animation: scale-up 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Rotate entrance */
+@keyframes rotate-in {
+  0% {
+    transform: rotate(-5deg) scale(0.9);
+    opacity: 0;
+  }
+  100% {
+    transform: rotate(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.rotate-in {
+  animation: rotate-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ============================================
+   LOADING & TRANSITIONS
+   ============================================ */
+
+/* Loading state */
+@keyframes loading-shimmer {
+  0% {
+    background-position: -100% 0;
+  }
+  100% {
+    background-position: 100% 0;
+  }
+}
+
+.loading-state {
+  background: linear-gradient(
+    90deg,
+    rgba(193, 134, 58, 0.1) 25%,
+    rgba(193, 134, 58, 0.2) 50%,
+    rgba(193, 134, 58, 0.1) 75%
+  );
+  background-size: 200% 100%;
+  animation: loading-shimmer 1.5s infinite;
+}
+
+/* Bounce entrance */
+@keyframes bounce-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) translateY(-20px);
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) translateY(0);
+  }
+}
+
+.bounce-in {
+  animation: bounce-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ============================================
+   TEXT ANIMATIONS
+   ============================================ */
+
+/* Text gradient shift */
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.gradient-text {
+  background-size: 200% 200%;
+  animation: gradient-shift 3s ease infinite;
+}
+
+/* ============================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================ */
+
+@media (max-width: 768px) {
+  .sidebar-scrollbar {
+    scrollbar-width: thin;
+  }
+
+  .nav-section-title {
+    font-size: 0.75rem;
+  }
+
+  .animate-slide-in {
+    animation: slide-in-smooth 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+}
+
+/* ============================================
+   SECTION BUTTONS - GOLDEN THEME
+   ============================================ */
+
+/* Golden glow on section buttons */
+@keyframes golden-glow {
+  0% {
+    box-shadow: 0 0 0 rgba(196, 138, 63, 0), inset 0 0 0 rgba(196, 138, 63, 0);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(196, 138, 63, 0.3), inset 0 0 10px rgba(196, 138, 63, 0.1);
+  }
+  100% {
+    box-shadow: 0 0 0 rgba(196, 138, 63, 0), inset 0 0 0 rgba(196, 138, 63, 0);
+  }
+}
+
+.section-button-hover {
+  animation: golden-glow 0.6s ease-in-out;
+}
+
+/* Golden shine effect on buttons */
+@keyframes golden-shine {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.golden-shine {
+  background-size: 1000px 100%;
+  animation: golden-shine 2s infinite;
+}
+
+/* Golden text glow */
+@keyframes text-glow-golden {
+  0%, 100% {
+    text-shadow: 0 0 5px rgba(196, 138, 63, 0.3);
+  }
+  50% {
+    text-shadow: 0 0 15px rgba(196, 138, 63, 0.6);
+  }
+}
+
+.text-glow-golden:hover {
+  animation: text-glow-golden 0.8s ease-in-out;
+}
+
+/* ============================================
+   PERFORMANCE OPTIMIZATION
+   ============================================ */
+
+/* Use will-change for better performance */
+.sidebar-performance {
+  will-change: transform;
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,6 +1,8 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react'
 import { supabase } from '@/data/supabase'
 import { User, Session } from '@supabase/supabase-js'
+import { setCurrentUser } from '@/services/requestMonitoring'
+import { logAuthLogin, logAuthLogout, logAuthError } from '@/utils/authLogging'
 
 interface AuthContextType {
   user: User | null
@@ -9,6 +11,8 @@ interface AuthContextType {
   error: string | null
   login: (email: string, password: string) => Promise<void>
   logout: () => Promise<void>
+  resetPassword: (email: string) => Promise<void>
+  updatePassword: (newPassword: string) => Promise<void>
   clearError: () => void
 }
 
@@ -25,6 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       setUser(session?.user ?? null)
+      setCurrentUser(session?.user ?? null) // Notificar monitoring
       setLoading(false)
     })
 
@@ -34,6 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
       setUser(session?.user ?? null)
+      setCurrentUser(session?.user ?? null) // Notificar monitoring
       setLoading(false)
     })
 
@@ -51,8 +57,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
       
       if (error) throw error
+      
+      // Log de sucesso
+      await logAuthLogin(email)
     } catch (error: any) {
-      setError(error.message || 'Erro ao fazer login')
+      const errorMsg = error.message || 'Erro ao fazer login'
+      setError(errorMsg)
+      // Log de erro
+      await logAuthError('LOGIN', email, errorMsg)
     } finally {
       setLoading(false)
     }
@@ -61,10 +73,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     try {
       setError(null)
+      
+      // Log antes do logout
+      await logAuthLogout(user?.email)
+      
       const { error } = await supabase.auth.signOut()
       if (error) throw error
     } catch (error: any) {
       setError(error.message || 'Erro ao fazer logout')
+    }
+  }
+
+  const resetPassword = async (email: string) => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      // Usar URL configurada no env ou fallback para window.location.origin
+      const appUrl = import.meta.env.VITE_APP_URL || window.location.origin
+      const redirectUrl = `${appUrl}/#/reset-password`
+      
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: redirectUrl,
+      })
+      
+      if (error) throw error
+    } catch (error: any) {
+      setError(error.message || 'Erro ao enviar email de reset')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const updatePassword = async (newPassword: string) => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      })
+      
+      if (error) throw error
+    } catch (error: any) {
+      setError(error.message || 'Erro ao atualizar a senha')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -79,6 +133,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         error,
         login,
         logout,
+        resetPassword,
+        updatePassword,
         clearError,
       }}
     >

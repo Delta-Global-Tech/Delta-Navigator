@@ -136,7 +136,7 @@ const StatementTableRow = memo(({ item, index, copiedCell, onCopy }: TableRowPro
 
 StatementTableRow.displayName = 'StatementTableRow';
 
-export default function Statement() {
+export default memo(function Statement() {
   const { updateSync, setRefreshing } = useSync();
   
   // Estado para controle da última sincronização (mantido para compatibilidade)
@@ -162,6 +162,10 @@ export default function Statement() {
   // Estados para ordenação
   const [sortBy, setSortBy] = useState('transaction_date'); // Campo para ordenação
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc'); // Direção da ordenação
+  
+  // Estado para paginação
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 100;
   
   // Estado para view mode
   const [viewMode, setViewMode] = useState<'table' | 'detailed'>('table');
@@ -225,6 +229,7 @@ export default function Statement() {
       const selectedDate = `${day}/${month}/${currentYear}`;
       
       setSelectedChartDate(prevDate => prevDate === selectedDate ? '' : selectedDate);
+      setCurrentPage(1); // Reset para página 1 quando clica no gráfico
     }
   }, []);
 
@@ -235,6 +240,7 @@ export default function Statement() {
     setPersonalDocument(inputPersonalDocument);
     setPersonalName(inputPersonalName);
     setSearchTerm(inputSearchTerm);
+    setCurrentPage(1); // Reset para página 1 quando aplicar filtros
   }, [inputStartDate, inputEndDate, inputPersonalDocument, inputPersonalName, inputSearchTerm]);
 
   // Função para aplicar filtros ao pressionar Enter
@@ -255,6 +261,7 @@ export default function Statement() {
       }
       return field === prevSortBy ? prevSortBy : field;
     });
+    setCurrentPage(1); // Reset para página 1 quando muda ordenação
   }, []);
 
   // Função para converter data do formato YYYY-MM-DD para DD/MM/YYYY
@@ -471,6 +478,28 @@ export default function Statement() {
       }
     });
   }, [filteredData, sortBy, sortOrder]);
+
+  // Lógica de paginação
+  const totalPages = Math.ceil(sortedData.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedData = sortedData.slice(startIndex, endIndex);
+
+  // Debug paginação
+  React.useEffect(() => {
+    console.log('[PAGINATION] Debug:', {
+      currentPage,
+      totalPages,
+      sortedDataLength: sortedData.length,
+      startIndex,
+      endIndex,
+      paginatedDataLength: paginatedData.length
+    });
+  }, [currentPage, totalPages, sortedData.length, startIndex, endIndex, paginatedData.length]);
+
+  // Nota: Removemos o reset automático de página porque filteredData muda toda vez
+  // Isso causava a página voltar para 1 sempre que usava paginação
+  // Reset só acontecerá quando usuário clicar em filtro/ordenação
 
   // Log para debug dos dados filtrados
   React.useEffect(() => {
@@ -848,166 +877,78 @@ export default function Statement() {
             </div>
           </div>
 
-          {/* 3 Gráficos em uma linha - LAYOUT HORIZONTAL */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Gráfico 1: Entradas */}
-            <div className="h-64 rounded-xl overflow-hidden" style={{
-              background: 'linear-gradient(135deg, rgba(3, 18, 38, 0.3) 0%, rgba(10, 27, 51, 0.3) 100%)',
-              border: '1px solid rgba(192, 134, 58, 0.2)',
-              padding: '1rem'
-            }}>
-              <p className="text-xs font-semibold mb-2" style={{color: 'rgba(192, 134, 58, 0.9)'}}>💰 Entradas</p>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart 
-                  data={chartData} 
-                  margin={{ top: 10, right: 15, left: 15, bottom: 20 }}
-                >
-                  <CartesianGrid 
-                    strokeDasharray="4 4" 
-                    stroke="rgba(192, 134, 58, 0.15)" 
-                    verticalPoints={[]}
-                    verticalFill={['rgba(192, 134, 58, 0.02)', 'transparent']}
-                  />
-                  <XAxis 
-                    dataKey="day" 
-                    stroke="rgba(192, 134, 58, 0.4)"
-                    fontSize={10}
-                    tick={{ fill: '#C0863A', fontWeight: 500 }}
-                    axisLine={{ stroke: 'rgba(192, 134, 58, 0.2)' }}
-                    tickLine={{ stroke: 'rgba(192, 134, 58, 0.2)' }}
-                  />
-                  <YAxis 
-                    stroke="rgba(192, 134, 58, 0.4)"
-                    fontSize={10}
-                    tick={{ fill: '#C0863A', fontWeight: 500 }}
-                    axisLine={{ stroke: 'rgba(192, 134, 58, 0.2)' }}
-                    tickLine={{ stroke: 'rgba(192, 134, 58, 0.2)' }}
-                    tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
-                  />
-                  <Tooltip 
-                    content={<CustomTooltip />}
-                    cursor={{ stroke: 'rgba(192, 134, 58, 0.3)', strokeWidth: 1 }}
-                    wrapperStyle={{ outline: 'none' }}
-                  />
-                  <Line 
-                    type="monotone"
-                    dataKey="entradasValor" 
-                    stroke="#C0863A"
-                    strokeWidth={2}
-                    dot={{ fill: '#C0863A', r: 3 }}
-                    activeDot={{ r: 5, fill: '#d4a574' }}
-                    isAnimationActive={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-
-            {/* Gráfico 2: Saídas */}
-            <div className="h-64 rounded-xl overflow-hidden" style={{
-              background: 'linear-gradient(135deg, rgba(3, 18, 38, 0.3) 0%, rgba(10, 27, 51, 0.3) 100%)',
-              border: '1px solid rgba(192, 134, 58, 0.2)',
-              padding: '1rem'
-            }}>
-              <p className="text-xs font-semibold mb-2" style={{color: 'rgba(239, 68, 68, 0.9)'}}>📉 Saídas</p>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart 
-                  data={chartData} 
-                  margin={{ top: 10, right: 15, left: 15, bottom: 20 }}
-                >
-                  <CartesianGrid 
-                    strokeDasharray="4 4" 
-                    stroke="rgba(192, 134, 58, 0.15)" 
-                    verticalPoints={[]}
-                    verticalFill={['rgba(192, 134, 58, 0.02)', 'transparent']}
-                  />
-                  <XAxis 
-                    dataKey="day" 
-                    stroke="rgba(192, 134, 58, 0.4)"
-                    fontSize={10}
-                    tick={{ fill: '#C0863A', fontWeight: 500 }}
-                    axisLine={{ stroke: 'rgba(192, 134, 58, 0.2)' }}
-                    tickLine={{ stroke: 'rgba(192, 134, 58, 0.2)' }}
-                  />
-                  <YAxis 
-                    stroke="rgba(192, 134, 58, 0.4)"
-                    fontSize={10}
-                    tick={{ fill: '#C0863A', fontWeight: 500 }}
-                    axisLine={{ stroke: 'rgba(192, 134, 58, 0.2)' }}
-                    tickLine={{ stroke: 'rgba(192, 134, 58, 0.2)' }}
-                    tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
-                  />
-                  <Tooltip 
-                    content={<CustomTooltip />}
-                    cursor={{ stroke: 'rgba(192, 134, 58, 0.3)', strokeWidth: 1 }}
-                    wrapperStyle={{ outline: 'none' }}
-                  />
-                  <Line 
-                    type="monotone"
-                    dataKey="saidasValor" 
-                    stroke="#ef4444"
-                    strokeWidth={2}
-                    dot={{ fill: '#ef4444', r: 3 }}
-                    activeDot={{ r: 5, fill: '#ff6b6b' }}
-                    isAnimationActive={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-
-            {/* Gráfico 3: Saldo Líquido */}
-            <div className="h-64 rounded-xl overflow-hidden" style={{
-              background: 'linear-gradient(135deg, rgba(3, 18, 38, 0.3) 0%, rgba(10, 27, 51, 0.3) 100%)',
-              border: '1px solid rgba(192, 134, 58, 0.2)',
-              padding: '1rem'
-            }}>
-              <p className="text-xs font-semibold mb-2" style={{color: 'rgba(16, 185, 129, 0.9)'}}>💹 Saldo Líquido</p>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart 
-                  data={chartData?.map(d => ({
-                    ...d,
-                    saldoLiquido: d.entradasValor - d.saidasValor
-                  })) || []} 
-                  margin={{ top: 10, right: 15, left: 15, bottom: 20 }}
-                >
-                  <CartesianGrid 
-                    strokeDasharray="4 4" 
-                    stroke="rgba(192, 134, 58, 0.15)" 
-                    verticalPoints={[]}
-                    verticalFill={['rgba(192, 134, 58, 0.02)', 'transparent']}
-                  />
-                  <XAxis 
-                    dataKey="day" 
-                    stroke="rgba(192, 134, 58, 0.4)"
-                    fontSize={10}
-                    tick={{ fill: '#C0863A', fontWeight: 500 }}
-                    axisLine={{ stroke: 'rgba(192, 134, 58, 0.2)' }}
-                    tickLine={{ stroke: 'rgba(192, 134, 58, 0.2)' }}
-                  />
-                  <YAxis 
-                    stroke="rgba(192, 134, 58, 0.4)"
-                    fontSize={10}
-                    tick={{ fill: '#C0863A', fontWeight: 500 }}
-                    axisLine={{ stroke: 'rgba(192, 134, 58, 0.2)' }}
-                    tickLine={{ stroke: 'rgba(192, 134, 58, 0.2)' }}
-                    tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
-                  />
-                  <Tooltip 
-                    content={<CustomTooltip />}
-                    cursor={{ stroke: 'rgba(192, 134, 58, 0.3)', strokeWidth: 1 }}
-                    wrapperStyle={{ outline: 'none' }}
-                  />
-                  <Line 
-                    type="monotone"
-                    dataKey="saldoLiquido" 
-                    stroke="#10b981"
-                    strokeWidth={2}
-                    dot={{ fill: '#10b981', r: 3 }}
-                    activeDot={{ r: 5, fill: '#34d399' }}
-                    isAnimationActive={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+          {/* Gráfico de barras com Recharts - NOVO DESIGN MODERNO */}
+          <div className="h-96 rounded-xl overflow-hidden" style={{
+            background: 'linear-gradient(135deg, rgba(3, 18, 38, 0.3) 0%, rgba(10, 27, 51, 0.3) 100%)',
+            border: '1px solid rgba(192, 134, 58, 0.2)',
+            padding: '1.5rem'
+          }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart 
+                data={chartData} 
+                margin={{ top: 30, right: 40, left: 40, bottom: 30 }}
+                onClick={handleBarClick}
+                style={{ cursor: 'pointer' }}
+              >
+                <CartesianGrid 
+                  strokeDasharray="4 4" 
+                  stroke="rgba(192, 134, 58, 0.15)" 
+                  verticalPoints={[]}
+                  verticalFill={['rgba(192, 134, 58, 0.02)', 'transparent']}
+                />
+                <XAxis 
+                  dataKey="day" 
+                  stroke="rgba(192, 134, 58, 0.4)"
+                  fontSize={12}
+                  tick={{ fill: '#C0863A', fontWeight: 500 }}
+                  axisLine={{ stroke: 'rgba(192, 134, 58, 0.2)' }}
+                  tickLine={{ stroke: 'rgba(192, 134, 58, 0.2)' }}
+                />
+                <YAxis 
+                  stroke="rgba(192, 134, 58, 0.4)"
+                  fontSize={12}
+                  tick={{ fill: '#C0863A', fontWeight: 500 }}
+                  axisLine={{ stroke: 'rgba(192, 134, 58, 0.2)' }}
+                  tickLine={{ stroke: 'rgba(192, 134, 58, 0.2)' }}
+                  tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`}
+                />
+                <Tooltip 
+                  content={<CustomTooltip />}
+                  cursor={{ stroke: 'rgba(192, 134, 58, 0.3)', strokeWidth: 1 }}
+                  wrapperStyle={{ outline: 'none' }}
+                />
+                <Legend 
+                  wrapperStyle={{ 
+                    color: '#C0863A', 
+                    paddingTop: '20px',
+                    fontSize: '14px',
+                    fontWeight: '500'
+                  }}
+                />
+                <Line 
+                  type="monotone"
+                  dataKey="entradasValor" 
+                  stroke="#C0863A"
+                  strokeWidth={3}
+                  dot={{ fill: '#C0863A', r: 5 }}
+                  activeDot={{ r: 7, fill: '#d4a574' }}
+                  name="💰 Entradas"
+                  isAnimationActive={false}
+                  style={{ cursor: 'pointer', filter: 'drop-shadow(0 4px 8px rgba(192, 134, 58, 0.2))' }}
+                />
+                <Line 
+                  type="monotone"
+                  dataKey="saidasValor" 
+                  stroke="#ef4444"
+                  strokeWidth={3}
+                  dot={{ fill: '#ef4444', r: 5 }}
+                  activeDot={{ r: 7, fill: '#ff6b6b' }}
+                  name="📉 Saídas"
+                  isAnimationActive={false}
+                  style={{ cursor: 'pointer', filter: 'drop-shadow(0 4px 8px rgba(239, 68, 68, 0.2))' }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
         </CardContent>
       </Card>
@@ -1160,11 +1101,11 @@ export default function Statement() {
                 <Activity className="h-5 w-5" />
                 Transações Detalhadas
                 <Badge style={{background: 'rgba(192, 134, 58, 0.3)', color: '#C0863A', border: '1px solid rgba(192, 134, 58, 0.5)'}}>
-                  {displaySummary.transactionCount} registros
+                  {displaySummary.transactionCount} registros • Página {currentPage} de {totalPages}
                 </Badge>
               </CardTitle>
               <p className="text-xs mt-1" style={{color: 'rgba(255, 255, 255, 0.7)'}}>
-                {sortOrder === 'asc' ? '↑ Mais antigas primeiro' : '↓ Mais recentes primeiro'} • Clique nos cabeçalhos para ordenar
+                📄 100 registros por página • Clique nos cabeçalhos para ordenar
               </p>
             </div>
             <div className="flex items-center gap-2 flex-wrap justify-end">
@@ -1261,11 +1202,11 @@ export default function Statement() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sortedData.map((item, index) => (
+                {paginatedData.map((item, index) => (
                   <StatementTableRow 
-                    key={`${item.personal_document}-${index}`}
+                    key={`${item.personal_document}-${startIndex + index}`}
                     item={item}
-                    index={index}
+                    index={startIndex + index}
                     copiedCell={copiedCell}
                     onCopy={copyToClipboard}
                   />
@@ -1273,6 +1214,123 @@ export default function Statement() {
               </TableBody>
             </Table>
           </div>
+          
+          {/* Paginação */}
+          {sortedData.length > 0 && (
+            <div className="p-6 border-t flex flex-col sm:flex-row items-center justify-between gap-4" style={{borderColor: 'rgba(192, 134, 58, 0.2)'}}>
+              <div className="flex items-center gap-4">
+                <span style={{color: 'rgba(255, 255, 255, 0.7)'}} className="text-sm">
+                  Mostrando <span style={{color: '#C0863A'}} className="font-bold">{startIndex + 1}</span> a <span style={{color: '#C0863A'}} className="font-bold">{Math.min(endIndex, sortedData.length)}</span> de <span style={{color: '#C0863A'}} className="font-bold">{sortedData.length}</span> registros
+                </span>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                {/* Botão Primeira Página */}
+                <Button
+                  onClick={() => {
+                    console.log('[PAGINATION] Primeira clicada');
+                    setCurrentPage(1);
+                  }}
+                  disabled={currentPage === 1}
+                  size="sm"
+                  variant="outline"
+                  style={{
+                    borderColor: currentPage === 1 ? 'rgba(192, 134, 58, 0.2)' : 'rgba(192, 134, 58, 0.5)',
+                    color: currentPage === 1 ? 'rgba(192, 134, 58, 0.4)' : '#C0863A',
+                    background: currentPage === 1 ? 'transparent' : 'transparent'
+                  }}
+                  className="hover:bg-opacity-10"
+                >
+                  ⏮ Primeira
+                </Button>
+                
+                {/* Botão Página Anterior */}
+                <Button
+                  onClick={() => {
+                    const newPage = Math.max(currentPage - 1, 1);
+                    console.log('[PAGINATION] Anterior clicado:', { currentPage, newPage });
+                    setCurrentPage(newPage);
+                  }}
+                  disabled={currentPage === 1}
+                  size="sm"
+                  variant="outline"
+                  style={{
+                    borderColor: currentPage === 1 ? 'rgba(192, 134, 58, 0.2)' : 'rgba(192, 134, 58, 0.5)',
+                    color: currentPage === 1 ? 'rgba(192, 134, 58, 0.4)' : '#C0863A',
+                  }}
+                  className="hover:bg-opacity-10"
+                >
+                  ← Anterior
+                </Button>
+                
+                {/* Seletor de Página */}
+                <div className="flex items-center gap-2">
+                  <span style={{color: 'rgba(255, 255, 255, 0.6)'}} className="text-sm">Página</span>
+                  <Select value={currentPage.toString()} onValueChange={(value) => {
+                    const newPage = parseInt(value, 10);
+                    console.log('[SELECT] Mudando página para:', newPage);
+                    setCurrentPage(newPage);
+                  }}>
+                    <SelectTrigger style={{
+                      background: 'rgba(10, 27, 51, 0.8)',
+                      borderColor: 'rgba(192, 134, 58, 0.3)',
+                      color: '#FFFFFF',
+                      width: '100px'
+                    }} className="h-9">
+                      <SelectValue placeholder="Página" />
+                    </SelectTrigger>
+                    <SelectContent style={{background: '#0a1b33', borderColor: 'rgba(192, 134, 58, 0.3)'}}>
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                        <SelectItem key={`page-${page}`} value={page.toString()} style={{color: '#FFFFFF'}}>
+                          {page}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <span style={{color: 'rgba(255, 255, 255, 0.6)'}} className="text-sm">de {totalPages}</span>
+                </div>
+                
+                {/* Botão Próxima Página */}
+                <Button
+                  onClick={() => {
+                    const newPage = Math.min(currentPage + 1, totalPages);
+                    console.log('[PAGINATION] Próxima clicada:', { currentPage, totalPages, newPage });
+                    setCurrentPage(newPage);
+                  }}
+                  disabled={currentPage === totalPages}
+                  size="sm"
+                  variant="outline"
+                  style={{
+                    borderColor: currentPage === totalPages ? 'rgba(192, 134, 58, 0.2)' : 'rgba(192, 134, 58, 0.5)',
+                    color: currentPage === totalPages ? 'rgba(192, 134, 58, 0.4)' : '#C0863A',
+                  }}
+                  className="hover:bg-opacity-10"
+                >
+                  Próxima →
+                </Button>
+                
+                {/* Botão Última Página */}
+                <Button
+                  onClick={() => {
+                    console.log('[PAGINATION] Última clicada:', { totalPages });
+                    setCurrentPage(totalPages);
+                  }}
+                  disabled={currentPage === totalPages}
+                  size="sm"
+                  variant="outline"
+                  style={{
+                    borderColor: currentPage === totalPages ? 'rgba(192, 134, 58, 0.2)' : 'rgba(192, 134, 58, 0.5)',
+                    color: currentPage === totalPages ? 'rgba(192, 134, 58, 0.4)' : '#C0863A',
+                    background: currentPage === totalPages ? 'transparent' : 'transparent'
+                  }}
+                  className="hover:bg-opacity-10"
+                >
+                  Última ⏭
+                </Button>
+              </div>
+            </div>
+          )}
+          
           {sortedData.length === 0 && (
             <div className="p-8 text-center" style={{borderTop: '1px solid rgba(192, 134, 58, 0.2)'}}>
               <AlertCircle className="h-12 w-12 mx-auto mb-2" style={{color: 'rgba(192, 134, 58, 0.5)'}} />
@@ -1285,3 +1343,4 @@ export default function Statement() {
     </div>
     );
   }
+);

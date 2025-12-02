@@ -1,3 +1,4 @@
+import { useEffect } from "react"
 import { ExecutiveKPIs } from "@/components/dashboard/ExecutiveKPIs"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -5,10 +6,18 @@ import { LayoutDashboard } from "lucide-react"
 import { useSync } from "@/providers/sync-provider"
 import { usePageXP } from "@/components/gamification"
 import { StaggeredContainer } from "@/components/motion/StaggeredContainer"
+import { useAuditLog } from "@/hooks/useAuditLog"
 
 export default function Dashboard() {
   // Gamification
   usePageXP('page_visit');
+  
+  // Audit Log
+  const { logView } = useAuditLog()
+  
+  useEffect(() => {
+    logView('Dashboard')
+  }, [])
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto p-6 space-y-8">

@@ -542,23 +542,24 @@ const Propostas = () => {
 
   if (loadingPropostas || loadingKPIs) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-lg">Carregando propostas...</div>
+      <div className="min-h-screen flex items-center justify-center p-6" style={{ background: 'linear-gradient(135deg, #031226 0%, #0a1b33 50%, #031226 100%)' }}>
+        <div className="text-lg text-white">Carregando propostas...</div>
       </div>
     );
   }
 
   if (errorPropostas) {
     return (
-      <div className="flex items-center justify-center h-96">
+      <div className="min-h-screen flex items-center justify-center p-6" style={{ background: 'linear-gradient(135deg, #031226 0%, #0a1b33 50%, #031226 100%)' }}>
         <div className="text-lg text-red-600">Erro ao carregar propostas</div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <h1 className="text-3xl font-bold">Gestão de Propostas</h1>
+    <div className="min-h-screen p-6 space-y-6" style={{ background: 'linear-gradient(135deg, #031226 0%, #0a1b33 50%, #031226 100%)' }}>
+      <div className="container mx-auto">
+        <h1 className="text-3xl font-bold text-white">Gestão de Propostas</h1>
       
       {/* Filtros */}
       <Card>
@@ -708,7 +709,8 @@ const Propostas = () => {
                           <p className="font-semibold text-foreground mb-3">📅 {data.data}</p>
                           <div className="space-y-2">
                             <div className="flex justify-between items-center">
-                              <span className="text-sm text-muted-foreground">📊 Qtd Propostas:</span>
+                              <span className="text-sm text-muted-foregro
+                              und">📊 Qtd Propostas:</span>
                               <span className="font-medium text-primary">{data['Qtd Propostas']}</span>
                             </div>
                             <div className="flex justify-between items-center">
@@ -719,7 +721,7 @@ const Propostas = () => {
                             <div className="text-xs text-muted-foreground mb-2 font-medium">💰 Valores das Finalizadas:</div>
                             <div className="flex justify-between items-center pl-2">
                               <span className="text-sm text-muted-foreground">• Valor Total:</span>
-                              <span className="font-medium text-blue-600">{formatCurrency(data['Valor Total Finalizadas (R$)'])}</span>
+                              <span className="font-medium" style={{ color: '#C0863A' }}>{formatCurrency(data['Valor Total Finalizadas (R$)'])}</span>
                             </div>
                             <div className="flex justify-between items-center pl-2">
                               <span className="text-sm text-muted-foreground">• Valor Líquido:</span>
@@ -910,6 +912,7 @@ const Propostas = () => {
           )}
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 };

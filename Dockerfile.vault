@@ -1,0 +1,10 @@
+FROM hashicorp/vault:latest
+
+# Instalar wget para healthcheck
+RUN apk add --no-cache wget curl
+
+EXPOSE 8200 8201
+
+# Usar entrypoint padrão do Vault
+ENTRYPOINT ["/bin/sh"]
+CMD ["-c", "vault server -dev -dev-listen-address=0.0.0.0:8200 -dev-root-token-id=devtoken"]

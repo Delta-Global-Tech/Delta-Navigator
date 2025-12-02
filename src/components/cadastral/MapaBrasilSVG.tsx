@@ -44,7 +44,7 @@ const ESTADOS_INFO: { [key: string]: string } = {
   to: 'Tocantins',
 };
 
-export function MapaBrasilSVG() {
+export function MapaBrasilSVG({ onStateSelect }: { onStateSelect?: (state: string) => void }) {
   const [mapData, setMapData] = useState<MapState>({});
   const [selectedState, setSelectedState] = useState<string>('mg');
   const [loading, setLoading] = useState(true);
@@ -97,6 +97,9 @@ export function MapaBrasilSVG() {
 
   const handleStateClick = (stateCode: string) => {
     setSelectedState(stateCode);
+    if (onStateSelect) {
+      onStateSelect(stateCode);
+    }
   };
 
   const getStateColor = (stateCode: string) => {

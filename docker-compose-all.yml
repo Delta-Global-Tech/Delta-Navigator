@@ -1,0 +1,273 @@
+version: '3.8'
+
+services:
+  # ============================================
+  # FRONTEND - React/Vite
+  # ============================================
+  frontend:
+    build: .
+    container_name: delta-frontend
+    ports:
+      - "80:80"
+    environment:
+      - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
+      - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
+      - VITE_API_URL=http://backend-server:3001
+      - VITE_CONTRATOS_API_URL=http://contratos-server:3004
+      - VITE_EXTRATO_API_URL=http://extrato-server:3001
+      - VITE_IUGU_API_URL=http://iugu-server:3005
+      - VITE_POSTGRES_API_URL=http://postgres-server:3002
+    depends_on:
+      backend-server:
+        condition: service_healthy
+      contratos-server:
+        condition: service_healthy
+      extrato-server:
+        condition: service_healthy
+      iugu-server:
+        condition: service_healthy
+      postgres-server:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    networks:
+      - delta-network
+    labels:
+      - "app=delta-navigator"
+      - "component=frontend"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # BACKEND SQL SERVER (Main Server)
+  # ============================================
+  backend-server:
+    build: ./server
+    container_name: delta-backend-server
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - SQLSERVER_HOST=${SQLSERVER_HOST}
+      - SQLSERVER_PORT=${SQLSERVER_PORT}
+      - SQLSERVER_USER=${SQLSERVER_USER}
+      - SQLSERVER_PASSWORD=${SQLSERVER_PASSWORD}
+      - SQLSERVER_DB=${SQLSERVER_DB}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_DATABASE=${POSTGRES_DATABASE}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - NODE_OPTIONS=--max-old-space-size=512
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+    networks:
+      - delta-network
+    labels:
+      - "app=delta-navigator"
+      - "component=backend-server"
+      - "port=3001"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # CONTRATOS SERVER
+  # ============================================
+  contratos-server:
+    build: ./contratos-server
+    container_name: delta-contratos-server
+    ports:
+      - "3004:3004"
+    environment:
+      - NODE_ENV=production
+      - SERVER_PORT=3004
+      - DB_HOST=${POSTGRES_HOST}
+      - DB_PORT=${POSTGRES_PORT}
+      - DB_NAME=${POSTGRES_DATABASE}
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - NODE_OPTIONS=--max-old-space-size=512
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+    networks:
+      - delta-network
+    labels:
+      - "app=delta-navigator"
+      - "component=contratos-server"
+      - "port=3004"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # EXTRATO SERVER
+  # ============================================
+  extrato-server:
+    build: ./extrato-server
+    container_name: delta-extrato-server
+    ports:
+      - "3003:3001"
+    environment:
+      - NODE_ENV=production
+      - SERVER_PORT=3001
+      - HOST=${POSTGRES_HOST}
+      - PORT=${POSTGRES_PORT}
+      - DB=${POSTGRES_DATABASE}
+      - DB_USER=${POSTGRES_USER}
+      - PASSWORD=${POSTGRES_PASSWORD}
+      - NODE_OPTIONS=--max-old-space-size=512
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+    networks:
+      - delta-network
+    labels:
+      - "app=delta-navigator"
+      - "component=extrato-server"
+      - "port=3001"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # IUGU SERVER
+  # ============================================
+  iugu-server:
+    build: ./iugu-server
+    container_name: delta-iugu-server
+    ports:
+      - "3005:3005"
+    environment:
+      - NODE_ENV=production
+      - SERVER_PORT=3005
+      - PG_HOST=${POSTGRES_HOST}
+      - PG_PORT=${POSTGRES_PORT}
+      - PG_DB=${POSTGRES_DATABASE}
+      - PG_USER=${POSTGRES_USER}
+      - PG_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_DATABASE=${POSTGRES_DATABASE}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - NODE_OPTIONS=--max-old-space-size=512
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3005/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+    networks:
+      - delta-network
+    labels:
+      - "app=delta-navigator"
+      - "component=iugu-server"
+      - "port=3005"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # POSTGRES SERVER
+  # ============================================
+  postgres-server:
+    build: ./postgres-server
+    container_name: delta-postgres-server
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=production
+      - PORT=3002
+      - HOST=${POSTGRES_HOST}
+      - DB=${POSTGRES_DATABASE}
+      - DB_USER=${POSTGRES_USER}
+      - PASSWORD=${POSTGRES_PASSWORD}
+      - NODE_OPTIONS=--max-old-space-size=512
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+    networks:
+      - delta-network
+    labels:
+      - "app=delta-navigator"
+      - "component=postgres-server"
+      - "port=3002"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  delta-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

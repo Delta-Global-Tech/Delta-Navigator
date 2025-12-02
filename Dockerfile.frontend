@@ -1,0 +1,26 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY package.json package-lock.json ./
+
+# Copy environment file
+COPY . ./
+
+# Install dependencies
+RUN npm install --legacy-peer-deps
+
+# Copy the rest of the application
+COPY src ./src
+COPY public ./public
+COPY index.html vite.config.ts tsconfig*.json postcss.config.js tailwind.config.ts eslint.config.js ./
+
+# Build the application
+RUN npm run build
+
+# Expose port
+EXPOSE 4173
+
+# Run preview server
+CMD ["npm", "run", "preview", "--", "--host", "0.0.0.0"]

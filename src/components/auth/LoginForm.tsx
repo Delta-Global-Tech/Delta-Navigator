@@ -7,13 +7,17 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, Shield, Eye, EyeOff } from "lucide-react"
 import { useAuth } from '@/hooks/useAuth'
 import { SignUpForm } from './SignUpForm'
+import { ForgotPasswordForm } from './ForgotPasswordForm'
 
 export function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [showSignUp, setShowSignUp] = useState(false)
+  const [showForgotPassword, setShowForgotPassword] = useState(false)
   const { login, loading, error } = useAuth()
+
+  console.log('✅ LoginForm renderizado - showForgotPassword:', showForgotPassword)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -22,6 +26,10 @@ export function LoginForm() {
 
   if (showSignUp) {
     return <SignUpForm onBackToLogin={() => setShowSignUp(false)} />
+  }
+
+  if (showForgotPassword) {
+    return <ForgotPasswordForm onBackToLogin={() => setShowForgotPassword(false)} />
   }
 
   return (
@@ -98,6 +106,19 @@ export function LoginForm() {
               ) : (
                 'Entrar'
               )}
+            </Button>
+
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full text-sm text-primary hover:text-primary hover:bg-transparent"
+              onClick={() => {
+                console.log('🔑 Clicou em Esqueceu sua senha')
+                setShowForgotPassword(true)
+              }}
+              disabled={loading}
+            >
+              Esqueceu sua senha?
             </Button>
           </form>
           

@@ -12,6 +12,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useAuth } from "@/hooks/useAuth"
+import { AdminSettingsMenu } from "@/components/admin/AdminSettingsMenu"
 
 interface HeaderProps {
   lastSync?: string
@@ -98,6 +99,9 @@ export function Header({ lastSync, isRefreshing }: HeaderProps) {
               3
             </Badge>
           </Button>
+
+          {/* Admin Settings Menu (se for admin/master) */}
+          <AdminSettingsMenu />
 
           {/* Settings */}
           <Button variant="ghost" size="sm">

@@ -97,3 +97,89 @@ dist
 # Temporary folders
 tmp/
 temp/
+
+# ===== ENVIRONMENT FILES (SECRETS) =====
+# Never commit .env files containing sensitive data
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Whitelist .env.example as template
+!.env.example
+
+# ===== DOCKER & DATABASE =====
+# Docker volumes and data
+docker/data/
+docker/logs/
+.docker/
+docker-compose.override.yml
+docker-compose.*.yml.backup*
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+postgres/data/
+mysql/data/
+vault/data/
+
+# ===== VITE & BUILD SPECIFIC =====
+.vitecache/
+
+# ===== ARCHIVES & BACKUPS =====
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+*.backup
+*.bak
+*.swp
+*.swo
+*~
+*.orig
+
+# ===== IDE SPECIFIC =====
+.vscode/
+.idea/
+*.iml
+.gradle/
+.classpath
+.project
+.settings/
+*.class
+
+# ===== SYSTEM FILES =====
+.env.local.js
+.cache/
+.bun/
+bun.lockb
+
+# ===== DOCUMENTATION GENERATED =====
+# Keep markdown docs but ignore generated ones
+!*.md
+/docs/generated/
+
+# ===== LOG FILES & REPORTS =====
+*.xlsx
+*.xls
+audit-logs/
+logs/
+
+# ===== NODE SPECIFIC =====
+.node_modules/
+npm-debug.log
+yarn-error.log
+
+# ===== TEST OUTPUTS =====
+.coverage
+coverage/
+*.lcov
+
+# ===== OS SPECIFIC =====
+.Thumbs.db
+Desktop.ini
+

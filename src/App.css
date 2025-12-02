@@ -11,23 +11,26 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Custom scrollbar styling */
-::-webkit-scrollbar {
-  width: 8px;
+/* Hide scrollbar completely but keep scrolling - Global */
+* {
+  scrollbar-width: none; /* Firefox */
 }
 
-::-webkit-scrollbar-track {
-  background: hsl(var(--muted));
+*::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
 }
 
-::-webkit-scrollbar-thumb {
-  background: hsl(var(--border));
-  border-radius: 4px;
+/* Esconder scrollbar em elementos com overflow */
+.overflow-y-auto {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground));
+.overflow-y-auto::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
 }
+
+/* Custom scrollbar styling - Removido para sidebar limpo */
 
 /* Loading states */
 .loading-shimmer {
@@ -44,3 +47,86 @@ html {
     background-position: -200% 0;
   }
 }
+
+/* Table Row Hover Effects */
+[role="row"]:hover {
+  background-color: rgba(192, 134, 58, 0.08) !important;
+  box-shadow: inset 0 0 0 1px rgba(192, 134, 58, 0.2);
+  transition: all 0.2s ease;
+}
+
+/* Table Cell Animations */
+[role="cell"] {
+  transition: all 0.2s ease;
+}
+
+/* Badge Animations */
+.badge-animated {
+  animation: badgePulse 2s ease-in-out infinite;
+}
+
+@keyframes badgePulse {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(192, 134, 58, 0.4);
+  }
+  50% {
+    opacity: 0.85;
+    box-shadow: 0 0 0 4px rgba(192, 134, 58, 0.1);
+  }
+}
+
+/* Fade In Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Card entrance animation */
+.card-entrance {
+  animation: fadeInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Chart entrance animation */
+.chart-entrance {
+  animation: fadeIn 0.8s ease-out;
+}
+
+/* Skeleton Loading Animation */
+@keyframes skeletonLoading {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.2) 20%,
+    rgba(255, 255, 255, 0.1) 40%,
+    rgba(255, 255, 255, 0.1) 100%
+  );
+  background-size: 1000px 100%;
+  animation: skeletonLoading 2s infinite;
+  border-radius: 8px;
+}
+

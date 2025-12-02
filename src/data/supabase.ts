@@ -3,8 +3,8 @@ import { createClient } from "@supabase/supabase-js";
 import { Database } from "@/integrations/supabase/types";
 
 export const supabase = createClient<Database>(
-  "https://tgdvaaprejaojcwzgzng.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnZHZhYXByZWphb2pjd3pnem5nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU4NjYxODIsImV4cCI6MjA3MTQ0MjE4Mn0.Z80j00gTMk89yjHdlUNKaCjrTb1eB8dKbAEzgsIVqG8",
+  "https://rrymsnrrjrmbhzihtjlo.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJyeW1zbnJyanJtYmh6aWh0amxvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk4NDgwMDgsImV4cCI6MjA3NTQyNDAwOH0.RYfElKjQPxV2-A6ROHWlOQqcJWRyZd91vQuEU2ox858",
   { 
     auth: { 
       persistSession: true,

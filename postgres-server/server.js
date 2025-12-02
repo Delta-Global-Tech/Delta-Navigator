@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
+const axios = require('axios');
 require('dotenv').config();
 
 const app = express();
@@ -15,8 +16,32 @@ const port = 3002;
 app.use(cors());
 app.use(express.json());
 
-// Configuração do PostgreSQL
-const config = {
+// ====== VAULT INTEGRATION (fallback automatico) ======
+const VAULT_ADDR = process.env.VAULT_ADDR || 'http://vault:8200';
+const VAULT_TOKEN = process.env.VAULT_TOKEN || 'devtoken';
+
+async function getVaultSecret(path) {
+  try {
+    const response = await axios.get(
+      `${VAULT_ADDR}/v1/${path}`,
+      {
+        headers: { 'X-Vault-Token': VAULT_TOKEN },
+        timeout: 3000,
+      }
+    );
+    const value = response.data?.data?.data?.value;
+    if (value) {
+      console.log(`[VAULT] Secret carregado: ${path}`);
+      return value;
+    }
+  } catch (error) {
+    console.warn(`[VAULT] Indisponivel (${path}), usando .env`);
+  }
+  return null;
+}
+
+// Inicializar configuração do banco com Vault + fallback
+let dbConfig = {
   host: process.env.HOST,
   port: process.env.PORT,
   database: process.env.DB,
@@ -24,6 +49,29 @@ const config = {
   password: process.env.PASSWORD,
   ssl: false
 };
+
+async function initializeDatabase() {
+  console.log('[VAULT] Tentando carregar secrets...');
+  
+  const vaultHost = await getVaultSecret('secret/data/delta/postgres-host');
+  const vaultPort = await getVaultSecret('secret/data/delta/postgres-port');
+  const vaultDb = await getVaultSecret('secret/data/delta/postgres-db');
+  const vaultUser = await getVaultSecret('secret/data/delta/postgres-user');
+  const vaultPassword = await getVaultSecret('secret/data/delta/postgres-password');
+  
+  if (vaultHost) dbConfig.host = vaultHost;
+  if (vaultPort) dbConfig.port = parseInt(vaultPort);
+  if (vaultDb) dbConfig.database = vaultDb;
+  if (vaultUser) dbConfig.user = vaultUser;
+  if (vaultPassword) dbConfig.password = vaultPassword;
+  
+  console.log(`[DB] Configuracao final: host=${dbConfig.host} port=${dbConfig.port} database=${dbConfig.database}`);
+  console.log('[DB] Pronto para conectar');
+}
+
+// Usar dbConfig diretamente (sera atualizado por initializeDatabase)
+const config = dbConfig;
+// ====== FIM VAULT INTEGRATION ======
 
 
 // Rota de teste de conexão
@@ -42,6 +90,29 @@ app.get('/api/test', async (req, res) => {
     res.status(500).json({ 
       error: 'Erro na conexão com PostgreSQL',
       details: error.message 
+    });
+  }
+});
+
+// Health check endpoint
+app.get('/health', async (req, res) => {
+  try {
+    const pool = new Pool(config);
+    const result = await pool.query('SELECT 1');
+    await pool.end();
+    
+    res.json({ 
+      status: 'healthy',
+      database: 'connected',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('[HEALTH CHECK] Database connection failed:', error.message);
+    res.status(503).json({ 
+      status: 'unhealthy',
+      database: 'disconnected',
+      error: error.message,
+      timestamp: new Date().toISOString()
     });
   }
 });
@@ -181,6 +252,13 @@ app.get('/api/funil/data', async (req, res) => {
     
   } catch (error) {
     console.error('Erro ao buscar dados do funil:', error);
+    
+    // Se a tabela não existe, retorna array vazio
+    if (error.code === '42P01' || error.message.includes('does not exist')) {
+      console.warn('Tabela não encontrada - retornando dados vazios');
+      return res.json([]);
+    }
+    
     res.status(500).json({ 
       error: 'Erro interno do servidor',
       details: error.message,
@@ -283,6 +361,22 @@ app.get('/api/funil/kpis', async (req, res) => {
     
   } catch (error) {
     console.error('Erro ao buscar KPIs do funil:', error);
+    
+    // Se a tabela não existe, retorna KPIs vazios
+    if (error.code === '42P01' || error.message.includes('does not exist')) {
+      console.warn('Tabela não encontrada - retornando KPIs vazios');
+      return res.json({
+        total_clients: 0,
+        pre_registro: 0,
+        site: 0,
+        whatsapp: 0,
+        download_fgts: 0,
+        app_autorizado: 0,
+        simulacao: 0,
+        registro_completo: 0
+      });
+    }
+    
     res.status(500).json({ 
       error: 'Erro interno do servidor',
       details: error.message,
@@ -316,6 +410,13 @@ app.get('/api/funil/status', async (req, res) => {
     
   } catch (error) {
     console.error('Erro ao buscar status do funil:', error);
+    
+    // Se a tabela não existe, retorna array vazio
+    if (error.code === '42P01' || error.message.includes('does not exist')) {
+      console.warn('Tabela não encontrada - retornando status vazio');
+      return res.json({ status: [] });
+    }
+    
     res.status(500).json({ 
       error: 'Erro ao buscar status do funil',
       details: error.message 
@@ -617,7 +718,12 @@ app.get('/api/propostas/evolucao-diaria', async (req, res) => {
 });
 
 // Iniciar servidor
-app.listen(port, '0.0.0.0', () => {
-  console.log(`Servidor rodando na porta ${port}`);
-  console.log(`Teste a API em: http://localhost:${port}/api/test`);
+initializeDatabase().then(() => {
+  app.listen(port, '0.0.0.0', () => {
+    console.log(`Servidor rodando na porta ${port}`);
+    console.log(`Teste a API em: http://localhost:${port}/api/test`);
+  });
+}).catch(error => {
+  console.error('Erro ao inicializar banco:', error);
+  process.exit(1);
 });

@@ -1,21 +1,23 @@
-# Dockerfile para backend PostgreSQL
+# Dockerfile para Postgres Server - Production Ready
 FROM node:18-alpine
+
+RUN apk add --no-cache curl tini
 
 WORKDIR /app
 
-# Instalar dependências
 COPY package*.json ./
-RUN npm ci --only=production
 
-# Copiar código
+RUN npm install --production && npm cache clean --force
+
 COPY . .
 
-# Expor porta
+RUN mkdir -p /app/logs
+
 EXPOSE 3002
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "const http = require('http'); http.get('http://localhost:3002/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); }).on('error', () => process.exit(1));"
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD curl -f http://localhost:3002/health || exit 1
 
-# Comando para iniciar
-CMD ["node", "server.js"]
+ENTRYPOINT ["/sbin/tini", "--"]
+
+CMD ["node", "--max-old-space-size=512", "server.js"]

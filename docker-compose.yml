@@ -3,24 +3,47 @@ version: '3.8'
 services:
   # Frontend React
   frontend:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
     ports:
-      - "80:80"
+      - "80:4173"
+    container_name: delta-frontend
     environment:
       - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
       - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
       - VITE_API_URL=http://backend-sql:3001
       - VITE_POSTGRES_API_URL=http://backend-postgres:3002
     depends_on:
-      - backend-sql
-      - backend-postgres
+      backend-sql:
+        condition: service_healthy
+      backend-postgres:
+        condition: service_healthy
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4173/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    networks:
+      - delta-network
+    labels:
+      - "app=delta-navigator"
+      - "component=frontend"
 
   # Backend SQL Server
   backend-sql:
     build: ./server
     ports:
       - "3001:3001"
+    container_name: delta-backend-sql
     environment:
       - NODE_ENV=production
       - PORT=3001
@@ -29,44 +52,293 @@ services:
       - SQLSERVER_USER=${SQLSERVER_USER}
       - SQLSERVER_PASSWORD=${SQLSERVER_PASSWORD}
       - SQLSERVER_DB=${SQLSERVER_DB}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_DATABASE=${POSTGRES_DATABASE}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=devtoken
+      - NODE_OPTIONS=--max-old-space-size=512
+      - FINANCIAL_PATH=/app/financial
+    volumes:
+      - C:\\Users\\alexsandro.costa\\Documents\\FINANCEIRA:/app/financial
     restart: unless-stopped
+    depends_on:
+      vault:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+    networks:
+      - delta-network
+    labels:
+      - "app=delta-navigator"
+      - "component=backend-sql"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # Backend PostgreSQL
   backend-postgres:
     build: ./postgres-server
     ports:
       - "3002:3002"
+    container_name: delta-backend-postgres
     environment:
       - NODE_ENV=production
+      - SERVER_PORT=3002
       - HOST=${POSTGRES_HOST}
       - PORT=${POSTGRES_PORT}
-      - DB=${POSTGRES_DB}
+      - DB=${POSTGRES_DATABASE}
       - DB_USER=${POSTGRES_USER}
       - PASSWORD=${POSTGRES_PASSWORD}
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=devtoken
+      - NODE_OPTIONS=--max-old-space-size=512
     restart: unless-stopped
+    depends_on:
+      vault:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+    networks:
+      - delta-network
+    labels:
+      - "app=delta-navigator"
+      - "component=backend-postgres"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Backend Extrato
+  backend-extrato:
+    build: ./extrato-server
+    ports:
+      - "3003:3003"
+    container_name: delta-extrato-server
+    environment:
+      - NODE_ENV=production
+      - SERVER_PORT=3003
+      - DB_HOST=10.174.1.116
+      - DB_PORT=5432
+      - DB_NAME=paysmart
+      - DB_USER=postgres
+      - DB_PASSWORD=XwrNUm9YshZsdQxQ
+      - CONTRATOS_SERVER_URL=http://backend-contratos:3004
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=devtoken
+      - NODE_OPTIONS=--max-old-space-size=512
+    restart: unless-stopped
+    depends_on:
+      vault:
+        condition: service_healthy
+      backend-contratos:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3003/health"]
+      interval: 30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+    networks:
+      - delta-network
+    labels:
+      - "app=delta-navigator"
+      - "component=backend-extrato"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # Nginx Reverse Proxy (opcional)
   nginx:
     image: nginx:alpine
     ports:
       - "8080:80"
+    container_name: delta-nginx
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
-      - frontend
-      - backend-sql
-      - backend-postgres
+      frontend:
+        condition: service_healthy
+      backend-sql:
+        condition: service_healthy
+      backend-postgres:
+        condition: service_healthy
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+    networks:
+      - delta-network
+    labels:
+      - "app=delta-navigator"
+      - "component=nginx"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # HashiCorp Vault - Gerenciamento de Secrets
+  vault:
+    build:
+      context: .
+      dockerfile: Dockerfile.vault
+    container_name: delta-vault
+    ports:
+      - "8200:8200"
+    environment:
+      - VAULT_DEV_ROOT_TOKEN_ID=devtoken
+      - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
+      - VAULT_LOG_LEVEL=info
+    cap_add:
+      - IPC_LOCK
+    volumes:
+      - vault_data:/vault/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:8200/v1/sys/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - delta-network
+    restart: unless-stopped
+    labels:
+      - "app=delta-navigator"
+      - "component=vault"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Backend Contratos
+  backend-contratos:
+    build: ./contratos-server
+    ports:
+      - "3004:3004"
+    container_name: delta-contratos-server
+    environment:
+      - NODE_ENV=production
+      - SERVER_PORT=3004
+      - POSTGRES_HOST=10.174.1.116
+      - POSTGRES_PORT=5432
+      - POSTGRES_DATABASE=EM
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=XwrNUm9YshZsdQxQ
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=devtoken
+      - NODE_OPTIONS=--max-old-space-size=512
+    restart: unless-stopped
+    depends_on:
+      vault:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+    networks:
+      - delta-network
+    labels:
+      - "app=delta-navigator"
+      - "component=backend-contratos"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Backend Iugu
+  backend-iugu:
+    build: ./iugu-server
+    ports:
+      - "3005:3005"
+    container_name: delta-iugu-server
+    environment:
+      - NODE_ENV=production
+      - SERVER_PORT=3005
+      - POSTGRES_HOST=10.174.1.117
+      - POSTGRES_PORT=5432
+      - POSTGRES_DATABASE=ntxdeltaglobal
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=u8@UWlfV@mT8TjSVtcEJmOTd
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=devtoken
+      - NODE_OPTIONS=--max-old-space-size=512
+    restart: unless-stopped
+    depends_on:
+      vault:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3005/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+    networks:
+      - delta-network
+    labels:
+      - "app=delta-navigator"
+      - "component=backend-iugu"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   postgres_data:
+  vault_data:
+
+networks:
+  delta-network:
+    driver: bridge

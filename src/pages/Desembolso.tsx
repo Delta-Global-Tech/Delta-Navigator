@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -51,6 +51,9 @@ interface DesembolsoData {
   taxa_real: number;
   taxa_cet: number;
   status_final: string;
+  // Campos adicionados da posição do contrato
+  vlr_prestacao?: number;
+  qtd_parcelas?: number;
 }
 
 interface DesembolsoStats {
@@ -315,6 +318,11 @@ const Desembolso = () => {
   const [selectedContrato, setSelectedContrato] = useState<string | null>(null);
   const [contratoPosicao, setContratoPosicao] = useState<any | null>(null);
   const [loadingPosicao, setLoadingPosicao] = useState(false);
+  const [expandOutrosProdutos, setExpandOutrosProdutos] = useState(false);
+  
+  // Monitoramento de requisições
+  const requestCountRef = useRef(0);
+  const startTimeRef = useRef(Date.now());
   
   const [filters, setFilters] = useState<FilterState>({
     dataInicio: '',
@@ -329,6 +337,10 @@ const Desembolso = () => {
 
   const fetchFilterOptions = async () => {
     try {
+      requestCountRef.current++;
+      const elapsedTime = Date.now() - startTimeRef.current;
+      console.log(`[DESEMBOLSO-MONITOR] Requisição #${requestCountRef.current} | Tempo desde carga: ${elapsedTime}ms | fetchFilterOptions`);
+      
       const url = getApiEndpoint('CONTRATOS', '/api/contratos/desembolso/filtros');
       console.log('[DESEMBOLSO] Buscando opções de filtros...', url);
       
@@ -347,30 +359,42 @@ const Desembolso = () => {
 
   const fetchData = async () => {
     try {
+      requestCountRef.current++;
+      const elapsedTime = Date.now() - startTimeRef.current;
+      console.log(`[DESEMBOLSO-MONITOR] Requisição #${requestCountRef.current} | Tempo desde carga: ${elapsedTime}ms | fetchData (desembolso + ranking + posição)`);
+      
       setLoading(true);
       setError(null);
+      
+      console.log('[DESEMBOLSO] Filtros atuais:', filters);
       
       // Construir query string com filtros
       const queryParams = new URLSearchParams();
       
+      // Enviar filtros com seus nomes originais primeiro
+      // Se não funcionar, tentaremos mapeamento
       Object.entries(filters).forEach(([key, value]) => {
         if (Array.isArray(value)) {
           // Para arrays (múltipla seleção), enviar cada valor separadamente
           value.forEach(item => {
             if (item && item.trim() !== '') {
               queryParams.append(key, item.trim());
+              console.log(`[DESEMBOLSO] Adicionando array: ${key} = ${item}`);
             }
           });
-        } else if (value && value.trim() !== '') {
+        } else if (value && typeof value === 'string' && value.trim() !== '') {
           queryParams.append(key, value.trim());
+          console.log(`[DESEMBOLSO] Adicionando valor: ${key} = ${value}`);
         }
       });
       
       const queryString = queryParams.toString();
+      console.log('[DESEMBOLSO] Query string final:', queryString);
+      console.log('[DESEMBOLSO] Query string URL:', decodeURIComponent(queryString));
       
       // Buscar dados principais de desembolso
       const url = getApiEndpoint('CONTRATOS', '/api/contratos/desembolso' + (queryString ? `?${queryString}` : ''));
-      console.log('[DESEMBOLSO] Buscando dados...', url);
+      console.log('[DESEMBOLSO] URL COMPLETA:', url);
       logApiCall(url, 'REQUEST');
       
       const response = await fetch(url);
@@ -383,7 +407,16 @@ const Desembolso = () => {
       console.log('[DESEMBOLSO] Dados recebidos:', result);
       logApiCall(url, 'SUCCESS');
       
-      setData(result);
+      // Enriquecer dados com informações de posição do contrato
+      const desembolsosEnriquecidos = await enrichDesembolsosWithPosicao(result.desembolsos || []);
+      
+      // Atualizar resultado com dados enriquecidos
+      const resultadoFinal = {
+        ...result,
+        desembolsos: desembolsosEnriquecidos
+      };
+      
+      setData(resultadoFinal);
       
       // Buscar dados de ranking com os mesmos filtros
       const rankingUrl = getApiEndpoint('CONTRATOS', '/api/contratos/desembolso/ranking-produtos' + (queryString ? `?${queryString}` : ''));
@@ -398,8 +431,19 @@ const Desembolso = () => {
       
       const rankingResult = await rankingResponse.json();
       console.log('[DESEMBOLSO] Ranking recebido:', rankingResult);
-      logApiCall(rankingUrl, 'SUCCESS');
       
+      // Log detalhado dos produtos "Outros"
+      if (rankingResult.resumo_categorias) {
+        const outrosCategoria = rankingResult.resumo_categorias.find(cat => cat.categoria === 'Outros');
+        if (outrosCategoria && outrosCategoria.produtos) {
+          console.log('[DESEMBOLSO] 📌 PRODUTOS CATEGORIZADOS COMO "OUTROS":');
+          outrosCategoria.produtos.forEach(prod => {
+            console.log(`   - ${prod.descricao} | ${prod.quantidade_contratos} contratos | R$ ${(prod.total_liberado || 0).toFixed(2)}`);
+          });
+        }
+      }
+      
+      logApiCall(rankingUrl, 'SUCCESS');
       setRankingData(rankingResult);
       
     } catch (err) {
@@ -412,14 +456,69 @@ const Desembolso = () => {
     }
   };
 
+  // Função para enriquecer desembolsos com dados de posição
+  const enrichDesembolsosWithPosicao = async (desembolsos: DesembolsoData[]) => {
+    try {
+      requestCountRef.current++;
+      const elapsedTime = Date.now() - startTimeRef.current;
+      console.log(`[DESEMBOLSO-MONITOR] Requisição #${requestCountRef.current} | Tempo desde carga: ${elapsedTime}ms | enrichDesembolsosWithPosicao`);
+      
+      console.log('[DESEMBOLSO] Iniciando enriquecimento com dados de posição...');
+      
+      // Buscar dados de posição completa
+      const endpoint = getApiEndpoint('CONTRATOS', '/api/contratos/posicao-completa');
+      const response = await fetch(endpoint);
+      
+      if (!response.ok) {
+        throw new Error(`Erro ao buscar posição: ${response.status}`);
+      }
+      
+      const posicaoData = await response.json();
+      console.log('[DESEMBOLSO] Dados de posição recebidos:', posicaoData);
+      
+      // Criar mapa de contratos pela posição para join rápido
+      const contratoMap = new Map();
+      if (posicaoData.contratos && Array.isArray(posicaoData.contratos)) {
+        posicaoData.contratos.forEach((contrato: any) => {
+          const numeroContrato = contrato.numeroContrato || contrato.numero_contrato;
+          if (numeroContrato) {
+            contratoMap.set(numeroContrato, {
+              vlr_prestacao: contrato.valorParcelas || contrato.valor_parcelas || 0,
+              qtd_parcelas: contrato.quantidadeDeParcelas || contrato.quantidade_de_parcelas || 0
+            });
+          }
+        });
+      }
+      
+      console.log('[DESEMBOLSO] Mapa de contratos criado com', contratoMap.size, 'entradas');
+      
+      // Fazer join: atualizar desembolsos com dados de posição
+      const desembolsosEnriquecidos = desembolsos.map(desembolso => {
+        const numeroContrato = desembolso.contrato;
+        const posicaoInfo = contratoMap.get(numeroContrato);
+        
+        return {
+          ...desembolso,
+          vlr_prestacao: posicaoInfo?.vlr_prestacao || 0,
+          qtd_parcelas: posicaoInfo?.qtd_parcelas || 0
+        };
+      });
+      
+      return desembolsosEnriquecidos;
+    } catch (err) {
+      console.error('[DESEMBOLSO] Erro ao enriquecer desembolsos com posição:', err);
+      // Retornar desembolsos originais sem enriquecimento
+      return desembolsos;
+    }
+  };
+
   useEffect(() => {
     fetchFilterOptions();
     fetchData();
   }, []);
 
-  useEffect(() => {
-    fetchData();
-  }, [filters]);
+  // Removido o useEffect que chamava fetchData toda vez que filters mudava
+  // Agora o usuário usa o botão "Aplicar Filtros" ou tecla Enter
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -452,6 +551,10 @@ const Desembolso = () => {
 
   const fetchPosicaoPorContrato = async (no_contrato: string) => {
     try {
+      requestCountRef.current++;
+      const elapsedTime = Date.now() - startTimeRef.current;
+      console.log(`[DESEMBOLSO-MONITOR] Requisição #${requestCountRef.current} | Tempo desde carga: ${elapsedTime}ms | fetchPosicaoPorContrato`);
+      
       setLoadingPosicao(true);
       setContratoPosicao(null);
       const endpoint = getApiEndpoint('CONTRATOS', `/api/contratos/posicao-completa?no_contrato=${encodeURIComponent(no_contrato)}`);
@@ -470,10 +573,34 @@ const Desembolso = () => {
   };
 
   const handleFilterChange = (key: keyof FilterState, value: string | string[]) => {
+    // Validação para campos de data e valor numérico
+    if ((key === 'dataInicio' || key === 'dataFim') && typeof value === 'string') {
+      // Apenas permite formato YYYY-MM-DD
+      if (value && !/^\d{4}-\d{2}-\d{2}$/.test(value) && !/^\d{0,4}-?\d{0,2}-?\d{0,2}$/.test(value)) {
+        console.warn('[DESEMBOLSO] Data inválida:', value);
+        return;
+      }
+    }
+    
+    if ((key === 'valorMinimo' || key === 'valorMaximo') && typeof value === 'string') {
+      // Apenas permite números e ponto decimal
+      if (value && !/^[\d.]*$/.test(value)) {
+        console.warn('[DESEMBOLSO] Valor inválido:', value);
+        return;
+      }
+    }
+    
     setFilters(prev => ({
       ...prev,
       [key]: value
     }));
+  };
+
+  const handleFilterKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      fetchData();
+    }
   };
 
   const handleMultiSelectChange = (key: 'produto' | 'filial' | 'convenio', value: string) => {
@@ -508,6 +635,10 @@ const Desembolso = () => {
       convenio: [],
       status: ''
     });
+    // Depois de limpar, recarregar com dados padrão
+    setTimeout(() => {
+      fetchData();
+    }, 100);
   };
 
   const getStatusBadge = (status: string) => {
@@ -628,10 +759,34 @@ const Desembolso = () => {
   const exportToExcel = () => {
     if (!filteredAndSortedData.length) return;
 
-    // Build workbook with KPIs + Desembolsos
-    const wb = XLSX.utils.book_new();
+    // Preparar dados para exportação
+    const exportData = filteredAndSortedData.map(item => ({
+      'Produto': item.descricao,
+      'Nome': item.nome,
+      'CPF/CNPJ': item.nr_cpf_cnpj,
+      'Contrato': item.contrato,
+      'Valor Prestação': item.vlr_prestacao || 0,
+      'Qtd. Parcelas': item.qtd_parcelas || 0,
+      'Valor Financiado': item.vl_financ,
+      'Valor Liberado': item.vlr_liberado,
+      'Taxa (%)': item.taxa > 0 ? item.taxa : 'N/A',
+      'Taxa Real (%)': item.taxa_real > 0 ? item.taxa_real : 'N/A',
+      'Taxa CET (%)': item.taxa_cet > 0 ? item.taxa_cet : 'N/A',
+      'Instituição': item.nome_inst,
+      'Status': item.status_final || 'N/A',
+      'Data Entrada': formatDate(item.data_entrada)
+    }));
 
+    // Criar worksheet e workbook
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Desembolsos');
 
+    // Gerar nome do arquivo
+    const filename = `desembolsos_${new Date().toISOString().split('T')[0]}.xlsx`;
+    
+    // Exportar arquivo
+    XLSX.writeFile(workbook, filename);
   };
 
   if (loading) {
@@ -747,6 +902,28 @@ const Desembolso = () => {
       </div>
       {/* Header */}
       <div className="mb-8 relative z-10">
+        {/* Painel de Monitoramento de Requisições */}
+        <div 
+          className="text-sm p-2 rounded mb-4 flex justify-between items-center"
+          style={{ 
+            background: 'rgba(220, 38, 38, 0.1)',
+            border: '1px solid rgba(220, 38, 38, 0.5)',
+            color: '#FCA5A5'
+          }}
+        >
+          <span>🔍 Monitoramento: <strong>{requestCountRef.current} requisições</strong> | Tempo: {(Date.now() - startTimeRef.current) / 1000}s</span>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              alert(`Total de requisições feitas nesta página: ${requestCountRef.current}\n\nAbra o console (F12) para ver detalhes de cada uma.`);
+            }}
+            style={{ color: '#FCA5A5' }}
+          >
+            Detalhes
+          </Button>
+        </div>
+        
         <div 
           className="text-center py-8 rounded-xl mb-6"
           style={{ 
@@ -938,6 +1115,39 @@ const Desembolso = () => {
                       ></div>
                     </div>
                   </div>
+                  
+                  {/* Expandir produtos "Outros" */}
+                  {categoria.categoria === 'Outros' && categoria.produtos && categoria.produtos.length > 0 && (
+                    <div className="mt-4 pt-3 border-t border-red-400/30">
+                      <button
+                        onClick={() => setExpandOutrosProdutos(!expandOutrosProdutos)}
+                        className="w-full text-left text-sm font-semibold text-red-200 hover:text-red-100 transition flex items-center justify-between py-2"
+                      >
+                        <span>📋 Ver Produtos Detalhados ({categoria.produtos.length})</span>
+                        <span>{expandOutrosProdutos ? '▼' : '▶'}</span>
+                      </button>
+                      
+                      {expandOutrosProdutos && (
+                        <div className="mt-3 space-y-2 max-h-64 overflow-y-auto">
+                          {categoria.produtos.map((produto, idx) => (
+                            <div key={idx} className="text-xs bg-red-900/20 rounded p-2 border border-red-400/20">
+                              <p className="text-red-100 font-semibold">{produto.descricao || 'Sem nome'}</p>
+                              <div className="text-red-200 text-xs mt-1 space-y-1">
+                                <div className="flex justify-between">
+                                  <span>Contratos:</span>
+                                  <span>{produto.quantidade_contratos}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span>Liberado:</span>
+                                  <span>{formatCurrency(produto.total_liberado || 0)}</span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
@@ -1016,10 +1226,12 @@ const Desembolso = () => {
                     type="date"
                     value={filters.dataInicio}
                     onChange={(e) => handleFilterChange('dataInicio', e.target.value)}
-                    className="w-full p-2 rounded border-0 text-white"
+                    onKeyPress={handleFilterKeyPress}
+                    className="w-full p-2 rounded border-0 text-white placeholder-gray-500"
                     style={{ 
                       background: 'rgba(0, 0, 0, 0.3)',
-                      border: '1px solid rgba(192, 134, 58, 0.3)'
+                      border: '1px solid rgba(192, 134, 58, 0.3)',
+                      colorScheme: 'dark'
                     }}
                   />
                 </div>
@@ -1032,10 +1244,12 @@ const Desembolso = () => {
                     type="date"
                     value={filters.dataFim}
                     onChange={(e) => handleFilterChange('dataFim', e.target.value)}
-                    className="w-full p-2 rounded border-0 text-white"
+                    onKeyPress={handleFilterKeyPress}
+                    className="w-full p-2 rounded border-0 text-white placeholder-gray-500"
                     style={{ 
                       background: 'rgba(0, 0, 0, 0.3)',
-                      border: '1px solid rgba(192, 134, 58, 0.3)'
+                      border: '1px solid rgba(192, 134, 58, 0.3)',
+                      colorScheme: 'dark'
                     }}
                   />
                 </div>
@@ -1049,11 +1263,15 @@ const Desembolso = () => {
                     type="number"
                     value={filters.valorMinimo}
                     onChange={(e) => handleFilterChange('valorMinimo', e.target.value)}
+                    onKeyPress={handleFilterKeyPress}
                     placeholder="0.00"
-                    className="w-full p-2 rounded border-0 text-white"
+                    step="0.01"
+                    min="0"
+                    className="w-full p-2 rounded border-0 text-white placeholder-gray-500"
                     style={{ 
                       background: 'rgba(0, 0, 0, 0.3)',
-                      border: '1px solid rgba(192, 134, 58, 0.3)'
+                      border: '1px solid rgba(192, 134, 58, 0.3)',
+                      colorScheme: 'dark'
                     }}
                   />
                 </div>
@@ -1066,11 +1284,15 @@ const Desembolso = () => {
                     type="number"
                     value={filters.valorMaximo}
                     onChange={(e) => handleFilterChange('valorMaximo', e.target.value)}
+                    onKeyPress={handleFilterKeyPress}
                     placeholder="999999.00"
-                    className="w-full p-2 rounded border-0 text-white"
+                    step="0.01"
+                    min="0"
+                    className="w-full p-2 rounded border-0 text-white placeholder-gray-500"
                     style={{ 
                       background: 'rgba(0, 0, 0, 0.3)',
-                      border: '1px solid rgba(192, 134, 58, 0.3)'
+                      border: '1px solid rgba(192, 134, 58, 0.3)',
+                      colorScheme: 'dark'
                     }}
                   />
                 </div>
@@ -1131,6 +1353,17 @@ const Desembolso = () => {
                   style={{ borderColor: '#6B7280', color: '#6B7280' }}
                 >
                   Limpar Filtros
+                </Button>
+                <Button
+                  onClick={() => {
+                    console.log('[DEBUG] Filtros antes de enviar:', JSON.stringify(filters, null, 2));
+                    alert('Verifique o console (F12) para ver os filtros enviados');
+                    fetchData();
+                  }}
+                  size="sm"
+                  style={{ background: '#C0863A', border: 'none', color: 'white' }}
+                >
+                  Aplicar Filtros
                 </Button>
               </div>
             </div>
@@ -1284,6 +1517,8 @@ const Desembolso = () => {
                   <th className="p-3 text-left font-semibold" style={{ color: '#C0863A' }}>Cliente</th>
                   <th className="p-3 text-left font-semibold" style={{ color: '#C0863A' }}>CPF/CNPJ</th>
                   <th className="p-3 text-left font-semibold" style={{ color: '#C0863A' }}>Contrato</th>
+                  <th className="p-3 text-left font-semibold" style={{ color: '#C0863A' }}>Valor Prestação</th>
+                  <th className="p-3 text-left font-semibold" style={{ color: '#C0863A' }}>Qtd. Parcelas</th>
                   <th 
                     className="p-3 text-left font-semibold cursor-pointer hover:bg-opacity-10 hover:bg-white transition-colors"
                     style={{ color: '#C0863A' }}
@@ -1341,6 +1576,8 @@ const Desembolso = () => {
                     <td className="p-3" style={{ color: 'white' }}>{item.nome}</td>
                     <td className="p-3" style={{ color: 'white', fontFamily: 'monospace' }}>{item.nr_cpf_cnpj}</td>
                     <td className="p-3" style={{ color: 'white', fontFamily: 'monospace' }}>{item.contrato}</td>
+                    <td className="p-3 font-semibold" style={{ color: '#10B981' }}>{item.vlr_prestacao ? formatCurrency(item.vlr_prestacao) : 'N/A'}</td>
+                    <td className="p-3" style={{ color: 'white' }}>{item.qtd_parcelas || 'N/A'}</td>
                     <td className="p-3 font-semibold" style={{ color: '#10B981' }}>{formatCurrency(item.vl_financ)}</td>
                     <td className="p-3 font-semibold" style={{ color: item.vlr_liberado > 0 ? '#10B981' : '#6B7280' }}>
                       {formatCurrency(item.vlr_liberado)}
@@ -1374,7 +1611,7 @@ const Desembolso = () => {
                 ))}
                 {filteredAndSortedData.length === 0 && (
                   <tr>
-                    <td colSpan={12} className="p-8 text-center" style={{ color: 'rgba(255, 255, 255, 0.5)' }}>
+                    <td colSpan={14} className="p-8 text-center" style={{ color: 'rgba(255, 255, 255, 0.5)' }}>
                       {searchTerm ? 'Nenhum resultado encontrado para a busca' : 'Nenhum dado disponível'}
                     </td>
                   </tr>

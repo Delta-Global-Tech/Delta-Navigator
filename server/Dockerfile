@@ -1,21 +1,32 @@
-# Dockerfile para backend SQL Server
+# Dockerfile para backend PostgreSQL - Production Ready
 FROM node:18-alpine
+
+# Instalar curl para health checks
+RUN apk add --no-cache curl tini
 
 WORKDIR /app
 
-# Instalar dependências
+# Copiar package files
 COPY package*.json ./
-RUN npm ci --only=production
 
-# Copiar código
+# Instalar dependências
+RUN npm ci --only=production && npm cache clean --force
+
+# Copiar código da aplicação
 COPY . .
+
+# Criar diretório para logs
+RUN mkdir -p /app/logs
 
 # Expor porta
 EXPOSE 3001
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "const http = require('http'); http.get('http://localhost:3001/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); }).on('error', () => process.exit(1));"
+# Health check melhorado
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD curl -f http://localhost:3001/health || exit 1
 
-# Comando para iniciar
-CMD ["node", "server.js"]
+# Usar tini como PID 1 para melhor handling de sinais
+ENTRYPOINT ["/sbin/tini", "--"]
+
+# Comando para iniciar com melhor gerenciamento de memória
+CMD ["node", "--max-old-space-size=512", "server.js"]

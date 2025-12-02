@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const axios = require('axios');
 const { Pool } = require('pg');
 const path = require('path');
 require('dotenv').config();
@@ -7,9 +8,20 @@ require('dotenv').config();
 const app = express();
 const port = process.env.SERVER_PORT || 3004;
 
+// Middleware para garantir que pool existe
+let poolReady = false;
+app.use((req, res, next) => {
+  if (!poolReady) {
+    return res.status(503).json({ status: 'initializing', message: 'Server initializing database connection' });
+  }
+  next();
+});
+
 // Configuração CORS para aceitar conexões da rede local
 app.use(cors({
   origin: [
+    'http://localhost',
+    'http://localhost:80',
     'http://localhost:5173',
     'http://localhost:3000',
     'http://localhost:3004',
@@ -17,11 +29,8 @@ app.use(cors({
     /^http:\/\/10\.\d+\.\d+\.\d+:\d+$/,
     /^http:\/\/192\.168\.\d+\.\d+:\d+$/,
     /^http:\/\/172\.(1[6-9]|2[0-9]|3[0-1])\.\d+\.\d+:\d+$/,
-    // Portas específicas sem protocolo
-    /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
-    /^http:\/\/192\.168\.\d+\.\d+:3000$/,
-    /^http:\/\/10\.\d+\.\d+\.\d+:5173$/,
-    /^http:\/\/192\.168\.\d+\.\d+:5173$/,
+    /^http:\/\/10\.\d+\.\d+\.\d+/,
+    /^http:\/\/192\.168\.\d+\.\d+/,
     // Modo desenvolvimento - aceita qualquer origem local
     true
   ],
@@ -32,30 +41,107 @@ app.use(cors({
 
 app.use(express.json());
 
+
 // Middleware de log para debug
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} - Origin: ${req.headers.origin || 'sem origin'}`);
   next();
 });
 
-// Configuração do PostgreSQL
-const pool = new Pool({
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  database: process.env.DB_NAME,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-});
+// Configuração do PostgreSQL com melhores práticas
+const VAULT_ADDR = process.env.VAULT_ADDR || 'http://vault:8200';
+const VAULT_TOKEN = process.env.VAULT_TOKEN || 'devtoken';
 
-// Teste de conexão
-pool.connect((err, client, release) => {
-  if (err) {
-    console.error('Erro ao conectar com PostgreSQL:', err);
-  } else {
-    console.log('Conectado ao PostgreSQL com sucesso!');
-    release();
+async function getVaultSecret(path) {
+  try {
+    const response = await axios.get(`${VAULT_ADDR}/v1/${path}`, {
+      headers: { 'X-Vault-Token': VAULT_TOKEN },
+      timeout: 3000,
+    });
+    const value = response.data?.data?.data?.value;
+    if (value) {
+      console.log(`[VAULT] Secret carregado: ${path}`);
+      return value;
+    }
+  } catch (error) {
+    console.warn(`[VAULT] Indisponivel (${path}), usando .env`);
   }
-});
+  return null;
+}
+
+// Configuração do banco - será preenchida por initializeDatabase
+let dbConfig = {
+  host: process.env.POSTGRES_HOST || 'localhost',
+  port: parseInt(process.env.POSTGRES_PORT) || 5432,
+  database: process.env.POSTGRES_DATABASE || 'airflow_treynor',
+  user: process.env.POSTGRES_USER || 'postgres',
+  password: process.env.POSTGRES_PASSWORD || 'MinhaSenh@123',
+  max: 20,
+  min: 2,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000,
+  query_timeout: 30000,
+};
+
+async function initializeDatabase() {
+  console.log('[VAULT] Tentando carregar secrets...');
+  const vaultHost = await getVaultSecret('secret/data/contratos/postgres-host');
+  const vaultPort = await getVaultSecret('secret/data/contratos/postgres-port');
+  const vaultDb = await getVaultSecret('secret/data/contratos/postgres-db');
+  const vaultUser = await getVaultSecret('secret/data/contratos/postgres-user');
+  const vaultPassword = await getVaultSecret('secret/data/contratos/postgres-password');
+  
+  if (vaultHost) dbConfig.host = vaultHost;
+  if (vaultPort) dbConfig.port = parseInt(vaultPort);
+  if (vaultDb) dbConfig.database = vaultDb;
+  if (vaultUser) dbConfig.user = vaultUser;
+  if (vaultPassword) dbConfig.password = vaultPassword;
+  
+  console.log(`[DB] Configuracao final: host=${dbConfig.host} port=${dbConfig.port} database=${dbConfig.database}`);
+  console.log('[DB] Pronto para conectar');
+}
+
+let pool;
+
+async function createPool() {
+  await initializeDatabase();
+  pool = new Pool(dbConfig);
+  poolReady = true;
+  
+  pool.on('error', (err, client) => {
+    console.error('[DB] Erro no pool PostgreSQL:', err);
+  });
+
+  pool.on('connect', () => {
+    console.log('[DB] Nova conexão estabelecida');
+  });
+
+  pool.on('remove', () => {
+    console.log('[DB] Conexão removida do pool');
+  });
+
+  // Health check endpoint - DEPOIS que pool é criado
+  app.get('/health', async (req, res) => {
+    try {
+      await pool.query('SELECT NOW()');
+      res.status(200).json({ 
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        database: 'connected',
+        service: 'contratos-server'
+      });
+    } catch (error) {
+      console.error('[HEALTH CHECK] Falha:', error.message);
+      res.status(503).json({ 
+        status: 'error',
+        timestamp: new Date().toISOString(),
+        database: 'disconnected',
+        error: error.message,
+        service: 'contratos-server'
+      });
+    }
+  });
+}
 
 // API para KPIs principais
 app.get('/api/contratos/kpis', async (req, res) => {
@@ -618,9 +704,12 @@ app.get('/api/contratos/posicao-completa', async (req, res) => {
 app.get('/api/contratos/desembolso', async (req, res) => {
   try {
     console.log('[DESEMBOLSO] Buscando dados de desembolso com filtros...');
+    console.log('[DESEMBOLSO] Query params recebidos:', req.query);
+    console.log('[DESEMBOLSO] URL completa:', req.originalUrl);
     
     // Extrair parâmetros de filtro da query string
     const {
+      cpf_cnpj,
       dataInicio,
       dataFim,
       produto,
@@ -635,6 +724,28 @@ app.get('/api/contratos/desembolso', async (req, res) => {
     let whereConditions = [];
     let queryParams = [];
     let paramIndex = 1;
+
+    console.log('[DESEMBOLSO] ✓ Valor de cpf_cnpj:', cpf_cnpj, 'tipo:', typeof cpf_cnpj, 'boolean:', !!cpf_cnpj);
+
+    // FILTRO CRÍTICO: CPF/CNPJ do cliente
+    if (cpf_cnpj) {
+      // Normalizar CPF: remover caracteres especiais e zeros à esquerda
+      const cpfNumero = cpf_cnpj.replace(/\D/g, '');
+      // Remove zeros à esquerda para comparação com banco que armazena sem zeros
+      const cpfSemZeros = cpfNumero.replace(/^0+/, '');
+      
+      console.log('[DESEMBOLSO] ✓ CPF RECEBIDO NO FILTRO:', cpf_cnpj);
+      console.log('[DESEMBOLSO] ✓ CPF COMO NÚMERO:', cpfNumero);
+      console.log('[DESEMBOLSO] ✓ CPF SEM ZEROS À ESQUERDA:', cpfSemZeros);
+      
+      // Comparar como número inteiro para evitar problemas com zeros à esquerda
+      // O banco armazena sem zeros, então compara: CAST(nr_cpf_cnpj AS BIGINT) = valor_sem_zeros
+      whereConditions.push(`CAST(d.nr_cpf_cnpj AS BIGINT) = $${paramIndex}::BIGINT`);
+      queryParams.push(cpfSemZeros);
+      paramIndex++;
+      
+      console.log('[DESEMBOLSO] ✓ Filtro adicionado:', whereConditions[whereConditions.length - 1]);
+    }
 
     if (dataInicio) {
       whereConditions.push(`d.data_entrada >= $${paramIndex}`);
@@ -742,7 +853,9 @@ app.get('/api/contratos/desembolso', async (req, res) => {
       LIMIT 2000
     `;
 
-    console.log('[DESEMBOLSO] Executando query com filtros...', { whereClause, params: queryParams });
+    console.log('[DESEMBOLSO] ✓ WHERE CLAUSE:', whereClause || 'NENHUM (retornando TODOS)');
+    console.log('[DESEMBOLSO] ✓ Query params:', queryParams);
+    console.log('[DESEMBOLSO] ✓ Executando query...');
     const result = await pool.query(query, queryParams);
     
     console.log(`[DESEMBOLSO] Query executada, ${result.rows.length} registros encontrados`);
@@ -2129,17 +2242,6 @@ app.get('/api/contratos/tomada-decisao', async (req, res) => {
   }
 });
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({ 
-    status: 'OK', 
-    service: 'contratos-server',
-    timestamp: new Date().toISOString(),
-    origin: req.headers.origin || 'sem origin',
-    userAgent: req.headers['user-agent'] || 'sem user-agent'
-  });
-});
-
 // API para comparativo mensal com nova estrutura de dados
 app.get('/api/contratos/comparativo-mensal-completo', async (req, res) => {
   try {
@@ -3003,13 +3105,139 @@ app.get('/api/em/a-desembolsar', async (req, res) => {
   }
 });
 
+// Endpoint para contas correntes
+app.get('/api/contas-correntes', async (req, res) => {
+  try {
+    console.log('[CONTAS CORRENTES] Buscando contas correntes');
+    
+    const query = `
+      SELECT 
+        id,
+        nr_agencia,
+        usuario_resumido,
+        nome_cliente,
+        tipo,
+        produto,
+        dt_abert,
+        dt_ult_mov
+      FROM em.conta_corrente
+      ORDER BY dt_ult_mov DESC NULLS LAST, dt_abert DESC
+    `;
+    
+    console.log('[CONTAS CORRENTES] Executando query');
+    const result = await pool.query(query);
+    console.log(`[CONTAS CORRENTES] Resultado: ${result.rows.length} linhas retornadas`);
+    
+    // Processar dados
+    const processedData = result.rows.map(row => ({
+      id: row.id,
+      nr_agencia: row.nr_agencia,
+      usuario_resumido: row.usuario_resumido,
+      nome_cliente: row.nome_cliente,
+      tipo: row.tipo,
+      produto: row.produto,
+      dt_abert: row.dt_abert,
+      dt_ult_mov: row.dt_ult_mov
+    }));
+    
+    const response = {
+      success: true,
+      data: processedData,
+      count: processedData.length
+    };
+    
+    res.json(response);
+    
+  } catch (error) {
+    console.error('[CONTAS CORRENTES] Erro:', error);
+    res.status(500).json({ 
+      error: 'Erro ao buscar contas correntes',
+      details: error.message
+    });
+  }
+});
+
+// Endpoint para saldo conta corrente
+app.get('/api/saldo-conta-corrente', async (req, res) => {
+  try {
+    console.log('[SALDO CONTA CORRENTE] Buscando saldo conta corrente');
+    
+    const query = `
+      SELECT 
+        id,
+        dt_movimento,
+        cod_cliente,
+        nr_cpf_cnpj_cc,
+        cliente,
+        produto,
+        ult_mov,
+        sdo_anterior,
+        debito,
+        credito,
+        vlr_bloqueado,
+        limite,
+        sdo_disponivel,
+        sdo_contabil,
+        gerente,
+        situacao
+      FROM em.saldo_conta_corrente
+      ORDER BY dt_movimento DESC NULLS LAST
+    `;
+    
+    console.log('[SALDO CONTA CORRENTE] Executando query');
+    const result = await pool.query(query);
+    console.log(`[SALDO CONTA CORRENTE] Resultado: ${result.rows.length} linhas retornadas`);
+    
+    // Processar dados
+    const processedData = result.rows.map(row => ({
+      id: row.id,
+      dt_movimento: row.dt_movimento,
+      cod_cliente: row.cod_cliente,
+      nr_cpf_cnpj_cc: row.nr_cpf_cnpj_cc,
+      cliente: row.cliente,
+      produto: row.produto,
+      ult_mov: row.ult_mov,
+      sdo_anterior: parseFloat(row.sdo_anterior) || 0,
+      debito: parseFloat(row.debito) || 0,
+      credito: parseFloat(row.credito) || 0,
+      vlr_bloqueado: parseFloat(row.vlr_bloqueado) || 0,
+      limite: parseFloat(row.limite) || 0,
+      sdo_disponivel: parseFloat(row.sdo_disponivel) || 0,
+      sdo_contabil: parseFloat(row.sdo_contabil) || 0,
+      gerente: row.gerente,
+      situacao: row.situacao
+    }));
+    
+    const response = {
+      success: true,
+      data: processedData,
+      count: processedData.length
+    };
+    
+    res.json(response);
+    
+  } catch (error) {
+    console.error('[SALDO CONTA CORRENTE] Erro:', error);
+    res.status(500).json({ 
+      error: 'Erro ao buscar saldo conta corrente',
+      details: error.message
+    });
+  }
+});
+
 // Middleware para servir arquivos estáticos
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Iniciar servidor
-app.listen(port, '0.0.0.0', () => {
-  console.log(`🚀 Servidor Contratos rodando na porta ${port}`);
-  console.log(`📍 Localhost: http://localhost:${port}`);
+createPool().then(() => {
+const server = app.listen(port, '0.0.0.0', () => {
+  console.log('');
+  console.log('═══════════════════════════════════════════════════════');
+  console.log('   🚀 Contratos Server - Iniciado com Sucesso!');
+  console.log('═══════════════════════════════════════════════════════');
+  console.log(`📍 Porta: ${port}`);
+  console.log(`� URL: http://localhost:${port}`);
+  console.log(`🏥 Health: http://localhost:${port}/health`);
   
   // Mostrar IPs disponíveis para acesso da rede
   const os = require('os');
@@ -3023,7 +3251,65 @@ app.listen(port, '0.0.0.0', () => {
       }
     });
   });
-  console.log('\n');
+  console.log('');
+});
+
+// Timeout padrão
+server.timeout = 30000;
+server.keepAliveTimeout = 65000;
+
+// Graceful Shutdown
+const gracefulShutdown = async (signal) => {
+  console.log('');
+  console.log('═══════════════════════════════════════════════════════');
+  console.log(`⚠️  Sinal ${signal} recebido, encerrando...`);
+  console.log('═══════════════════════════════════════════════════════');
+  
+  server.close(async () => {
+    console.log('✓ Servidor Express encerrado');
+    
+    try {
+      await pool.end();
+      console.log('✓ Pool PostgreSQL encerrado');
+    } catch (error) {
+      console.error('✗ Erro ao encerrar pool:', error);
+    }
+    
+    console.log('✓ Servidor Contratos encerrado com sucesso');
+    console.log('═══════════════════════════════════════════════════════');
+    process.exit(0);
+  });
+  
+  setTimeout(() => {
+    console.error('✗ Timeout durante shutdown, forçando saída...');
+    process.exit(1);
+  }, 30000);
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+}).catch(error => {
+  console.error('Failed to initialize database:', error);
+  process.exit(1);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('');
+  console.error('═══════════════════════════════════════════════════════');
+  console.error('🔴 UNCAUGHT EXCEPTION:');
+  console.error(error);
+  console.error('═══════════════════════════════════════════════════════');
+  console.error('');
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('');
+  console.error('═══════════════════════════════════════════════════════');
+  console.error('🔴 UNHANDLED REJECTION:');
+  console.error('Motivo:', reason);
+  console.error('═══════════════════════════════════════════════════════');
+  console.error('');
 });
 
 module.exports = app;

@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Input } from '../components/ui/input';
 import { RefreshCw, DollarSign, TrendingUp, Calendar, Clock, BarChart3, PieChart, Users, FileText, Filter, Download, ChevronUp, ChevronDown, ChevronsUpDown, CheckCircle2 } from 'lucide-react';
 import { getApiEndpoint, logApiCall } from '@/lib/api-config';
+import { useAuditLog } from '@/hooks/useAuditLog';
 import * as XLSX from 'xlsx';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart as RePieChart, Pie, Cell } from 'recharts';
 
@@ -55,7 +56,9 @@ const PosicaoContratosCompleta: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dados, setDados] = useState<PosicaoCompleta | null>(null);
-  // ...existing code...
+  
+  // Audit Log
+  const { logView, logExport } = useAuditLog();
   
   // Estados para filtros
   const [filtros, setFiltros] = useState({
@@ -105,6 +108,7 @@ const PosicaoContratosCompleta: React.FC = () => {
 
   useEffect(() => {
     fetchDados();
+    logView('Contratos')
   }, []);
 
   const formatCurrency = (value: number) => {
@@ -379,6 +383,7 @@ const PosicaoContratosCompleta: React.FC = () => {
       SaldoTeorico: (c.valorTotalDevedor || 0) - (c.valorPago || 0),
       PrestacoesPagas: c.prestacoesPagasTotal,
       QuantidadeParcelas: c.quantidadeDeParcelas,
+      ValorParcelas: c.valorParcelas,
       PercentualPago: c.percentualPago,
       Taxa: c.taxa,
       TaxaReal: c.taxaReal,
@@ -392,6 +397,9 @@ const PosicaoContratosCompleta: React.FC = () => {
     const filterSuffix = (filtros.produtos.length > 0 || filtros.nomeCliente || filtros.dataInicio || filtros.dataFim) ? `_filtrado` : '';
     const filename = `posicao_contratos${filterSuffix}_${new Date().toISOString().split('T')[0]}.xlsx`;
     XLSX.writeFile(workbook, filename);
+    
+    // Log de exportação
+    logExport('Contratos', 'XLSX', dadosFiltrados.contratos.length);
   };
 
   // Lista de produtos únicos para filtro
